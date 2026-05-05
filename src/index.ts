@@ -6,6 +6,7 @@ import { listCommand } from './commands/list';
 import { listallCommand } from './commands/listall';
 import { doneCommand } from './commands/done';
 import { rmCommand } from './commands/rm';
+import { priCommand, depriCommand } from './commands/pri';
 
 const args = process.argv.slice(2);
 
@@ -60,13 +61,15 @@ switch (cmd) {
     break;
   }
 
-  case 'pri':
-    console.log('todo pri: not yet implemented');
+  case 'pri': {
+    priCommand(filePath, filteredArgs[1], filteredArgs[2]);
     break;
+  }
 
-  case 'depri':
-    console.log('todo depri: not yet implemented');
+  case 'depri': {
+    depriCommand(filePath, filteredArgs[1]);
     break;
+  }
 
   case 'search':
     console.log('todo search: not yet implemented');
