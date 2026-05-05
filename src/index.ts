@@ -4,6 +4,7 @@ import { helpCommand } from './commands/help';
 import { addCommand } from './commands/add';
 import { listCommand } from './commands/list';
 import { listallCommand } from './commands/listall';
+import { doneCommand } from './commands/done';
 
 const args = process.argv.slice(2);
 
@@ -48,9 +49,10 @@ switch (cmd) {
     break;
   }
 
-  case 'done':
-    console.log('todo done: not yet implemented');
+  case 'done': {
+    doneCommand(filePath, filteredArgs[1]);
     break;
+  }
 
   case 'rm':
     console.log('todo rm: not yet implemented');
