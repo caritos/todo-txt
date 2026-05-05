@@ -1,0 +1,14 @@
+{
+  "name": "quick-quokka",
+  "version": "0.1.0",
+  "module": "src/index.ts",
+  "bin": {
+    "todo": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
