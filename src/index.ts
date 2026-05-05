@@ -22,7 +22,6 @@ const filePath = resolveFile(fileFlag);
 
 // Get the command
 const cmd = filteredArgs[0];
-const cmdArgs = filteredArgs.slice(1);
 
 // Route to commands
 if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') {
