@@ -1,3 +1,5 @@
+import type { Task } from './parser';
+
 const A = {
   reset:         '\x1b[0m',
   bold:          '\x1b[1m',
@@ -16,12 +18,13 @@ function c(color: string, text: string): string {
 }
 
 export function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export function addDays(date: string, n: number): string {
   const d = new Date(date);
-  d.setDate(d.getDate() + n);
+  d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
 
@@ -44,7 +47,7 @@ function colorText(text: string, todayStr: string): string {
     });
 }
 
-export function formatTask(task: import('./parser').Task, todayStr: string): string {
+export function formatTask(task: Task, todayStr: string): string {
   const num = c(A.dim, String(task.line).padStart(2));
 
   if (task.done) {
