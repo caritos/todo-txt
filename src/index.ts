@@ -8,6 +8,7 @@ import { doneCommand } from './commands/done';
 import { rmCommand } from './commands/rm';
 import { priCommand, depriCommand } from './commands/pri';
 import { searchCommand } from './commands/search';
+import { reportCommand } from './commands/report';
 
 const args = process.argv.slice(2);
 
@@ -77,9 +78,10 @@ switch (cmd) {
     break;
   }
 
-  case 'report':
-    console.log('todo report: not yet implemented');
+  case 'report': {
+    reportCommand(filePath);
     break;
+  }
 
   default:
     console.error(`todo: unknown command '${cmd}'`);
