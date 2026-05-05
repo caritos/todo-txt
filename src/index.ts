@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { resolveFile } from './store';
 import { helpCommand } from './commands/help';
+import { addCommand } from './commands/add';
 
 const args = process.argv.slice(2);
 
@@ -30,9 +31,10 @@ if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') {
 }
 
 switch (cmd) {
-  case 'add':
-    console.log('todo add: not yet implemented');
+  case 'add': {
+    addCommand(filePath, filteredArgs.slice(1));
     break;
+  }
 
   case 'list':
     console.log('todo list: not yet implemented');
