@@ -7,6 +7,7 @@ import { listallCommand } from './commands/listall';
 import { doneCommand } from './commands/done';
 import { rmCommand } from './commands/rm';
 import { priCommand, depriCommand } from './commands/pri';
+import { searchCommand } from './commands/search';
 
 const args = process.argv.slice(2);
 
@@ -71,9 +72,10 @@ switch (cmd) {
     break;
   }
 
-  case 'search':
-    console.log('todo search: not yet implemented');
+  case 'search': {
+    searchCommand(filePath, filteredArgs.slice(1));
     break;
+  }
 
   case 'report':
     console.log('todo report: not yet implemented');
