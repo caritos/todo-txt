@@ -46,3 +46,16 @@ export function parseLine(raw: string, lineNum: number): Task {
 
   return { line: lineNum, raw, done, completionDate, priority, creationDate, text, projects, contexts, extensions };
 }
+
+export function serializeTask(task: Task): string {
+  const parts: string[] = [];
+  if (task.done) {
+    parts.push('x');
+    if (task.completionDate) parts.push(task.completionDate);
+  } else {
+    if (task.priority) parts.push(`(${task.priority})`);
+  }
+  if (task.creationDate) parts.push(task.creationDate);
+  parts.push(task.text);
+  return parts.join(' ');
+}

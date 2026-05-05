@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'bun:test';
-import { parseLine } from '../src/parser';
+import { parseLine, serializeTask } from '../src/parser';
+import type { Task } from '../src/parser';
 
 describe('parseLine', () => {
   it('parses a simple task', () => {
@@ -94,5 +95,71 @@ describe('parseLine', () => {
     const t = parseLine(raw, 5);
     expect(t.raw).toBe(raw);
     expect(t.line).toBe(5);
+  });
+});
+
+describe('serializeTask', () => {
+  it('serializes a simple task', () => {
+    const task: Task = {
+      line: 1, raw: '', done: false,
+      text: 'Buy groceries', projects: [], contexts: [], extensions: {},
+    };
+    expect(serializeTask(task)).toBe('Buy groceries');
+  });
+
+  it('serializes a task with priority', () => {
+    const task: Task = {
+      line: 1, raw: '', done: false, priority: 'A',
+      text: 'Fix login bug', projects: [], contexts: [], extensions: {},
+    };
+    expect(serializeTask(task)).toBe('(A) Fix login bug');
+  });
+
+  it('serializes a task with priority and creation date', () => {
+    const task: Task = {
+      line: 1, raw: '', done: false, priority: 'B',
+      creationDate: '2026-05-01', text: 'Write docs',
+      projects: [], contexts: [], extensions: {},
+    };
+    expect(serializeTask(task)).toBe('(B) 2026-05-01 Write docs');
+  });
+
+  it('serializes a completed task with both dates', () => {
+    const task: Task = {
+      line: 1, raw: '', done: true,
+      completionDate: '2026-05-04', creationDate: '2026-05-01',
+      text: 'Deploy server +backend',
+      projects: ['+backend'], contexts: [], extensions: {},
+    };
+    expect(serializeTask(task)).toBe('x 2026-05-04 2026-05-01 Deploy server +backend');
+  });
+
+  it('serializes a completed task with completion date only', () => {
+    const task: Task = {
+      line: 1, raw: '', done: true, completionDate: '2026-05-04',
+      text: 'Quick fix', projects: [], contexts: [], extensions: {},
+    };
+    expect(serializeTask(task)).toBe('x 2026-05-04 Quick fix');
+  });
+
+  it('does not include priority for completed tasks', () => {
+    const task: Task = {
+      line: 1, raw: '', done: true,
+      completionDate: '2026-05-04', priority: undefined,
+      text: 'Was urgent', projects: [], contexts: [], extensions: {},
+    };
+    expect(serializeTask(task)).toBe('x 2026-05-04 Was urgent');
+  });
+
+  it('round-trips: parse then serialize reproduces original line', () => {
+    const lines = [
+      '(A) 2026-05-01 Fix login bug +backend @work due:2026-05-10',
+      'x 2026-05-04 2026-05-01 Deploy server +backend @work',
+      'Buy groceries @personal',
+      '(C) Review pull requests +backend @work due:2026-05-07',
+    ];
+    for (const line of lines) {
+      expect(serializeTask(parseLine(line, 1))).toBe(line);
+    }
   });
 });
