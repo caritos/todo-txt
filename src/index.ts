@@ -3,6 +3,7 @@ import { resolveFile } from './store';
 import { helpCommand } from './commands/help';
 import { addCommand } from './commands/add';
 import { listCommand } from './commands/list';
+import { listallCommand } from './commands/listall';
 
 const args = process.argv.slice(2);
 
@@ -42,9 +43,10 @@ switch (cmd) {
     break;
   }
 
-  case 'listall':
-    console.log('todo listall: not yet implemented');
+  case 'listall': {
+    listallCommand(filePath, filteredArgs.slice(1));
     break;
+  }
 
   case 'done':
     console.log('todo done: not yet implemented');
