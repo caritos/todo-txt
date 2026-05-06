@@ -98,15 +98,19 @@ describe('list command — year count display', () => {
   });
 
   test('shows (N years) for type:anniversary with start:', () => {
-    writeFileSync(todoFile, `2026-05-06 Augusto Anniversary start:1984-05-06 frequency:yearly type:anniversary\n`, 'utf8');
+    const startYear = 1984;
+    const expectedYears = new Date().getFullYear() - startYear;
+    writeFileSync(todoFile, `2026-05-06 Augusto Anniversary start:${startYear}-05-06 frequency:yearly type:anniversary\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'list']);
-    expect(stdout).toContain('(42 years)');
+    expect(stdout).toContain(`(${expectedYears} years)`);
   });
 
   test('shows (N years) for type:birthday with start:', () => {
-    writeFileSync(todoFile, `2026-05-06 John Birthday start:1990-03-15 frequency:yearly type:birthday\n`, 'utf8');
+    const startYear = 1990;
+    const expectedYears = new Date().getFullYear() - startYear;
+    writeFileSync(todoFile, `2026-05-06 John Birthday start:${startYear}-03-15 frequency:yearly type:birthday\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'list']);
-    expect(stdout).toContain('(36 years)');
+    expect(stdout).toContain(`(${expectedYears} years)`);
   });
 
   test('does not show (N years) for type:event', () => {
