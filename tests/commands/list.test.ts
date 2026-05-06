@@ -83,3 +83,45 @@ describe('list command', () => {
     expect(stderr).toContain('No todo.txt found');
   });
 });
+
+describe('list command — year count display', () => {
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-test-'));
+    todoFile = join(dir, 'todo.txt');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('shows (N years) for type:anniversary with start:', () => {
+    const startYear = 1984;
+    const expectedYears = new Date().getFullYear() - startYear;
+    writeFileSync(todoFile, `2026-05-06 Augusto Anniversary start:${startYear}-05-06 frequency:yearly type:anniversary\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain(`(${expectedYears} years)`);
+  });
+
+  test('shows (N years) for type:birthday with start:', () => {
+    const startYear = 1990;
+    const expectedYears = new Date().getFullYear() - startYear;
+    writeFileSync(todoFile, `2026-05-06 John Birthday start:${startYear}-03-15 frequency:yearly type:birthday\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain(`(${expectedYears} years)`);
+  });
+
+  test('does not show (N years) for type:event', () => {
+    writeFileSync(todoFile, `2026-05-06 Team standup start:2024-05-06 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).not.toContain('years)');
+  });
+
+  test('does not show (N years) for anniversary without start:', () => {
+    writeFileSync(todoFile, `2026-05-06 My Anniversary type:anniversary\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).not.toContain('years)');
+  });
+});
