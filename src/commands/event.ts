@@ -32,6 +32,12 @@ function injectEnd(text: string): string {
   return text;
 }
 
+function resolveType(text: string): string {
+  const val = getExtValue(text, 'type');
+  if (val === 'anniversary' || val === 'birthday') return val;
+  return 'event';
+}
+
 export function eventCommand(filePath: string, textParts: string[]): void {
   if (textParts.length === 0) {
     console.error('Usage: todo event <text>');
@@ -41,11 +47,18 @@ export function eventCommand(filePath: string, textParts: string[]): void {
   let text = textParts.join(' ');
   validateFrequency(text);
   validateStartEnd(text);
+
+  const type = resolveType(text);
+  if ((type === 'anniversary' || type === 'birthday') && !getExtValue(text, 'start')) {
+    console.error(`todo: type:${type} requires a start: date`);
+    process.exit(1);
+  }
+
   text = injectEnd(text);
 
   const todayStr = today();
-  const normalized = text.replace(/\s*\btype:event\b/g, '').trim();
-  const raw = `${todayStr} ${normalized} type:event`;
+  const normalized = text.replace(/\s*\btype:(?:event|anniversary|birthday)\b/g, '').trim();
+  const raw = `${todayStr} ${normalized} type:${type}`;
 
   appendFileSync(filePath, raw + '\n', 'utf8');
 

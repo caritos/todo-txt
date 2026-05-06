@@ -139,4 +139,38 @@ describe('event command', () => {
     expect(code).toBe(1);
     expect(stderr).toContain("invalid frequency");
   });
+
+  test('writes anniversary with type:anniversary when specified', () => {
+    run(['--file', todoFile, 'event', 'Augusto Anniversary start:1984-05-06 frequency:yearly type:anniversary']);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('type:anniversary');
+    expect(content).not.toContain('type:event');
+  });
+
+  test('writes birthday with type:birthday when specified', () => {
+    run(['--file', todoFile, 'event', "John's Birthday start:1990-03-15 frequency:yearly type:birthday"]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('type:birthday');
+    expect(content).not.toContain('type:event');
+  });
+
+  test('exits with error for type:anniversary without start:', () => {
+    const { stderr, code } = run(['--file', todoFile, 'event', 'My Anniversary type:anniversary']);
+    expect(code).toBe(1);
+    expect(stderr).toContain('requires a start:');
+  });
+
+  test('exits with error for type:birthday without start:', () => {
+    const { stderr, code } = run(['--file', todoFile, 'event', "John's Birthday type:birthday"]);
+    expect(code).toBe(1);
+    expect(stderr).toContain('requires a start:');
+  });
+
+  test('plain event still writes type:event not type:anniversary or type:birthday', () => {
+    run(['--file', todoFile, 'event', 'Team standup']);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('type:event');
+    expect(content).not.toContain('type:anniversary');
+    expect(content).not.toContain('type:birthday');
+  });
 });
