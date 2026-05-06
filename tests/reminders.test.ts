@@ -172,4 +172,17 @@ describe('remindersCommand', () => {
       exitSpy.mockRestore();
     }
   });
+
+  it('exits 1 when executor throws', () => {
+    const exitSpy = spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit');
+    }) as any);
+    try {
+      expect(() =>
+        remindersCommand(TMP, [], (_jxa: string) => { throw new Error('osascript failed'); })
+      ).toThrow('process.exit');
+    } finally {
+      exitSpy.mockRestore();
+    }
+  });
 });

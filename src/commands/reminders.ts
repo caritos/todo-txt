@@ -134,7 +134,12 @@ export function remindersCommand(filePath: string, args: string[], executor: JXA
   try {
     raw = executor(jxa);
   } catch (err: unknown) {
-    console.error(err instanceof Error ? err.message : String(err));
+    if (err instanceof Error && 'stderr' in err) {
+      const stderr = String((err as { stderr?: Buffer | string }).stderr ?? '').trim();
+      if (stderr) console.error(stderr);
+    } else {
+      console.error(err instanceof Error ? err.message : String(err));
+    }
     console.error('todo: failed to read Reminders — check System Settings → Privacy & Security → Automation');
     process.exit(1);
   }
