@@ -5,6 +5,7 @@ Commands:
   add <text>          Add a new task (creation date stamped automatically)
   event <text>        Add a new event (creation date stamped, tagged type:event)
   import <ics-file>   Import events from an iCalendar (.ics) file
+  reminders [list]    Import tasks from Apple Reminders (macOS only)
   focus               Show tasks and events in the next 2 weeks
   list [filters]      List open tasks, sorted by priority. Filters: +project @context (A) keyword
   listall [filters]   List all tasks including completed
@@ -44,7 +45,9 @@ Examples:
   todo done 3
   todo pri 5 A
   todo import family.ics
-  todo --file work.txt import meetings.ics`;
+  todo --file work.txt import meetings.ics
+  todo reminders
+  todo reminders Work`;
 
   console.log(help);
 }
