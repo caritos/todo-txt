@@ -12,7 +12,10 @@ function isPastEvent(task: Task, todayStr: string): boolean {
   if (!task.extensions['type']) return false;
   const start = task.extensions['start'];
   if (!start) return false;
-  if (task.extensions['frequency']) return false;
+  if (task.extensions['frequency']) {
+    const until = task.extensions['recur-until'];
+    return until !== undefined && until < todayStr;
+  }
   return start.slice(0, 10) < todayStr;
 }
 

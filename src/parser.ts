@@ -40,7 +40,7 @@ export function parseLine(raw: string, lineNum: number): Task {
   const projects = [...text.matchAll(/(?:^|\s)(\+\S+)/g)].map(m => m[1]!);
   const contexts = [...text.matchAll(/(?:^|\s)(@\S+)/g)].map(m => m[1]!);
   const extensions: Record<string, string> = {};
-  for (const m of text.matchAll(/(?:^|\s)(\w+):([^/\s]\S*)/g)) {
+  for (const m of text.matchAll(/(?:^|\s)(\w[\w-]*):([^/\s]\S*)/g)) {
     extensions[m[1]!] = m[2]!;
   }
 

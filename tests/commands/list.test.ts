@@ -187,4 +187,22 @@ describe('list command — past event filtering', () => {
     const { stdout } = run(['--file', todoFile, 'list']);
     expect(stdout).toContain('Old task');
   });
+
+  test('hides recurring event with past recur-until:', () => {
+    writeFileSync(todoFile, `2026-05-06 Tennis start:2023-03-07T20:00 frequency:weekly recur-until:2023-06-05 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).not.toContain('Tennis');
+  });
+
+  test('shows recurring event with future recur-until:', () => {
+    writeFileSync(todoFile, `2026-05-06 Tennis start:2026-04-01T20:00 frequency:weekly recur-until:2026-12-31 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain('Tennis');
+  });
+
+  test('shows recurring event with no recur-until:', () => {
+    writeFileSync(todoFile, `2026-05-06 Weekly Standup start:2023-01-01T09:00 frequency:weekly type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain('Weekly Standup');
+  });
 });
