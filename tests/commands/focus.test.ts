@@ -111,6 +111,20 @@ describe('focus command', () => {
     expect(stdout).not.toContain('Ended Standup');
   });
 
+  test('hides recurring event whose start: is older than 2 years with no recur-until:', () => {
+    const staleStart = addDays(today, -800);
+    writeFileSync(todoFile, `2026-05-06 Old Workshop start:${staleStart}T10:00 frequency:daily type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).not.toContain('Old Workshop');
+  });
+
+  test('shows recurring event whose start: is within 2 years with no recur-until:', () => {
+    const recentStart = addDays(today, -60);
+    writeFileSync(todoFile, `2026-05-06 Weekly Standup start:${recentStart}T09:00 frequency:weekly type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('Weekly Standup');
+  });
+
   // Regular tasks
   test('shows regular task with due: in window', () => {
     const due = addDays(today, 5);

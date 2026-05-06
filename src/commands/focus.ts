@@ -24,6 +24,8 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
       return next >= todayStr && next <= windowEnd;
     }
     if (frequency) {
+      const startDate = start.slice(0, 10);
+      if (startDate < addDays(todayStr, -730)) return false;
       return true;
     }
     const startDate = start.slice(0, 10);
