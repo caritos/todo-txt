@@ -74,4 +74,29 @@ describe('add command', () => {
     expect(content).toContain('@work');
     expect(content).toContain('due:2026-05-10');
   });
+
+  test('accepts task with valid frequency extensions', () => {
+    const { code } = run(['--file', todoFile, 'add', 'Pay bills frequency:monthly frequency-month-day:10']);
+    expect(code).toBe(0);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:monthly');
+    expect(content).toContain('frequency-month-day:10');
+  });
+
+  test('exits with error for invalid frequency: value on add', () => {
+    const { stderr, code } = run(['--file', todoFile, 'add', 'Task frequency:hourly']);
+    expect(code).toBe(1);
+    expect(stderr).toContain("invalid frequency");
+  });
+
+  test('exits with error for invalid every: value on add', () => {
+    const { stderr, code } = run(['--file', todoFile, 'add', 'Task frequency:daily every:0']);
+    expect(code).toBe(1);
+    expect(stderr).toContain("invalid every");
+  });
+
+  test('passes through auxiliary frequency keys without frequency: key', () => {
+    const { code } = run(['--file', todoFile, 'add', 'Task every:2']);
+    expect(code).toBe(0);
+  });
 });

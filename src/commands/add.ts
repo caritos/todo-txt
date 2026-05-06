@@ -2,6 +2,7 @@ import { appendFileSync } from 'fs';
 import { parseLine, serializeTask } from '../parser';
 import { readTasks } from '../store';
 import { today, formatTask } from '../output';
+import { validateFrequency } from '../recurrence';
 
 export function addCommand(filePath: string, textParts: string[]): void {
   if (textParts.length === 0) {
@@ -10,6 +11,7 @@ export function addCommand(filePath: string, textParts: string[]): void {
   }
 
   const text = textParts.join(' ');
+  validateFrequency(text);
   const todayStr = today();
 
   // If text already starts with a priority like "(A) ...", preserve it
