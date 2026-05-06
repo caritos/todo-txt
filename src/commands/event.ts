@@ -57,7 +57,7 @@ export function eventCommand(filePath: string, textParts: string[]): void {
   text = injectEnd(text);
 
   const todayStr = today();
-  const normalized = text.replace(/\s*\btype:(?:event|anniversary|birthday)\b/g, '').trim();
+  const normalized = text.replace(/(?:^|\s)type:(?:event|anniversary|birthday)(?=\s|$)/g, ' ').trim();
   const raw = `${todayStr} ${normalized} type:${type}`;
 
   appendFileSync(filePath, raw + '\n', 'utf8');
