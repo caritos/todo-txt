@@ -103,6 +103,29 @@ function mapVevent(vevent: ICAL.Component, todayStr: string): string | null {
     const rruleProp = vevent.getFirstPropertyValue('rrule') as ICAL.Recur | null;
     if (rruleProp) parts.push(...mapRrule(rruleProp));
 
+    const exdateProps = vevent.getAllProperties('exdate');
+    if (exdateProps.length > 0) {
+      const dates: string[] = [];
+      for (const prop of exdateProps) {
+        for (const val of prop.getValues() as ICAL.Time[]) {
+          dates.push(val.toString().slice(0, 10));
+        }
+      }
+      if (dates.length > 0) parts.push(`exdate:${dates.join(',')}`);
+    }
+
+    const location = vevent.getFirstPropertyValue('location') as string | null;
+    if (location) {
+      const sanitized = sanitizeExtValue(location);
+      if (sanitized) parts.push(`location:${sanitized}`);
+    }
+
+    const description = vevent.getFirstPropertyValue('description') as string | null;
+    if (description) {
+      const sanitized = sanitizeExtValue(description);
+      if (sanitized) parts.push(`description:${sanitized}`);
+    }
+
     parts.push(`type:${detectType(summary)}`);
 
     return parts.join(' ');

@@ -324,4 +324,89 @@ describe('import command', () => {
     expect(content).toContain('frequency:yearly');
     expect(content).toContain('frequency-month:May');
   });
+
+  test('maps EXDATE to exdate: extension with comma-separated dates', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Basketball',
+      'DTSTART;TZID=America/New_York:20220929T193000',
+      'DTEND;TZID=America/New_York:20220929T210000',
+      'RRULE:FREQ=WEEKLY;BYDAY=TH',
+      'EXDATE;TZID=America/New_York:20221124T193000',
+      'EXDATE;TZID=America/New_York:20221229T193000',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toMatch(/exdate:2022-11-24[^,\s]*,2022-12-29|exdate:2022-12-29[^,\s]*,2022-11-24/);
+  });
+
+  test('maps LOCATION to location: extension with spaces replaced by underscores', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Cardiology Appt',
+      'DTSTART;VALUE=DATE:20240123',
+      'DTEND;VALUE=DATE:20240124',
+      'LOCATION:1741 N Ocean Ave Medford NY',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('location:1741_N_Ocean_Ave_Medford_NY');
+  });
+
+  test('maps DESCRIPTION to description: extension with newlines and spaces replaced by underscores', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Review Finances',
+      'DTSTART;VALUE=DATE:20200901',
+      'DTEND;VALUE=DATE:20200902',
+      'DESCRIPTION:Review finances on personal capital',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('description:Review_finances_on_personal_capital');
+  });
+
+  test('truncates DESCRIPTION to 200 characters', () => {
+    const longDesc = 'A'.repeat(250);
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Long event',
+      'DTSTART;VALUE=DATE:20260506',
+      'DTEND;VALUE=DATE:20260507',
+      `DESCRIPTION:${longDesc}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    const match = content.match(/description:(\S+)/);
+    expect(match).not.toBeNull();
+    expect(match![1]!.length).toBeLessThanOrEqual(200);
+  });
+
+  test('omits location: when LOCATION is absent', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Simple event',
+      'DTSTART;VALUE=DATE:20260506',
+      'DTEND;VALUE=DATE:20260507',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).not.toContain('location:');
+    expect(content).not.toContain('description:');
+  });
 });
