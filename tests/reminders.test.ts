@@ -54,9 +54,9 @@ describe('mapReminder', () => {
     const line = mapReminder({ ...BASE, completed: true, completionDate: '2026-04-30' }, '2026-05-06');
     expect(line).toMatch(/^x 2026-04-30 /);
   });
-  it('completed with null completionDate uses creationDate as second token', () => {
+  it('completed with null completionDate uses todayStr as completion date', () => {
     const line = mapReminder({ ...BASE, completed: true, completionDate: null }, '2026-05-06');
-    expect(line).toMatch(/^x \d{4}-\d{2}-\d{2} /);
+    expect(line).toMatch(/^x 2026-05-06 /);
   });
   it('maps priority 1 to (A)', () => {
     expect(mapReminder({ ...BASE, priority: 1 }, '2026-05-06')).toMatch(/^\(A\) /);

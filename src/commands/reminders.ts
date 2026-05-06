@@ -36,7 +36,7 @@ export function mapReminder(r: ReminderRecord, todayStr: string): string {
 
   if (r.completed) {
     parts.push('x');
-    if (r.completionDate) parts.push(r.completionDate);
+    parts.push(r.completionDate ?? todayStr);
   } else {
     const pri = PRIORITY_MAP[r.priority];
     if (pri) parts.push(pri);
@@ -60,10 +60,8 @@ export function mapReminder(r: ReminderRecord, todayStr: string): string {
   return parts.join(' ');
 }
 
-// Implemented in Task 2
 export function buildExistingIds(_filePath: string): Set<string> {
   return new Set();
 }
 
-// Implemented in Task 3
 export function remindersCommand(_filePath: string, _args: string[], _executor?: JXAExecutor): void {}
