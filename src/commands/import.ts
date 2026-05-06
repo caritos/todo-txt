@@ -41,7 +41,7 @@ function detectType(summary: string): string {
   return 'event';
 }
 
-function mapRrule(rrule: ICAL.Recur): string[] {
+function mapRrule(rrule: ICAL.Recur): string[] | null {
   const FREQ_MAP: Record<string, string> = {
     DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly', YEARLY: 'yearly',
   };
@@ -62,6 +62,7 @@ function mapRrule(rrule: ICAL.Recur): string[] {
       const dayCode = match[2]!;
       const position = positionName(pos);
       const dayName = BYDAY_FULL[dayCode];
+      if (!position) return null; // unsupported positional — skip event
       if (position && dayName) parts.push(`frequency-month-day:${position}-${dayName}`);
     } else {
       const days = byday.map(d => BYDAY_SHORT[String(d)]).filter((d): d is string => d !== undefined);
@@ -74,7 +75,7 @@ function mapRrule(rrule: ICAL.Recur): string[] {
 
   const bymonth = rrule.parts['BYMONTH'] as number[] | undefined;
   if (bymonth && bymonth.length > 0) {
-    const months = bymonth.map(m => MONTH_NAMES[m - 1]).filter((m): m is string => m !== undefined);
+    const months = bymonth.map(m => MONTH_NAMES[m - 1]).filter((m): m is (typeof MONTH_NAMES)[number] => m !== undefined);
     if (months.length > 0) parts.push(`frequency-month:${months.join(',')}`);
   }
 
@@ -96,12 +97,20 @@ function mapVevent(vevent: ICAL.Component, todayStr: string): string | null {
     if (dtend && dtstart) {
       const isSingleAllDay =
         dtstart.isDate && dtend.isDate &&
-        dtend.toJSDate().getTime() - dtstart.toJSDate().getTime() === 86400000;
+        (() => {
+          const sMs = new Date(dtstart.toString() + 'T00:00:00Z').getTime();
+          const eMs = new Date(dtend.toString() + 'T00:00:00Z').getTime();
+          return eMs - sMs === 86400000;
+        })();
       if (!isSingleAllDay) parts.push(`end:${formatIcalTime(dtend)}`);
     }
 
     const rruleProp = vevent.getFirstPropertyValue('rrule') as ICAL.Recur | null;
-    if (rruleProp) parts.push(...mapRrule(rruleProp));
+    if (rruleProp) {
+      const rruleParts = mapRrule(rruleProp);
+      if (rruleParts === null) return null; // unsupported RRULE — skip event
+      parts.push(...rruleParts);
+    }
 
     const exdateProps = vevent.getAllProperties('exdate');
     if (exdateProps.length > 0) {

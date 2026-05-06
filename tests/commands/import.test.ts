@@ -409,4 +409,28 @@ describe('import command', () => {
     expect(content).not.toContain('location:');
     expect(content).not.toContain('description:');
   });
+
+  test('skips event with unsupported positional BYDAY (e.g. -2FR) and imports the rest', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Valid event',
+      'DTSTART;VALUE=DATE:20260506',
+      'DTEND;VALUE=DATE:20260507',
+      'END:VEVENT',
+      'BEGIN:VEVENT',
+      'SUMMARY:Unsupported recurrence',
+      'DTSTART;VALUE=DATE:20260506',
+      'DTEND;VALUE=DATE:20260507',
+      'RRULE:FREQ=MONTHLY;BYDAY=-2FR',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    const { code, stderr } = run(['--file', todoFile, 'import', icsPath]);
+    expect(code).toBe(0);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('Valid event');
+    expect(content).not.toContain('Unsupported recurrence');
+    expect(stderr).toContain('skipping');
+  });
 });
