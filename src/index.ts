@@ -9,6 +9,7 @@ import { rmCommand } from './commands/rm';
 import { priCommand, depriCommand } from './commands/pri';
 import { searchCommand } from './commands/search';
 import { reportCommand } from './commands/report';
+import { eventCommand } from './commands/event';
 
 const args = process.argv.slice(2);
 
@@ -75,6 +76,11 @@ switch (cmd) {
 
   case 'search': {
     searchCommand(filePath, filteredArgs.slice(1));
+    break;
+  }
+
+  case 'event': {
+    eventCommand(filePath, filteredArgs.slice(1));
     break;
   }
 

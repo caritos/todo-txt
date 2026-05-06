@@ -3,6 +3,7 @@ export function helpCommand(): void {
 
 Commands:
   add <text>          Add a new task (creation date stamped automatically)
+  event <text>        Add a new event (creation date stamped, tagged type:event)
   list [filters]      List open tasks. Filters: +project @context (A) keyword
   listall [filters]   List all tasks including completed
   done <n>            Mark task #n complete
@@ -18,6 +19,8 @@ Options:
 Examples:
   todo add "Fix login bug +backend @work due:2026-05-10"
   todo add "(A) Urgent task"
+  todo event "Team standup +work @office"
+  todo list type:event
   todo list +backend
   todo list @work (B)
   todo done 3
