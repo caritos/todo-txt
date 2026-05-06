@@ -41,8 +41,44 @@ function detectType(summary: string): string {
   return 'event';
 }
 
-function mapRrule(_rrule: ICAL.Recur): string[] {
-  return []; // implemented in Task 5
+function mapRrule(rrule: ICAL.Recur): string[] {
+  const FREQ_MAP: Record<string, string> = {
+    DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly', YEARLY: 'yearly',
+  };
+  const freq = FREQ_MAP[rrule.freq];
+  if (!freq) return [];
+
+  const parts: string[] = [`frequency:${freq}`];
+
+  if (rrule.interval && rrule.interval > 1) parts.push(`every:${rrule.interval}`);
+
+  if (rrule.until) parts.push(`recur-until:${rrule.until.toString().slice(0, 10)}`);
+
+  const byday = rrule.parts['BYDAY'] as string[] | undefined;
+  if (byday && byday.length > 0) {
+    const match = String(byday[0]).match(/^(-?\d+)([A-Z]+)$/);
+    if (match) {
+      const pos = parseInt(match[1]!);
+      const dayCode = match[2]!;
+      const position = positionName(pos);
+      const dayName = BYDAY_FULL[dayCode];
+      if (position && dayName) parts.push(`frequency-month-day:${position}-${dayName}`);
+    } else {
+      const days = byday.map(d => BYDAY_SHORT[String(d)]).filter((d): d is string => d !== undefined);
+      if (days.length > 0) parts.push(`frequency-day:${days.join(',')}`);
+    }
+  } else {
+    const bymonthday = rrule.parts['BYMONTHDAY'] as number[] | undefined;
+    if (bymonthday && bymonthday.length > 0) parts.push(`frequency-month-day:${bymonthday[0]}`);
+  }
+
+  const bymonth = rrule.parts['BYMONTH'] as number[] | undefined;
+  if (bymonth && bymonth.length > 0) {
+    const months = bymonth.map(m => MONTH_NAMES[m - 1]).filter((m): m is string => m !== undefined);
+    if (months.length > 0) parts.push(`frequency-month:${months.join(',')}`);
+  }
+
+  return parts;
 }
 
 function mapVevent(vevent: ICAL.Component, todayStr: string): string | null {

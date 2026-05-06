@@ -205,4 +205,123 @@ describe('import command', () => {
     const content = readFileSync(todoFile, 'utf8');
     expect(content).toContain('Valid event');
   });
+
+  test('maps RRULE FREQ=WEEKLY to frequency:weekly', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Basketball',
+      'DTSTART;TZID=America/New_York:20220929T193000',
+      'DTEND;TZID=America/New_York:20220929T210000',
+      'RRULE:FREQ=WEEKLY;BYDAY=TH;UNTIL=20230705T000000Z',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:weekly');
+    expect(content).toContain('frequency-day:Th');
+    expect(content).toContain('recur-until:2023-07-05');
+  });
+
+  test('maps RRULE FREQ=MONTHLY;BYMONTHDAY to frequency:monthly frequency-month-day:N', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Rent due',
+      'DTSTART;VALUE=DATE:20200901',
+      'DTEND;VALUE=DATE:20200902',
+      'RRULE:FREQ=MONTHLY;BYMONTHDAY=1',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:monthly');
+    expect(content).toContain('frequency-month-day:1');
+  });
+
+  test('maps RRULE FREQ=MONTHLY;BYDAY=1MO to frequency-month-day:first-monday', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Team review',
+      'DTSTART;VALUE=DATE:20260505',
+      'DTEND;VALUE=DATE:20260506',
+      'RRULE:FREQ=MONTHLY;BYDAY=1MO',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:monthly');
+    expect(content).toContain('frequency-month-day:first-monday');
+  });
+
+  test('maps RRULE FREQ=MONTHLY;BYDAY=-1FR to frequency-month-day:last-friday', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Last Friday meeting',
+      'DTSTART;VALUE=DATE:20260501',
+      'DTEND;VALUE=DATE:20260502',
+      'RRULE:FREQ=MONTHLY;BYDAY=-1FR',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:monthly');
+    expect(content).toContain('frequency-month-day:last-friday');
+  });
+
+  test('maps RRULE FREQ=YEARLY to frequency:yearly', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Annual review',
+      'DTSTART;VALUE=DATE:20260506',
+      'DTEND;VALUE=DATE:20260507',
+      'RRULE:FREQ=YEARLY',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:yearly');
+  });
+
+  test('maps RRULE INTERVAL=2 to every:2', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Biweekly sync',
+      'DTSTART;VALUE=DATE:20260506',
+      'DTEND;VALUE=DATE:20260507',
+      'RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:weekly');
+    expect(content).toContain('every:2');
+  });
+
+  test('maps RRULE FREQ=YEARLY;BYMONTH=5 to frequency-month:May', () => {
+    const icsPath = writeIcs('t.ics', [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'SUMMARY:Memorial day',
+      'DTSTART;VALUE=DATE:20260525',
+      'DTEND;VALUE=DATE:20260526',
+      'RRULE:FREQ=YEARLY;BYMONTH=5',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ]);
+    run(['--file', todoFile, 'import', icsPath]);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:yearly');
+    expect(content).toContain('frequency-month:May');
+  });
 });
