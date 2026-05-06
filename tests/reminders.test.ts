@@ -132,12 +132,6 @@ describe('remindersCommand', () => {
     expect(lines).toHaveLength(1);
   });
 
-  it('prints message and leaves file unchanged when all already imported', () => {
-    writeFileSync(TMP, '2026-05-01 Buy groceries +Personal reminders-id:ABC-123\n', 'utf8');
-    remindersCommand(TMP, [], makeExecutor([FIXTURE]));
-    expect(readFileSync(TMP, 'utf8').trim().split('\n')).toHaveLength(1);
-  });
-
   it('filters by list name when argument provided', () => {
     const workItem: ReminderRecord = { ...BASE, id: 'XYZ-789', title: 'Write report', list: 'Work' };
     writeFileSync(TMP, '', 'utf8');

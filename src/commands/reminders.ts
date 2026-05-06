@@ -81,21 +81,21 @@ function buildJXA(): string {
   var allLists = [];
   var reminders = [];
   var lists = app.lists();
+  function safeDate(d) {
+    if (!d) return null;
+    try {
+      var yyyy = d.getFullYear();
+      var mm = String(d.getMonth() + 1).padStart(2, '0');
+      var dd = String(d.getDate()).padStart(2, '0');
+      return yyyy + '-' + mm + '-' + dd;
+    } catch(e) { return null; }
+  }
   for (var i = 0; i < lists.length; i++) {
     var list = lists[i];
     allLists.push(list.name());
     var items = list.reminders();
     for (var j = 0; j < items.length; j++) {
       var r = items[j];
-      function safeDate(d) {
-        if (!d) return null;
-        try {
-          var yyyy = d.getFullYear();
-          var mm = String(d.getMonth() + 1).padStart(2, '0');
-          var dd = String(d.getDate()).padStart(2, '0');
-          return yyyy + '-' + mm + '-' + dd;
-        } catch(e) { return null; }
-      }
       var dueDate = null;
       try { dueDate = safeDate(r.dueDate()); } catch(e) {}
       var completionDate = null;
