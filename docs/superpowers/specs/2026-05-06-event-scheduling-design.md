@@ -84,6 +84,8 @@ todo add "Pay bills due:2026-05-10 frequency:monthly frequency-month-day:10"
 
 ## Validation Rules
 
+Validation only activates when `frequency:` is present. Auxiliary keys (`every:`, `frequency-day:`, etc.) appearing without `frequency:` pass through as regular extensions with no validation or error.
+
 **`frequency:`** — must be one of `daily`, `weekly`, `monthly`, `yearly`
 
 **`every:`** — must be a positive integer (`>= 1`)
