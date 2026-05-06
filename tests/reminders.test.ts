@@ -83,3 +83,26 @@ describe('mapReminder', () => {
     expect(mapReminder(BASE, '2026-05-06')).toContain('reminders-id:ABC-123');
   });
 });
+
+describe('buildExistingIds', () => {
+  it('returns empty set for non-existent file', () => {
+    expect(buildExistingIds('/nonexistent/path.txt').size).toBe(0);
+  });
+  it('extracts reminders-id value from a task line', () => {
+    writeFileSync(TMP, '2026-05-01 Buy groceries +Personal reminders-id:ABC-123\n', 'utf8');
+    expect(buildExistingIds(TMP).has('ABC-123')).toBe(true);
+  });
+  it('handles multiple tasks each with an id', () => {
+    writeFileSync(TMP, [
+      '2026-05-01 Task one reminders-id:AAA',
+      '2026-05-01 Task two reminders-id:BBB',
+    ].join('\n') + '\n', 'utf8');
+    const ids = buildExistingIds(TMP);
+    expect(ids.has('AAA')).toBe(true);
+    expect(ids.has('BBB')).toBe(true);
+  });
+  it('ignores lines without reminders-id', () => {
+    writeFileSync(TMP, '2026-05-01 Plain task\n', 'utf8');
+    expect(buildExistingIds(TMP).size).toBe(0);
+  });
+});

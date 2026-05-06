@@ -60,8 +60,19 @@ export function mapReminder(r: ReminderRecord, todayStr: string): string {
   return parts.join(' ');
 }
 
-export function buildExistingIds(_filePath: string): Set<string> {
-  return new Set();
+export function buildExistingIds(filePath: string): Set<string> {
+  let content: string;
+  try {
+    content = readFileSync(filePath, 'utf8');
+  } catch {
+    return new Set();
+  }
+  const ids = new Set<string>();
+  for (const line of content.split('\n')) {
+    const m = line.match(/(?:^|\s)reminders-id:(\S+)/);
+    if (m) ids.add(m[1]!);
+  }
+  return ids;
 }
 
 export function remindersCommand(_filePath: string, _args: string[], _executor?: JXAExecutor): void {}
