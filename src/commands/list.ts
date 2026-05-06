@@ -3,6 +3,18 @@ import { readTasks } from '../store';
 import { today, addDays, formatTask, formatSummary } from '../output';
 import type { Task } from '../parser';
 
+export function sortByPriority(tasks: Task[]): Task[] {
+  const rank = (p: string | undefined) => p === undefined ? 26 : p.charCodeAt(0) - 65;
+  return [...tasks].sort((a, b) => rank(a.priority) - rank(b.priority));
+}
+
+export function isPastEvent(task: Task, todayStr: string): boolean {
+  if (task.extensions['type'] !== 'event') return false;
+  const end = task.extensions['end'] ?? task.extensions['start'];
+  if (!end) return false;
+  return end.slice(0, 10) < todayStr;
+}
+
 export function matchesFilters(task: Task, filters: string[]): boolean {
   // Each filter must match: ANDed together
   // Filter types:
@@ -26,10 +38,10 @@ export function listCommand(filePath: string, filters: string[]): void {
 
   const todayStr = today();
   const tasks = readTasks(filePath);
-  const open = tasks.filter(t => !t.done);
+  const open = tasks.filter(t => !t.done && !isPastEvent(t, todayStr));
   const filtered = filters.length > 0 ? open.filter(t => matchesFilters(t, filters)) : open;
 
-  filtered.forEach(t => console.log(formatTask(t, todayStr)));
+  sortByPriority(filtered).forEach(t => console.log(formatTask(t, todayStr)));
 
   // Summary stats (counts across ALL open tasks, not just filtered)
   const overdue = open.filter(t => {

@@ -4,8 +4,10 @@ export function helpCommand(): void {
 Commands:
   add <text>          Add a new task (creation date stamped automatically)
   event <text>        Add a new event (creation date stamped, tagged type:event)
-  list [filters]      List open tasks. Filters: +project @context (A) keyword
+  list [filters]      List open tasks, sorted by priority. Filters: +project @context (A) keyword
+  focus               Show only: (A) priority + overdue + due today
   listall [filters]   List all tasks including completed
+  edit <n> <text>     Replace task #n's text (creation date is preserved)
   done <n>            Mark task #n complete
   rm <n>              Delete task #n permanently
   pri <n> <A-Z>       Set priority on task #n
@@ -33,6 +35,8 @@ Examples:
   todo event "Birthday party start:2026-05-10"
   todo event "Standup start:2026-05-10T09:00 end:2026-05-10T09:30 frequency:weekly frequency-day:M,W,F"
   todo event "Book club start:2026-05-06 frequency:monthly frequency-month-day:first-tuesday"
+  todo edit 199 "Wedding Anniversary start:2004-05-01 frequency:yearly type:anniversary"
+  todo focus
   todo list type:event
   todo list +backend
   todo list @work (B)

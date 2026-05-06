@@ -82,6 +82,25 @@ describe('list command', () => {
     expect(code).toBe(1);
     expect(stderr).toContain('No todo.txt found');
   });
+
+  test('sorts output with (A) before (B) before unprioritized', () => {
+    // File order is deliberately reversed to prove sorting
+    const fixture = [
+      '2026-05-01 Buy groceries',
+      '(B) 2026-05-01 Write docs',
+      '(A) 2026-05-01 Fix bug',
+    ].join('\n') + '\n';
+    const { mkdtempSync, rmSync, writeFileSync } = require('fs');
+    const { join } = require('path');
+    const { tmpdir } = require('os');
+    const d = mkdtempSync(join(tmpdir(), 'todo-sort-'));
+    const f = join(d, 'todo.txt');
+    writeFileSync(f, fixture, 'utf8');
+    const { stdout } = run(['--file', f, 'list']);
+    rmSync(d, { recursive: true });
+    expect(stdout.indexOf('Fix bug')).toBeLessThan(stdout.indexOf('Write docs'));
+    expect(stdout.indexOf('Write docs')).toBeLessThan(stdout.indexOf('Buy groceries'));
+  });
 });
 
 describe('list command — year count display', () => {

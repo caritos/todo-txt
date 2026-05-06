@@ -10,6 +10,8 @@ import { priCommand, depriCommand } from './commands/pri';
 import { searchCommand } from './commands/search';
 import { reportCommand } from './commands/report';
 import { eventCommand } from './commands/event';
+import { focusCommand } from './commands/focus';
+import { editCommand } from './commands/edit';
 
 const args = process.argv.slice(2);
 
@@ -81,6 +83,16 @@ switch (cmd) {
 
   case 'event': {
     eventCommand(filePath, filteredArgs.slice(1));
+    break;
+  }
+
+  case 'focus': {
+    focusCommand(filePath);
+    break;
+  }
+
+  case 'edit': {
+    editCommand(filePath, filteredArgs[1], filteredArgs.slice(2));
     break;
   }
 
