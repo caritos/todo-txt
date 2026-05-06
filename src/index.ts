@@ -12,6 +12,7 @@ import { reportCommand } from './commands/report';
 import { eventCommand } from './commands/event';
 import { focusCommand } from './commands/focus';
 import { editCommand } from './commands/edit';
+import { importCommand } from './commands/import';
 
 const args = process.argv.slice(2);
 
@@ -98,6 +99,11 @@ switch (cmd) {
 
   case 'report': {
     reportCommand(filePath);
+    break;
+  }
+
+  case 'import': {
+    importCommand(filePath, filteredArgs.slice(1));
     break;
   }
 
