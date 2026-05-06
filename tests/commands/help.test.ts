@@ -52,8 +52,12 @@ describe('help command', () => {
     expect(stdout).toContain('end:');
   });
 
-  test('documents frequency: extension', () => {
+  test('documents all frequency extensions', () => {
     const { stdout } = run('help');
     expect(stdout).toContain('frequency:');
+    expect(stdout).toContain('every:');
+    expect(stdout).toContain('frequency-day:');
+    expect(stdout).toContain('frequency-month-day:');
+    expect(stdout).toContain('frequency-month:');
   });
 });
