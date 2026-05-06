@@ -45,8 +45,34 @@ function mapRrule(_rrule: ICAL.Recur): string[] {
   return []; // implemented in Task 5
 }
 
-function mapVevent(_vevent: ICAL.Component, _todayStr: string): string | null {
-  return null; // implemented in Task 4
+function mapVevent(vevent: ICAL.Component, todayStr: string): string | null {
+  try {
+    const event = new ICAL.Event(vevent);
+    const summary = event.summary;
+    if (!summary) return null;
+
+    const parts: string[] = [todayStr, summary];
+
+    const dtstart = event.startDate;
+    if (dtstart) parts.push(`start:${formatIcalTime(dtstart)}`);
+
+    const dtend = event.endDate;
+    if (dtend && dtstart) {
+      const isSingleAllDay =
+        dtstart.isDate && dtend.isDate &&
+        dtend.toJSDate().getTime() - dtstart.toJSDate().getTime() === 86400000;
+      if (!isSingleAllDay) parts.push(`end:${formatIcalTime(dtend)}`);
+    }
+
+    const rruleProp = vevent.getFirstPropertyValue('rrule') as ICAL.Recur | null;
+    if (rruleProp) parts.push(...mapRrule(rruleProp));
+
+    parts.push(`type:${detectType(summary)}`);
+
+    return parts.join(' ');
+  } catch {
+    return null;
+  }
 }
 
 export function importCommand(filePath: string, args: string[]): void {
