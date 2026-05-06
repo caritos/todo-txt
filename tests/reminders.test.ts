@@ -106,3 +106,76 @@ describe('buildExistingIds', () => {
     expect(buildExistingIds(TMP).size).toBe(0);
   });
 });
+
+// Fixture with dueDate for end-to-end command tests
+const FIXTURE: ReminderRecord = { ...BASE, dueDate: '2026-05-10' };
+
+function makeExecutor(reminders: ReminderRecord[], allLists?: string[]): JXAExecutor {
+  const lists = allLists ?? [...new Set(reminders.map(r => r.list))];
+  return (_jxa: string) => JSON.stringify({ allLists: lists, reminders });
+}
+
+describe('remindersCommand', () => {
+  it('appends new reminders to the file', () => {
+    writeFileSync(TMP, '', 'utf8');
+    remindersCommand(TMP, [], makeExecutor([FIXTURE]));
+    const content = readFileSync(TMP, 'utf8');
+    expect(content).toContain('Buy groceries +Personal');
+    expect(content).toContain('due:2026-05-10');
+    expect(content).toContain('reminders-id:ABC-123');
+  });
+
+  it('skips duplicate reminders by reminders-id', () => {
+    writeFileSync(TMP, '2026-05-01 Buy groceries +Personal reminders-id:ABC-123\n', 'utf8');
+    remindersCommand(TMP, [], makeExecutor([FIXTURE]));
+    const lines = readFileSync(TMP, 'utf8').trim().split('\n');
+    expect(lines).toHaveLength(1);
+  });
+
+  it('prints message and leaves file unchanged when all already imported', () => {
+    writeFileSync(TMP, '2026-05-01 Buy groceries +Personal reminders-id:ABC-123\n', 'utf8');
+    remindersCommand(TMP, [], makeExecutor([FIXTURE]));
+    expect(readFileSync(TMP, 'utf8').trim().split('\n')).toHaveLength(1);
+  });
+
+  it('filters by list name when argument provided', () => {
+    const workItem: ReminderRecord = { ...BASE, id: 'XYZ-789', title: 'Write report', list: 'Work' };
+    writeFileSync(TMP, '', 'utf8');
+    remindersCommand(TMP, ['Work'], makeExecutor([FIXTURE, workItem], ['Personal', 'Work']));
+    const content = readFileSync(TMP, 'utf8');
+    expect(content).toContain('Write report');
+    expect(content).not.toContain('Buy groceries');
+  });
+
+  it('prints message and does not write file when no reminders found', () => {
+    writeFileSync(TMP, '', 'utf8');
+    remindersCommand(TMP, [], makeExecutor([], []));
+    expect(readFileSync(TMP, 'utf8')).toBe('');
+  });
+
+  it('exits 1 when named list does not exist', () => {
+    const exitSpy = spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit');
+    }) as any);
+    try {
+      expect(() =>
+        remindersCommand(TMP, ['Nonexistent'], makeExecutor([], ['Personal']))
+      ).toThrow('process.exit');
+    } finally {
+      exitSpy.mockRestore();
+    }
+  });
+
+  it('exits 1 on invalid JSON from executor', () => {
+    const exitSpy = spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit');
+    }) as any);
+    try {
+      expect(() =>
+        remindersCommand(TMP, [], (_jxa: string) => 'not-json')
+      ).toThrow('process.exit');
+    } finally {
+      exitSpy.mockRestore();
+    }
+  });
+});
