@@ -73,4 +73,70 @@ describe('event command', () => {
     const matches = content.match(/type:event/g);
     expect(matches).toHaveLength(1);
   });
+
+  test('writes timed event with start: and end:', () => {
+    run(['--file', todoFile, 'event', 'Standup start:2026-05-10T09:00 end:2026-05-10T09:30']);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('start:2026-05-10T09:00');
+    expect(content).toContain('end:2026-05-10T09:30');
+    expect(content).toContain('type:event');
+  });
+
+  test('auto-injects end: equal to start: when start: present but end: absent', () => {
+    run(['--file', todoFile, 'event', 'Birthday party start:2026-05-10']);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('start:2026-05-10');
+    expect(content).toContain('end:2026-05-10');
+    expect(content).toContain('type:event');
+  });
+
+  test('does not inject end: when both start: and end: are given', () => {
+    run(['--file', todoFile, 'event', 'Conference start:2026-05-10 end:2026-05-12']);
+    const content = readFileSync(todoFile, 'utf8');
+    const matches = content.match(/end:/g);
+    expect(matches).toHaveLength(1);
+    expect(content).toContain('end:2026-05-12');
+  });
+
+  test('does not inject end: when no start: given', () => {
+    run(['--file', todoFile, 'event', 'Team standup']);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).not.toContain('end:');
+  });
+
+  test('exits with error for invalid start: format', () => {
+    const { stderr, code } = run(['--file', todoFile, 'event', 'Meeting start:05/10/2026']);
+    expect(code).toBe(1);
+    expect(stderr).toContain("invalid start");
+  });
+
+  test('exits with error for invalid end: format', () => {
+    const { stderr, code } = run(['--file', todoFile, 'event', 'Meeting start:2026-05-10 end:9am']);
+    expect(code).toBe(1);
+    expect(stderr).toContain("invalid end");
+  });
+
+  test('accepts all-day event with date-only start: and end:', () => {
+    const { code } = run(['--file', todoFile, 'event', 'Holiday start:2026-05-10 end:2026-05-12']);
+    expect(code).toBe(0);
+  });
+
+  test('accepts timed event with datetime start: and end:', () => {
+    const { code } = run(['--file', todoFile, 'event', 'Meeting start:2026-05-10T09:00 end:2026-05-10T10:00']);
+    expect(code).toBe(0);
+  });
+
+  test('accepts valid frequency extensions', () => {
+    const { code } = run(['--file', todoFile, 'event', 'Standup start:2026-05-10T09:00 frequency:weekly frequency-day:M,W,F']);
+    expect(code).toBe(0);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toContain('frequency:weekly');
+    expect(content).toContain('frequency-day:M,W,F');
+  });
+
+  test('exits with error for invalid frequency: value', () => {
+    const { stderr, code } = run(['--file', todoFile, 'event', 'Task frequency:hourly']);
+    expect(code).toBe(1);
+    expect(stderr).toContain("invalid frequency");
+  });
 });
