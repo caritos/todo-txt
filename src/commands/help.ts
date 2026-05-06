@@ -4,6 +4,7 @@ export function helpCommand(): void {
 Commands:
   add <text>          Add a new task (creation date stamped automatically)
   event <text>        Add a new event (creation date stamped, tagged type:event)
+  import <ics-file>   Import events from an iCalendar (.ics) file
   list [filters]      List open tasks, sorted by priority. Filters: +project @context (A) keyword
   focus               Show only: (A) priority + overdue + due today
   listall [filters]   List all tasks including completed
@@ -41,7 +42,9 @@ Examples:
   todo list +backend
   todo list @work (B)
   todo done 3
-  todo pri 5 A`;
+  todo pri 5 A
+  todo import family.ics
+  todo --file work.txt import meetings.ics`;
 
   console.log(help);
 }

@@ -60,4 +60,10 @@ describe('help command', () => {
     expect(stdout).toContain('frequency-month-day:');
     expect(stdout).toContain('frequency-month:');
   });
+
+  test('documents the import command', () => {
+    const { stdout } = run('help');
+    expect(stdout).toContain('import');
+    expect(stdout).toContain('.ics');
+  });
 });
