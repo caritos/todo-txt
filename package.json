@@ -1,5 +1,5 @@
 {
-  "name": "quick-quokka",
+  "name": "todo",
   "version": "0.1.0",
   "module": "src/index.ts",
   "bin": {
@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "@types/bun": "latest"
+  },
+  "dependencies": {
+    "ical.js": "^2.2.1"
   }
 }
