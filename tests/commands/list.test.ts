@@ -144,3 +144,47 @@ describe('list command — year count display', () => {
     expect(stdout).not.toContain('years)');
   });
 });
+
+describe('list command — past event filtering', () => {
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-test-'));
+    todoFile = join(dir, 'todo.txt');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('hides non-recurring event with past start:', () => {
+    writeFileSync(todoFile, `2026-05-06 Tag Sale start:2026-04-24T09:30 end:2026-04-24T10:00 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).not.toContain('Tag Sale');
+  });
+
+  test('shows recurring event with past start:', () => {
+    writeFileSync(todoFile, `2026-05-06 Weekly Standup start:2026-04-01T09:00 frequency:weekly type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain('Weekly Standup');
+  });
+
+  test('shows event with future start:', () => {
+    writeFileSync(todoFile, `2026-05-06 Summer Party start:2026-07-04T14:00 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain('Summer Party');
+  });
+
+  test('shows event starting today:', () => {
+    writeFileSync(todoFile, `2026-05-06 Morning Meeting start:2026-05-06T09:00 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain('Morning Meeting');
+  });
+
+  test('regular task without type: is not hidden by past start:', () => {
+    writeFileSync(todoFile, `2026-05-06 Old task start:2026-04-01\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(stdout).toContain('Old task');
+  });
+});

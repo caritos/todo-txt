@@ -8,11 +8,12 @@ export function sortByPriority(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => rank(a.priority) - rank(b.priority));
 }
 
-export function isPastEvent(task: Task, todayStr: string): boolean {
-  if (task.extensions['type'] !== 'event') return false;
-  const end = task.extensions['end'] ?? task.extensions['start'];
-  if (!end) return false;
-  return end.slice(0, 10) < todayStr;
+function isPastEvent(task: Task, todayStr: string): boolean {
+  if (!task.extensions['type']) return false;
+  const start = task.extensions['start'];
+  if (!start) return false;
+  if (task.extensions['frequency']) return false;
+  return start.slice(0, 10) < todayStr;
 }
 
 export function matchesFilters(task: Task, filters: string[]): boolean {
