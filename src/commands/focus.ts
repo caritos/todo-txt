@@ -1,14 +1,38 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
-import { today, formatTask } from '../output';
-import { isPastEvent, sortByPriority } from './list';
+import { today, addDays, formatTask } from '../output';
 import type { Task } from '../parser';
+import { isPastEvent } from './list';
 
-function isFocusTask(task: Task, todayStr: string): boolean {
+function nextYearlyDate(start: string, todayStr: string): string {
+  const mmdd = start.slice(5, 10);
+  const thisYear = todayStr.slice(0, 4);
+  const thisOccurrence = `${thisYear}-${mmdd}`;
+  if (thisOccurrence >= todayStr) return thisOccurrence;
+  return `${parseInt(thisYear) + 1}-${mmdd}`;
+}
+
+function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boolean {
+  const type = task.extensions['type'];
+  const start = task.extensions['start'];
+  const frequency = task.extensions['frequency'];
+
+  if (type) {
+    if (!start) return false;
+    if (frequency === 'yearly') {
+      const next = nextYearlyDate(start.slice(0, 10), todayStr);
+      return next >= todayStr && next <= windowEnd;
+    }
+    if (frequency) {
+      return true;
+    }
+    const startDate = start.slice(0, 10);
+    return startDate >= todayStr && startDate <= windowEnd;
+  }
+
   const due = task.extensions['due'];
-  if (due !== undefined && due <= todayStr) return true;
-  if (task.priority === 'A') return true;
-  return false;
+  if (!due) return false;
+  return due >= todayStr && due <= windowEnd;
 }
 
 export function focusCommand(filePath: string): void {
@@ -18,14 +42,16 @@ export function focusCommand(filePath: string): void {
   }
 
   const todayStr = today();
+  const windowEnd = addDays(todayStr, 14);
   const tasks = readTasks(filePath);
-  const candidates = tasks.filter(t => !t.done && !isPastEvent(t, todayStr));
-  const focused = sortByPriority(candidates.filter(t => isFocusTask(t, todayStr)));
+  const open = tasks.filter(t => !t.done && !isPastEvent(t, todayStr));
+  const focused = open.filter(t => isInFocusWindow(t, todayStr, windowEnd));
 
   if (focused.length === 0) {
-    console.log('nothing needs attention');
+    console.log(`\x1b[2mNothing in focus for the next 2 weeks.\x1b[0m`);
     return;
   }
 
   focused.forEach(t => console.log(formatTask(t, todayStr)));
+  console.log(`\x1b[2m${focused.length} item${focused.length === 1 ? '' : 's'} in focus (${todayStr} – ${windowEnd})\x1b[0m`);
 }

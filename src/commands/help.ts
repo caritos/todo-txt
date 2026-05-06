@@ -5,8 +5,8 @@ Commands:
   add <text>          Add a new task (creation date stamped automatically)
   event <text>        Add a new event (creation date stamped, tagged type:event)
   import <ics-file>   Import events from an iCalendar (.ics) file
+  focus               Show tasks and events in the next 2 weeks
   list [filters]      List open tasks, sorted by priority. Filters: +project @context (A) keyword
-  focus               Show only: (A) priority + overdue + due today
   listall [filters]   List all tasks including completed
   edit <n> <text>     Replace task #n's text (creation date is preserved)
   done <n>            Mark task #n complete

@@ -8,7 +8,7 @@ export function sortByPriority(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => rank(a.priority) - rank(b.priority));
 }
 
-function isPastEvent(task: Task, todayStr: string): boolean {
+export function isPastEvent(task: Task, todayStr: string): boolean {
   if (!task.extensions['type']) return false;
   const start = task.extensions['start'];
   if (!start) return false;
