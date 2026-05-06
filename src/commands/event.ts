@@ -10,7 +10,8 @@ export function eventCommand(filePath: string, textParts: string[]): void {
 
   const text = textParts.join(' ');
   const todayStr = today();
-  const raw = `${todayStr} ${text} type:event`;
+  const normalized = text.replace(/\s*\btype:event\b/g, '').trim();
+  const raw = `${todayStr} ${normalized} type:event`;
 
   appendFileSync(filePath, raw + '\n', 'utf8');
 

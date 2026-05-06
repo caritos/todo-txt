@@ -66,4 +66,11 @@ describe('event command', () => {
     expect(stdout).toContain('Team standup');
     expect(stdout).not.toContain('Buy milk');
   });
+
+  test('deduplicates type:event if user includes it in text', () => {
+    run(['--file', todoFile, 'event', 'Standup type:event']);
+    const content = readFileSync(todoFile, 'utf8');
+    const matches = content.match(/type:event/g);
+    expect(matches).toHaveLength(1);
+  });
 });
