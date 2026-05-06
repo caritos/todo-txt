@@ -16,10 +16,23 @@ Commands:
 Options:
   --file <path>       Use a specific todo.txt file (overrides TODO_FILE env)
 
+Scheduling extensions (for event and add):
+  start:<date>        Start date: YYYY-MM-DD (all-day) or YYYY-MM-DDThh:mm (timed)
+  end:<date>          End date: same format. Auto-set to start: if omitted on events.
+  frequency:<freq>    Recurrence: daily | weekly | monthly | yearly
+  every:<n>           Repeat every N units (default 1)
+  frequency-day:<days>        Weekly days: M,T,W,Th,F,Sat,Sun (comma-separated)
+  frequency-month-day:<val>   Monthly/yearly day: 1-31 or first-monday, last-weekend-day, etc.
+  frequency-month:<months>    Yearly months: Jan,Feb,... (comma-separated)
+
 Examples:
   todo add "Fix login bug +backend @work due:2026-05-10"
   todo add "(A) Urgent task"
+  todo add "Pay bills frequency:monthly frequency-month-day:10"
   todo event "Team standup +work @office"
+  todo event "Birthday party start:2026-05-10"
+  todo event "Standup start:2026-05-10T09:00 end:2026-05-10T09:30 frequency:weekly frequency-day:M,W,F"
+  todo event "Book club start:2026-05-06 frequency:monthly frequency-month-day:first-tuesday"
   todo list type:event
   todo list +backend
   todo list @work (B)

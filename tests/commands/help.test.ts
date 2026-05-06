@@ -45,4 +45,15 @@ describe('help command', () => {
     expect(code).toBe(1);
     expect(stderr).toContain("unknown command 'banana'");
   });
+
+  test('documents start: and end: extensions', () => {
+    const { stdout } = run('help');
+    expect(stdout).toContain('start:');
+    expect(stdout).toContain('end:');
+  });
+
+  test('documents frequency: extension', () => {
+    const { stdout } = run('help');
+    expect(stdout).toContain('frequency:');
+  });
 });
