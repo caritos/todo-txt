@@ -75,7 +75,10 @@ export function buildExistingIds(filePath: string): Set<string> {
   return ids;
 }
 
-function buildJXA(): string {
+function buildJXA(listFilter?: string): string {
+  const listCheck = listFilter
+    ? `if (listName !== ${JSON.stringify(listFilter)}) continue;`
+    : '';
   return `(function() {
   var app = Application('Reminders');
   var allLists = [];
@@ -92,29 +95,25 @@ function buildJXA(): string {
   }
   for (var i = 0; i < lists.length; i++) {
     var list = lists[i];
-    allLists.push(list.name());
+    var listName = list.name();
+    allLists.push(listName);
+    ${listCheck}
     var items = list.reminders();
     for (var j = 0; j < items.length; j++) {
-      var r = items[j];
-      var dueDate = null;
-      try { dueDate = safeDate(r.dueDate()); } catch(e) {}
-      var completionDate = null;
-      try { completionDate = safeDate(r.completionDate()); } catch(e) {}
-      var creationDate = null;
-      try { creationDate = safeDate(r.creationDate()); } catch(e) {}
-      var notes = null;
-      try { var b = r.body(); if (b) notes = String(b); } catch(e) {}
-      reminders.push({
-        id: r.id(),
-        title: r.name(),
-        list: list.name(),
-        dueDate: dueDate,
-        completed: r.completed(),
-        completionDate: completionDate,
-        creationDate: creationDate,
-        priority: r.priority(),
-        notes: notes
-      });
+      try {
+        var props = items[j].properties();
+        reminders.push({
+          id: props.id || '',
+          title: props.name || '',
+          list: listName,
+          dueDate: safeDate(props.dueDate),
+          completed: !!props.completed,
+          completionDate: safeDate(props.completionDate),
+          creationDate: safeDate(props.creationDate),
+          priority: props.priority || 0,
+          notes: props.body ? String(props.body) : null
+        });
+      } catch(e) {}
     }
   }
   return JSON.stringify({ allLists: allLists, reminders: reminders });
@@ -122,14 +121,17 @@ function buildJXA(): string {
 }
 
 function defaultExecutor(jxa: string): string {
-  return execFileSync('osascript', ['-l', 'JavaScript', '-e', jxa], { encoding: 'utf8' });
+  return execFileSync('osascript', ['-l', 'JavaScript', '-e', jxa], {
+    encoding: 'utf8',
+    maxBuffer: 200 * 1024 * 1024,
+  });
 }
 
 export function remindersCommand(filePath: string, args: string[], executor: JXAExecutor = defaultExecutor): void {
   const listFilter = args[0];
   const todayStr = today();
 
-  const jxa = buildJXA();
+  const jxa = buildJXA(listFilter);
   let raw: string;
   try {
     raw = executor(jxa);
