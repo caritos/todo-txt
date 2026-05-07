@@ -63,17 +63,18 @@ function focusSortKey(task: Task, todayStr: string): string {
   const type = task.extensions['type'];
   const start = task.extensions['start'];
   const frequency = task.extensions['frequency'];
+  const time = start ? start.slice(10) : ''; // e.g. 'T16:45' or ''
 
   if (type && start) {
     if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr);
-    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr);
-    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr);
+    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) + time;
+    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) + time;
     if (frequency) return todayStr;
-    return start.slice(0, 10);
+    return start.slice(0, 16); // date + time if present
   }
 
   const due = task.extensions['due'];
-  if (due) return due.slice(0, 10);
+  if (due) return due; // may include time, e.g. 2026-05-07T11:15
   return '9999-12-31';
 }
 
