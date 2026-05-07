@@ -37,6 +37,14 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
     return startDate >= todayStr && startDate <= windowEnd;
   }
 
+  if (start && frequency) {
+    const startDate = start.slice(0, 10);
+    if (startDate < addDays(todayStr, -730)) return false;
+    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) <= windowEnd;
+    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) <= windowEnd;
+    return true;
+  }
+
   const due = task.extensions['due'];
   if (!due) return false;
   return due >= todayStr && due <= windowEnd;
@@ -73,8 +81,15 @@ function focusSortKey(task: Task, todayStr: string): string {
     return start.slice(0, 16); // date + time if present
   }
 
+  if (start && frequency) {
+    const time = start.slice(10);
+    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) + time;
+    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) + time;
+    return todayStr;
+  }
+
   const due = task.extensions['due'];
-  if (due) return due; // may include time, e.g. 2026-05-07T11:15
+  if (due) return due;
   return '9999-12-31';
 }
 
