@@ -64,7 +64,7 @@ switch (cmd) {
   }
 
   case 'done': {
-    doneCommand(filePath, filteredArgs[1]);
+    doneCommand(filePath, filteredArgs.slice(1));
     break;
   }
 
