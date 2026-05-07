@@ -99,21 +99,27 @@ function buildJXA(listFilter?: string): string {
     allLists.push(listName);
     ${listCheck}
     var items = list.reminders();
+    if (!items.length) continue;
+    var ids = items.id();
+    var names = items.name();
+    var dueDates = items.dueDate();
+    var completeds = items.completed();
+    var completionDates = items.completionDate();
+    var creationDates = items.creationDate();
+    var priorities = items.priority();
+    var bodies = items.body();
     for (var j = 0; j < items.length; j++) {
-      try {
-        var props = items[j].properties();
-        reminders.push({
-          id: props.id || '',
-          title: props.name || '',
-          list: listName,
-          dueDate: safeDate(props.dueDate),
-          completed: !!props.completed,
-          completionDate: safeDate(props.completionDate),
-          creationDate: safeDate(props.creationDate),
-          priority: props.priority || 0,
-          notes: props.body ? String(props.body) : null
-        });
-      } catch(e) {}
+      reminders.push({
+        id: ids[j] || '',
+        title: names[j] || '',
+        list: listName,
+        dueDate: safeDate(dueDates[j]),
+        completed: !!completeds[j],
+        completionDate: safeDate(completionDates[j]),
+        creationDate: safeDate(creationDates[j]),
+        priority: priorities[j] || 0,
+        notes: bodies[j] ? String(bodies[j]) : null
+      });
     }
   }
   return JSON.stringify({ allLists: allLists, reminders: reminders });
