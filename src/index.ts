@@ -37,7 +37,12 @@ const filePath = resolveFile(fileFlag);
 const cmd = filteredArgs[0];
 
 // Route to commands
-if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') {
+if (!cmd) {
+  focusCommand(filePath);
+  process.exit(0);
+}
+
+if (cmd === 'help' || cmd === '--help' || cmd === '-h') {
   helpCommand();
   process.exit(0);
 }

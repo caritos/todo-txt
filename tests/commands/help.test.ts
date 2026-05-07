@@ -1,5 +1,8 @@
 import { test, expect, describe } from 'bun:test';
 import { spawnSync } from 'child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 const CLI = './src/index.ts';
 
@@ -34,10 +37,13 @@ describe('help command', () => {
     expect(stdout).toContain('Usage: todo <command>');
   });
 
-  test('todo with no args prints usage', () => {
-    const { stdout, code } = run();
+  test('todo with no args runs focus', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'todo-help-'));
+    const f = join(dir, 'todo.txt');
+    writeFileSync(f, '', 'utf8');
+    const { code } = run('--file', f);
+    rmSync(dir, { recursive: true });
     expect(code).toBe(0);
-    expect(stdout).toContain('Usage: todo <command>');
   });
 
   test('unknown command exits with error', () => {
