@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
-import { today, addDays, formatTask } from '../output';
+import { today, addDays, formatFocusTask } from '../output';
 import type { Task } from '../parser';
 import { isPastEvent } from './list';
 
@@ -116,6 +116,6 @@ export function focusCommand(filePath: string): void {
     if (da !== db) return da.localeCompare(db);
     return (a.priority ?? 'Z').localeCompare(b.priority ?? 'Z');
   });
-  focused.forEach(t => console.log(formatTask(t, todayStr)));
+  focused.forEach(t => console.log(formatFocusTask(t, todayStr, focusSortKey(t, todayStr))));
   console.log(`\x1b[2m${focused.length} item${focused.length === 1 ? '' : 's'} in focus (${todayStr} – ${windowEnd})\x1b[0m`);
 }

@@ -78,6 +78,34 @@ export function formatTask(task: Task, todayStr: string): string {
   return `${num}  ${parts.join(' ')}`;
 }
 
+const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MON_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const FOCUS_STRIP_RE = /\s+(?:reminders-id|start|end|location|exdate|frequency(?:-day)?|recur-until|note|description|due|type):\S+/g;
+
+export function formatFocusTask(task: Task, todayStr: string, effectiveDate: string): string {
+  const num = c(A.dim, String(task.line).padStart(4));
+
+  const datePart = effectiveDate.slice(0, 10);
+  const timePart = effectiveDate.length > 10 ? effectiveDate.slice(11, 16) : '';
+  let when: string;
+  if (datePart === todayStr) {
+    when = timePart ? `today ${timePart}` : 'today';
+  } else {
+    const d = new Date(datePart + 'T12:00:00');
+    const dm = `${MON_ABBR[d.getMonth()]} ${d.getDate()}`;
+    when = timePart ? `${DAY_ABBR[d.getDay()]} ${dm} ${timePart}` : `${DAY_ABBR[d.getDay()]} ${dm}`;
+  }
+
+  const cleanText = task.text.replace(FOCUS_STRIP_RE, '').trim();
+  const yearCount = computeYearCount(task, todayStr);
+  const colored = colorText(cleanText, todayStr);
+  const title = yearCount ? `${colored} ${c(A.dim, yearCount)}` : colored;
+
+  const whenCol = c(A.dim, when.padEnd(18));
+  if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}`;
+  return `${num}  ${whenCol}  ${title}`;
+}
+
 export function formatSummary(open: number, done: number, overdue: number, dueSoon: number): string {
   const parts: string[] = [];
   if (done > 0) {
