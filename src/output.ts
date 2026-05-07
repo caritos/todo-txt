@@ -101,7 +101,8 @@ export function formatFocusTask(task: Task, todayStr: string, effectiveDate: str
   const colored = colorText(cleanText, todayStr);
   const title = yearCount ? `${colored} ${c(A.dim, yearCount)}` : colored;
 
-  const whenCol = c(A.dim, when.padEnd(18));
+  const overdue = datePart < todayStr && datePart !== '9999-12-31';
+  const whenCol = overdue ? c(A.red, when.padEnd(18)) : c(A.dim, when.padEnd(18));
   const recPart = recLabel ? `  ${c(A.dim, recLabel)}` : '';
   if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}${recPart}`;
   return `${num}  ${whenCol}  ${title}${recPart}`;

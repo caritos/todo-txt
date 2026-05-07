@@ -47,7 +47,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
 
   const due = task.extensions['due'];
   if (!due) return false;
-  return due >= todayStr && due <= windowEnd;
+  return due.slice(0, 10) <= windowEnd; // include overdue (no lower bound)
 }
 
 function nextWeeklyDate(startStr: string, todayStr: string): string {
