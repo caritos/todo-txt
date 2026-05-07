@@ -146,6 +146,14 @@ describe('focus command', () => {
     expect(stdout).not.toContain('No due task');
   });
 
+  test('sorts by nearest due date first', () => {
+    const near = addDays(today, 2);
+    const far = addDays(today, 10);
+    writeFileSync(todoFile, `2026-05-06 Far task due:${far}\n2026-05-06 Near task due:${near}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout.indexOf('Near task')).toBeLessThan(stdout.indexOf('Far task'));
+  });
+
   test('hides done tasks', () => {
     const due = addDays(today, 5);
     writeFileSync(todoFile, `x 2026-05-06 2026-05-01 Done task due:${due}\n`, 'utf8');

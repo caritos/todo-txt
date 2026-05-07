@@ -37,6 +37,22 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
   return due >= todayStr && due <= windowEnd;
 }
 
+function focusSortKey(task: Task, todayStr: string): string {
+  const type = task.extensions['type'];
+  const start = task.extensions['start'];
+  const frequency = task.extensions['frequency'];
+
+  if (type && start) {
+    if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr);
+    if (frequency) return todayStr;
+    return start.slice(0, 10);
+  }
+
+  const due = task.extensions['due'];
+  if (due) return due.slice(0, 10);
+  return '9999-12-31';
+}
+
 export function focusCommand(filePath: string): void {
   if (!existsSync(filePath)) {
     console.error("No todo.txt found in current directory. Run 'todo add' to create one.");
@@ -54,6 +70,12 @@ export function focusCommand(filePath: string): void {
     return;
   }
 
+  focused.sort((a, b) => {
+    const da = focusSortKey(a, todayStr);
+    const db = focusSortKey(b, todayStr);
+    if (da !== db) return da.localeCompare(db);
+    return (a.priority ?? 'Z').localeCompare(b.priority ?? 'Z');
+  });
   focused.forEach(t => console.log(formatTask(t, todayStr)));
   console.log(`\x1b[2m${focused.length} item${focused.length === 1 ? '' : 's'} in focus (${todayStr} – ${windowEnd})\x1b[0m`);
 }
