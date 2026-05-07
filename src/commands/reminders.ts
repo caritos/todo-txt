@@ -98,17 +98,18 @@ function buildJXA(listFilter?: string): string {
     var listName = list.name();
     allLists.push(listName);
     ${listCheck}
-    var items = list.reminders();
-    if (!items.length) continue;
-    var ids = items.id();
-    var names = items.name();
-    var dueDates = items.dueDate();
-    var completeds = items.completed();
-    var completionDates = items.completionDate();
-    var creationDates = items.creationDate();
-    var priorities = items.priority();
-    var bodies = items.body();
-    for (var j = 0; j < items.length; j++) {
+    var reminderSpecs = list.reminders;
+    var count = reminderSpecs.length;
+    if (!count) continue;
+    var ids = reminderSpecs.id();
+    var names = reminderSpecs.name();
+    var dueDates = reminderSpecs.dueDate();
+    var completeds = reminderSpecs.completed();
+    var completionDates = reminderSpecs.completionDate();
+    var creationDates = reminderSpecs.creationDate();
+    var priorities = reminderSpecs.priority();
+    var bodies = reminderSpecs.body();
+    for (var j = 0; j < count; j++) {
       reminders.push({
         id: ids[j] || '',
         title: names[j] || '',
