@@ -37,6 +37,15 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
   return due >= todayStr && due <= windowEnd;
 }
 
+function nextWeeklyDate(startStr: string, todayStr: string): string {
+  const startDow = new Date(startStr.slice(0, 10) + 'T12:00:00').getDay();
+  const todayDate = new Date(todayStr + 'T12:00:00');
+  const daysUntil = (startDow - todayDate.getDay() + 7) % 7;
+  const next = new Date(todayDate);
+  next.setDate(todayDate.getDate() + daysUntil);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+}
+
 function focusSortKey(task: Task, todayStr: string): string {
   const type = task.extensions['type'];
   const start = task.extensions['start'];
@@ -44,6 +53,7 @@ function focusSortKey(task: Task, todayStr: string): string {
 
   if (type && start) {
     if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr);
+    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr);
     if (frequency) return todayStr;
     return start.slice(0, 10);
   }

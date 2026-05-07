@@ -146,6 +146,27 @@ describe('focus command', () => {
     expect(stdout).not.toContain('No due task');
   });
 
+  test('sorts weekly recurring event by next occurrence of its weekday, not today', () => {
+    // Find the next Saturday from today
+    const todayDate = new Date(today + 'T12:00:00');
+    const daysUntilSat = (6 - todayDate.getDay() + 7) % 7;
+    const nextSat = addDays(today, daysUntilSat === 0 ? 0 : daysUntilSat);
+    // A task due the day after next Saturday should sort after the weekly Saturday event
+    const afterSat = addDays(nextSat, 1);
+    // A task due the day before next Saturday should sort before it
+    const beforeSat = daysUntilSat > 0 ? addDays(today, 1) : addDays(nextSat, -1);
+    writeFileSync(todoFile, [
+      `2024-08-03 Weekly Saturday event start:2024-08-03T10:00 frequency:weekly type:event`,
+      `2026-05-06 Task due after Saturday due:${afterSat}`,
+      ...(beforeSat >= today ? [`2026-05-06 Task due before Saturday due:${beforeSat}`] : []),
+    ].join('\n') + '\n', 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    if (daysUntilSat > 0) {
+      expect(stdout.indexOf('Task due before Saturday')).toBeLessThan(stdout.indexOf('Weekly Saturday event'));
+    }
+    expect(stdout.indexOf('Weekly Saturday event')).toBeLessThan(stdout.indexOf('Task due after Saturday'));
+  });
+
   test('sorts by nearest due date first', () => {
     const near = addDays(today, 2);
     const far = addDays(today, 10);
