@@ -77,7 +77,7 @@ function focusSortKey(task: Task, todayStr: string): string {
     if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr);
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) + time;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) + time;
-    if (frequency) return todayStr;
+    if (frequency) return todayStr + time;
     return start.slice(0, 16); // date + time if present
   }
 
@@ -85,7 +85,7 @@ function focusSortKey(task: Task, todayStr: string): string {
     const time = start.slice(10);
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) + time;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) + time;
-    return todayStr;
+    return todayStr + time; // daily and other frequencies: today at original time
   }
 
   const due = task.extensions['due'];
@@ -109,10 +109,12 @@ function focusNextRecurrence(task: Task, todayStr: string): string {
   if (frequency === 'weekly') nextDate = nextWeeklyDate(start, afterCurrent);
   else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent);
   else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent);
+  else if (frequency === 'daily') nextDate = afterCurrent;
   else return '';
 
   const d = new Date(nextDate + 'T12:00:00');
-  const dayPart = frequency === 'weekly' ? `${REC_DAY[d.getDay()]} ` : '';
+  const showDay = frequency === 'weekly' || frequency === 'daily';
+  const dayPart = showDay ? `${REC_DAY[d.getDay()]} ` : '';
   const monthDay = `${REC_MON[d.getMonth()]} ${d.getDate()}`;
   const yearPart = nextDate.slice(0, 4) !== todayStr.slice(0, 4) ? ` ${d.getFullYear()}` : '';
   const label = `${dayPart}${monthDay}${yearPart}${time ? ' ' + time : ''}`;
@@ -128,8 +130,22 @@ export function focusCommand(filePath: string): void {
   const todayStr = today();
   const windowEnd = addDays(todayStr, 14);
   const tasks = readTasks(filePath);
-  const open = tasks.filter(t => !t.done && !isPastEvent(t, todayStr));
-  const focused = open.filter(t => isInFocusWindow(t, todayStr, windowEnd));
+
+  const effToday = (t: Task) =>
+    t.done ? addDays(t.completionDate ?? todayStr, 1) : todayStr;
+
+  const relevant = tasks.filter(t => {
+    if (t.done) {
+      const freq = t.extensions['frequency'];
+      const start = t.extensions['start'];
+      if (!(freq && start)) return false;
+      const recurUntil = t.extensions['recur-until'];
+      if (recurUntil && recurUntil < addDays(t.completionDate ?? todayStr, 1)) return false;
+      return true;
+    }
+    return !isPastEvent(t, todayStr);
+  });
+  const focused = relevant.filter(t => isInFocusWindow(t, effToday(t), windowEnd));
 
   if (focused.length === 0) {
     console.log(`\x1b[2mNothing in focus for the next 2 weeks.\x1b[0m`);
@@ -137,11 +153,14 @@ export function focusCommand(filePath: string): void {
   }
 
   focused.sort((a, b) => {
-    const da = focusSortKey(a, todayStr);
-    const db = focusSortKey(b, todayStr);
+    const da = focusSortKey(a, effToday(a));
+    const db = focusSortKey(b, effToday(b));
     if (da !== db) return da.localeCompare(db);
     return (a.priority ?? 'Z').localeCompare(b.priority ?? 'Z');
   });
-  focused.forEach(t => console.log(formatFocusTask(t, todayStr, focusSortKey(t, todayStr), focusNextRecurrence(t, todayStr))));
+  focused.forEach(t => {
+    const et = effToday(t);
+    console.log(formatFocusTask(t, todayStr, focusSortKey(t, et), focusNextRecurrence(t, et)));
+  });
   console.log(`\x1b[2m${focused.length} item${focused.length === 1 ? '' : 's'} in focus (${todayStr} – ${windowEnd})\x1b[0m`);
 }
