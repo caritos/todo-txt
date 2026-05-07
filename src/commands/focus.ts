@@ -40,7 +40,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
   if (start && frequency) {
     const startDate = start.slice(0, 10);
     if (startDate < addDays(todayStr, -730)) return false;
-    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) <= windowEnd;
+    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1')) <= windowEnd;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) <= windowEnd;
     return true;
   }
@@ -50,12 +50,15 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
   return due.slice(0, 10) <= windowEnd; // include overdue (no lower bound)
 }
 
-function nextWeeklyDate(startStr: string, todayStr: string): string {
-  const startDow = new Date(startStr.slice(0, 10) + 'T12:00:00').getDay();
+function nextWeeklyDate(startStr: string, todayStr: string, every: number = 1): string {
+  const startDate = new Date(startStr.slice(0, 10) + 'T12:00:00');
   const todayDate = new Date(todayStr + 'T12:00:00');
-  const daysUntil = (startDow - todayDate.getDay() + 7) % 7;
-  const next = new Date(todayDate);
-  next.setDate(todayDate.getDate() + daysUntil);
+  const intervalDays = every * 7;
+  const diffDays = Math.round((todayDate.getTime() - startDate.getTime()) / 86400000);
+  if (diffDays <= 0) return startStr.slice(0, 10);
+  const cycles = Math.ceil(diffDays / intervalDays);
+  const next = new Date(startDate);
+  next.setDate(startDate.getDate() + cycles * intervalDays);
   return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
 }
 
@@ -75,7 +78,7 @@ function focusSortKey(task: Task, todayStr: string): string {
 
   if (type && start) {
     if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr);
-    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) + time;
+    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1')) + time;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) + time;
     if (frequency) return todayStr + time;
     return start.slice(0, 16); // date + time if present
@@ -83,7 +86,7 @@ function focusSortKey(task: Task, todayStr: string): string {
 
   if (start && frequency) {
     const time = start.slice(10);
-    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr) + time;
+    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1')) + time;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr) + time;
     return todayStr + time; // daily and other frequencies: today at original time
   }
@@ -106,7 +109,7 @@ function focusNextRecurrence(task: Task, todayStr: string): string {
   const time = start.length > 10 ? start.slice(11, 16) : '';
 
   let nextDate: string;
-  if (frequency === 'weekly') nextDate = nextWeeklyDate(start, afterCurrent);
+  if (frequency === 'weekly') nextDate = nextWeeklyDate(start, afterCurrent, parseInt(task.extensions['every'] ?? '1'));
   else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent);
   else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent);
   else if (frequency === 'daily') nextDate = afterCurrent;
