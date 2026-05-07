@@ -82,7 +82,7 @@ const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MON_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const FOCUS_STRIP_RE = /\s+(?:reminders-id|start|end|location|exdate|frequency(?:-day)?|recur-until|note|description|due|type):\S+/g;
 
-export function formatFocusTask(task: Task, todayStr: string, effectiveDate: string): string {
+export function formatFocusTask(task: Task, todayStr: string, effectiveDate: string, recLabel = ''): string {
   const num = c(A.dim, String(task.line).padStart(4));
 
   const datePart = effectiveDate.slice(0, 10);
@@ -102,8 +102,9 @@ export function formatFocusTask(task: Task, todayStr: string, effectiveDate: str
   const title = yearCount ? `${colored} ${c(A.dim, yearCount)}` : colored;
 
   const whenCol = c(A.dim, when.padEnd(18));
-  if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}`;
-  return `${num}  ${whenCol}  ${title}`;
+  const recPart = recLabel ? `  ${c(A.dim, recLabel)}` : '';
+  if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}${recPart}`;
+  return `${num}  ${whenCol}  ${title}${recPart}`;
 }
 
 export function formatSummary(open: number, done: number, overdue: number, dueSoon: number): string {

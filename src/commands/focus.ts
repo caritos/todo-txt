@@ -93,6 +93,32 @@ function focusSortKey(task: Task, todayStr: string): string {
   return '9999-12-31';
 }
 
+const REC_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const REC_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function focusNextRecurrence(task: Task, todayStr: string): string {
+  const start = task.extensions['start'];
+  const frequency = task.extensions['frequency'];
+  if (!start || !frequency) return '';
+
+  const currentDate = focusSortKey(task, todayStr).slice(0, 10);
+  const afterCurrent = addDays(currentDate, 1);
+  const time = start.length > 10 ? start.slice(11, 16) : '';
+
+  let nextDate: string;
+  if (frequency === 'weekly') nextDate = nextWeeklyDate(start, afterCurrent);
+  else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent);
+  else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent);
+  else return '';
+
+  const d = new Date(nextDate + 'T12:00:00');
+  const dayPart = frequency === 'weekly' ? `${REC_DAY[d.getDay()]} ` : '';
+  const monthDay = `${REC_MON[d.getMonth()]} ${d.getDate()}`;
+  const yearPart = nextDate.slice(0, 4) !== todayStr.slice(0, 4) ? ` ${d.getFullYear()}` : '';
+  const label = `${dayPart}${monthDay}${yearPart}${time ? ' ' + time : ''}`;
+  return `↻ ${label}`;
+}
+
 export function focusCommand(filePath: string): void {
   if (!existsSync(filePath)) {
     console.error("No todo.txt found in current directory. Run 'todo add' to create one.");
@@ -116,6 +142,6 @@ export function focusCommand(filePath: string): void {
     if (da !== db) return da.localeCompare(db);
     return (a.priority ?? 'Z').localeCompare(b.priority ?? 'Z');
   });
-  focused.forEach(t => console.log(formatFocusTask(t, todayStr, focusSortKey(t, todayStr))));
+  focused.forEach(t => console.log(formatFocusTask(t, todayStr, focusSortKey(t, todayStr), focusNextRecurrence(t, todayStr))));
   console.log(`\x1b[2m${focused.length} item${focused.length === 1 ? '' : 's'} in focus (${todayStr} – ${windowEnd})\x1b[0m`);
 }
