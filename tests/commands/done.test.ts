@@ -76,3 +76,91 @@ describe('done command', () => {
     expect(stdout).toContain('already complete');
   });
 });
+
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+describe('done command - recurring tasks', () => {
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-recurring-'));
+    todoFile = join(dir, 'todo.txt');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('creates completed copy and updates last-done on original', () => {
+    const today = todayStr();
+    writeFileSync(todoFile, `stoicism start:${daysAgo(1)}T06:00 frequency:daily\n`, 'utf8');
+    const { code, stdout } = run(['--file', todoFile, 'done', '1']);
+    expect(code).toBe(0);
+    expect(stdout).toContain('Done:');
+    const content = readFileSync(todoFile, 'utf8');
+    const lines = content.split('\n').filter(Boolean);
+    // completed copy: plain done line, no start/frequency
+    const copy = lines.find(l => l.startsWith('x ') && l.includes('stoicism') && !l.includes('frequency:'));
+    expect(copy).toBeDefined();
+    expect(copy).toContain(today);
+    // original stays open with last-done
+    const original = lines.find(l => l.includes('frequency:daily'));
+    expect(original).toBeDefined();
+    expect(original).not.toMatch(/^x /);
+    expect(original).toContain(`last-done:${today}`);
+  });
+
+  test('rejects with "Already completed today" if last-done equals today', () => {
+    const today = todayStr();
+    writeFileSync(todoFile, `stoicism start:2026-05-07T06:00 frequency:daily last-done:${today}\n`, 'utf8');
+    const { code, stdout } = run(['--file', todoFile, 'done', '1']);
+    expect(code).toBe(0);
+    expect(stdout).toContain('Already completed today');
+  });
+
+  test('migrates old done:true recurring task: resets to open, creates copy, sets last-done', () => {
+    const today = todayStr();
+    const yesterday = daysAgo(1);
+    writeFileSync(todoFile, `x ${yesterday} stoicism start:2026-05-07T06:00 frequency:daily\n`, 'utf8');
+    const { code } = run(['--file', todoFile, 'done', '1']);
+    expect(code).toBe(0);
+    const content = readFileSync(todoFile, 'utf8');
+    const lines = content.split('\n').filter(Boolean);
+    // completed copy added
+    const copy = lines.find(l => l.startsWith('x ') && l.includes('stoicism') && !l.includes('frequency:'));
+    expect(copy).toBeDefined();
+    // original reset to open
+    const original = lines.find(l => l.includes('frequency:daily'));
+    expect(original).not.toMatch(/^x /);
+    expect(original).toContain(`last-done:${today}`);
+  });
+
+  test('rejects old done:true recurring task if completionDate is today', () => {
+    const today = todayStr();
+    writeFileSync(todoFile, `x ${today} stoicism start:2026-05-07T06:00 frequency:daily\n`, 'utf8');
+    const { code, stdout } = run(['--file', todoFile, 'done', '1']);
+    expect(code).toBe(0);
+    expect(stdout).toContain('Already completed today');
+  });
+
+  test('preserves +project and @context in completed copy', () => {
+    const today = todayStr();
+    writeFileSync(todoFile, `morning reflection +family start:${daysAgo(1)}T06:00 frequency:daily\n`, 'utf8');
+    run(['--file', todoFile, 'done', '1']);
+    const content = readFileSync(todoFile, 'utf8');
+    const copy = content.split('\n').find(l => l.startsWith('x ') && !l.includes('frequency:'));
+    expect(copy).toContain('+family');
+    expect(copy).not.toContain('start:');
+    expect(copy).not.toContain('frequency:');
+  });
+});
