@@ -220,3 +220,75 @@ describe('focus command', () => {
     expect(stdout).not.toContain('Done task');
   });
 });
+
+describe('focus - recurring task completion tracking', () => {
+  function todayStr(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function daysAgo(n: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-test-'));
+    todoFile = join(dir, 'todo.txt');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('hides recurring task when last-done equals today', () => {
+    const today = todayStr();
+    writeFileSync(todoFile, `stoicism start:${daysAgo(1)}T06:00 frequency:daily last-done:${today}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).not.toContain('stoicism');
+  });
+
+  test('shows recurring task when last-done is yesterday', () => {
+    const yesterday = daysAgo(1);
+    writeFileSync(todoFile, `stoicism start:${daysAgo(2)}T06:00 frequency:daily last-done:${yesterday}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('stoicism');
+  });
+
+  test('shows streak count ×N for recurring task with 2+ consecutive completions', () => {
+    const lines = [
+      `stoicism start:${daysAgo(5)}T06:00 frequency:daily`,
+      `x ${daysAgo(1)} stoicism`,
+      `x ${daysAgo(2)} stoicism`,
+      `x ${daysAgo(3)} stoicism`,
+    ].join('\n') + '\n';
+    writeFileSync(todoFile, lines, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('stoicism');
+    expect(stdout).toContain('×3');
+  });
+
+  test('does not show streak for task with only 1 completion', () => {
+    writeFileSync(todoFile, [
+      `stoicism start:${daysAgo(5)}T06:00 frequency:daily`,
+      `x ${daysAgo(1)} stoicism`,
+    ].join('\n') + '\n', 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).not.toContain('×');
+  });
+
+  test('shows streak of 2 for task completed yesterday and day before', () => {
+    const yesterday = daysAgo(1);
+    writeFileSync(todoFile, [
+      `stoicism start:${daysAgo(5)}T06:00 frequency:daily last-done:${yesterday}`,
+      `x ${yesterday} stoicism`,
+      `x ${daysAgo(2)} stoicism`,
+    ].join('\n') + '\n', 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('stoicism');
+    expect(stdout).toContain('×2');
+  });
+});

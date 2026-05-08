@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { readTasks } from '../store';
 import { today, addDays, formatFocusTask } from '../output';
 import type { Task } from '../parser';
+import { baseText } from '../parser';
 import { isPastEvent } from './list';
 
 function nextYearlyDate(start: string, todayStr: string): string {
@@ -131,6 +132,40 @@ function focusNextRecurrence(task: Task, todayStr: string): string {
   return `↻ ${label}`;
 }
 
+function stepBack(date: string, freq: string, every = '1'): string {
+  if (freq === 'weekly') return addDays(date, -(parseInt(every) * 7));
+  if (freq === 'monthly') {
+    const d = new Date(date + 'T12:00:00');
+    d.setMonth(d.getMonth() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  if (freq === 'yearly') {
+    return `${parseInt(date.slice(0, 4)) - 1}-${date.slice(5)}`;
+  }
+  return addDays(date, -1);
+}
+
+function computeStreak(task: Task, allTasks: Task[], todayStr: string): number {
+  const freq = task.extensions['frequency'];
+  if (!freq) return 0;
+  const base = baseText(task.text);
+  const dates = new Set<string>(
+    allTasks
+      .filter(t => t.done && t.completionDate && baseText(t.text) === base)
+      .map(t => t.completionDate!)
+  );
+  if (dates.size === 0) return 0;
+  const mostRecent = [...dates].sort().at(-1)!;
+  if (mostRecent < stepBack(todayStr, freq, task.extensions['every'])) return 0;
+  let streak = 0;
+  let check = mostRecent;
+  while (dates.has(check)) {
+    streak++;
+    check = stepBack(check, freq, task.extensions['every']);
+  }
+  return streak;
+}
+
 export function focusCommand(filePath: string): void {
   if (!existsSync(filePath)) {
     console.error("No todo.txt found in current directory. Run 'todo add' to create one.");
@@ -153,6 +188,7 @@ export function focusCommand(filePath: string): void {
       if (recurUntil && recurUntil < addDays(t.completionDate ?? todayStr, 1)) return false;
       return true;
     }
+    if (t.extensions['last-done'] === todayStr) return false;
     return !isPastEvent(t, todayStr);
   });
   const focused = relevant.filter(t => isInFocusWindow(t, effToday(t), windowEnd));
@@ -170,7 +206,8 @@ export function focusCommand(filePath: string): void {
   });
   focused.forEach(t => {
     const et = effToday(t);
-    console.log(formatFocusTask(t, todayStr, focusSortKey(t, et), focusNextRecurrence(t, et)));
+    const streak = t.extensions['frequency'] ? computeStreak(t, tasks, todayStr) : 0;
+    console.log(formatFocusTask(t, todayStr, focusSortKey(t, et), focusNextRecurrence(t, et), streak));
   });
   console.log(`\x1b[2m${focused.length} item${focused.length === 1 ? '' : 's'} in focus (${todayStr} – ${windowEnd})\x1b[0m`);
 }
