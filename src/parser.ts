@@ -59,3 +59,7 @@ export function serializeTask(task: Task): string {
   parts.push(task.text);
   return parts.join(' ');
 }
+
+export function baseText(text: string): string {
+  return text.replace(/(?:^|\s)\w[\w-]*:[^/\s]\S*/g, ' ').replace(/\s+/g, ' ').trim();
+}

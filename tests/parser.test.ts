@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { parseLine, serializeTask } from '../src/parser';
+import { parseLine, serializeTask, baseText } from '../src/parser';
 import type { Task } from '../src/parser';
 
 describe('parseLine', () => {
@@ -161,5 +161,27 @@ describe('serializeTask', () => {
     for (const line of lines) {
       expect(serializeTask(parseLine(line, 1))).toBe(line);
     }
+  });
+});
+
+describe('baseText', () => {
+  it('returns plain text unchanged', () => {
+    expect(baseText('Buy groceries')).toBe('Buy groceries');
+  });
+
+  it('strips key:value extensions', () => {
+    expect(baseText('stoicism start:2026-05-08T06:00 frequency:daily')).toBe('stoicism');
+  });
+
+  it('keeps +project and @context tags', () => {
+    expect(baseText('morning reflection +family start:2026-05-08T06:00 frequency:daily')).toBe('morning reflection +family');
+  });
+
+  it('strips last-done extension', () => {
+    expect(baseText('stoicism frequency:daily last-done:2026-05-08')).toBe('stoicism');
+  });
+
+  it('strips every: extension', () => {
+    expect(baseText('review rss feeds frequency:daily every:1')).toBe('review rss feeds');
   });
 });
