@@ -146,6 +146,44 @@ describe('focus command', () => {
     expect(stdout).not.toContain('No due task');
   });
 
+  test('shows regular task with start: today (no type, no frequency)', () => {
+    writeFileSync(todoFile, `2026-05-06 Basketball wechat start:${today}T09:00\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('Basketball wechat');
+  });
+
+  test('shows regular task with start: in window (no type, no frequency)', () => {
+    const start = addDays(today, 5);
+    writeFileSync(todoFile, `2026-05-06 Scheduled task start:${start}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('Scheduled task');
+  });
+
+  test('hides regular task with start: after window (no type, no frequency)', () => {
+    const start = addDays(today, 20);
+    writeFileSync(todoFile, `2026-05-06 Future scheduled task start:${start}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).not.toContain('Future scheduled task');
+  });
+
+  test('hides regular task with start: in the past (no type, no frequency)', () => {
+    const start = addDays(today, -3);
+    writeFileSync(todoFile, `2026-05-06 Past scheduled task start:${start}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).not.toContain('Past scheduled task');
+  });
+
+  test('sorts regular task with start: by start date', () => {
+    const near = addDays(today, 2);
+    const far = addDays(today, 8);
+    writeFileSync(todoFile, [
+      `2026-05-06 Far start task start:${far}`,
+      `2026-05-06 Near start task start:${near}`,
+    ].join('\n') + '\n', 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout.indexOf('Near start task')).toBeLessThan(stdout.indexOf('Far start task'));
+  });
+
   test('sorts weekly recurring event by next occurrence of its weekday, not today', () => {
     // Find the next Saturday from today
     const todayDate = new Date(today + 'T12:00:00');
