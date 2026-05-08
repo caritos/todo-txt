@@ -73,7 +73,8 @@ export function formatTask(task: Task, todayStr: string): string {
   if (task.priority) parts.push(colorPriority(task.priority));
   if (task.creationDate) parts.push(c(A.dim, task.creationDate));
   const yearCount = computeYearCount(task, todayStr);
-  const coloredText = colorText(task.text, todayStr);
+  const displayText = task.text.replace(/(?:^|\s)last-done:\S+/g, ' ').replace(/\s+/g, ' ').trim();
+  const coloredText = colorText(displayText, todayStr);
   parts.push(yearCount ? `${coloredText} ${c(A.dim, yearCount)}` : coloredText);
   return `${num}  ${parts.join(' ')}`;
 }
