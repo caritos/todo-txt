@@ -163,4 +163,14 @@ describe('done command - recurring tasks', () => {
     expect(copy).not.toContain('start:');
     expect(copy).not.toContain('frequency:');
   });
+
+  test('completes only once when same recurring task number given twice', () => {
+    writeFileSync(todoFile, `stoicism start:${daysAgo(1)}T06:00 frequency:daily\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'done', '1', '1']);
+    expect(stdout).toContain('Done:');
+    expect(stdout).toContain('Already completed today');
+    const content = readFileSync(todoFile, 'utf8');
+    const copies = content.split('\n').filter(l => l.startsWith('x ') && l.includes('stoicism') && !l.includes('frequency:'));
+    expect(copies).toHaveLength(1);
+  });
 });

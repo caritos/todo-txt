@@ -65,6 +65,7 @@ export function doneCommand(filePath: string, nStrs: string[]): void {
       } else {
         task.text = `${task.text} last-done:${todayStr}`;
       }
+      task.extensions['last-done'] = todayStr;
       task.raw = serializeTask(task);
 
       tasks.push(copy);
