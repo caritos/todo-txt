@@ -136,8 +136,11 @@ function stepBack(date: string, freq: string, every = '1'): string {
   if (freq === 'weekly') return addDays(date, -(parseInt(every) * 7));
   if (freq === 'monthly') {
     const d = new Date(date + 'T12:00:00');
-    d.setMonth(d.getMonth() - 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const targetMonth = d.getMonth() === 0 ? 11 : d.getMonth() - 1;
+    const targetYear = d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear();
+    const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+    const day = Math.min(d.getDate(), lastDay);
+    return `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
   if (freq === 'yearly') {
     return `${parseInt(date.slice(0, 4)) - 1}-${date.slice(5)}`;
