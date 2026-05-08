@@ -26,7 +26,7 @@ Overdue tasks appear in red. Priority tasks lead the line. Recurring items show 
 Requires [Bun](https://bun.sh).
 
 ```bash
-git clone https://github.com/eladio/todo-txt
+git clone https://github.com/caritos/todo-txt
 cd todo-txt
 bun install
 ln -s "$PWD/src/index.ts" /usr/local/bin/todo
