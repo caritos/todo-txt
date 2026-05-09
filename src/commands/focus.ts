@@ -181,7 +181,18 @@ export function focusCommand(filePath: string): void {
 
   const effToday = (t: Task) => {
     if (t.done) return addDays(t.completionDate ?? todayStr, 1);
-    if (t.extensions['last-done'] === todayStr) return addDays(todayStr, 1);
+    const lastDone = t.extensions['last-done'];
+    if (lastDone === todayStr) {
+      const start = t.extensions['start'];
+      const freq = t.extensions['frequency'];
+      const every = t.extensions['every'] ?? '1';
+      if (start && freq) {
+        if (freq === 'weekly') return addDays(nextWeeklyDate(start, todayStr, parseInt(every)), 1);
+        if (freq === 'monthly') return addDays(nextMonthlyDate(start, todayStr), 1);
+        if (freq === 'yearly') return addDays(nextYearlyDate(start.slice(0, 10), todayStr), 1);
+      }
+      return addDays(todayStr, 1);
+    }
     return todayStr;
   };
 
