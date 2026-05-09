@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'bun:test';
 import { parseLine, serializeTask, baseText } from '../src/parser';
 import type { Task } from '../src/parser';
 

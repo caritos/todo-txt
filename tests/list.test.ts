@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'bun:test';
 import { matchesFilters, isPastEvent, sortByPriority } from '../src/commands/list';
 import { parseLine } from '../src/parser';
 

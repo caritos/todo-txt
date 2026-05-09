@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, afterEach, spyOn } from 'bun:test';
 import { writeFileSync, readFileSync, unlinkSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -148,7 +148,7 @@ describe('remindersCommand', () => {
   });
 
   it('exits 1 when named list does not exist', () => {
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
+    const exitSpy = spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit');
     }) as any);
     try {
@@ -161,7 +161,7 @@ describe('remindersCommand', () => {
   });
 
   it('exits 1 on invalid JSON from executor', () => {
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
+    const exitSpy = spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit');
     }) as any);
     try {
@@ -174,7 +174,7 @@ describe('remindersCommand', () => {
   });
 
   it('exits 1 when executor throws', () => {
-    const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
+    const exitSpy = spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit');
     }) as any);
     try {

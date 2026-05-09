@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from '@jest/globals';
+import { describe, it, expect, afterEach } from 'bun:test';
 import { writeFileSync, unlinkSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';

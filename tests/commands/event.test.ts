@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeEach, afterEach } from '@jest/globals';
+import { test, expect, describe, beforeEach, afterEach } from 'bun:test';
 import { spawnSync } from 'child_process';
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'fs';
 import { join } from 'path';
