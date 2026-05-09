@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeEach, afterEach } from 'bun:test';
+import { test, expect, describe, beforeEach, afterEach } from '@jest/globals';
 import { spawnSync } from 'child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -244,11 +244,20 @@ describe('focus - recurring task completion tracking', () => {
     rmSync(dir, { recursive: true });
   });
 
-  test('hides recurring task when last-done equals today', () => {
+  test('does not show daily recurring task for today when last-done equals today', () => {
     const today = todayStr();
     writeFileSync(todoFile, `stoicism start:${daysAgo(1)}T06:00 frequency:daily last-done:${today}\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'focus']);
-    expect(stdout).not.toContain('stoicism');
+    // Should not show "today" for a task already done today
+    const lines = stdout.split('\n').filter(l => l.includes('stoicism'));
+    expect(lines.every(l => !l.includes('today'))).toBe(true);
+  });
+
+  test('shows daily recurring task for next day when last-done equals today', () => {
+    const today = todayStr();
+    writeFileSync(todoFile, `stoicism start:${daysAgo(1)}T06:00 frequency:daily last-done:${today}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('stoicism');
   });
 
   test('shows recurring task when last-done is yesterday', () => {

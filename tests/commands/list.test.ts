@@ -1,4 +1,4 @@
-import { test, expect, describe, beforeEach, afterEach } from 'bun:test';
+import { test, expect, describe, beforeEach, afterEach } from '@jest/globals';
 import { spawnSync } from 'child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -158,10 +158,10 @@ describe('list command — past event filtering', () => {
     rmSync(dir, { recursive: true });
   });
 
-  test('hides non-recurring event with past start:', () => {
+  test('shows non-recurring event with past start:', () => {
     writeFileSync(todoFile, `2026-05-06 Tag Sale start:2026-04-24T09:30 end:2026-04-24T10:00 type:event\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'list']);
-    expect(stdout).not.toContain('Tag Sale');
+    expect(stdout).toContain('Tag Sale');
   });
 
   test('shows recurring event with past start:', () => {
@@ -188,10 +188,10 @@ describe('list command — past event filtering', () => {
     expect(stdout).toContain('Old task');
   });
 
-  test('hides recurring event with past recur-until:', () => {
+  test('shows recurring event with past recur-until:', () => {
     writeFileSync(todoFile, `2026-05-06 Tennis start:2023-03-07T20:00 frequency:weekly recur-until:2023-06-05 type:event\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'list']);
-    expect(stdout).not.toContain('Tennis');
+    expect(stdout).toContain('Tennis');
   });
 
   test('shows recurring event with future recur-until:', () => {

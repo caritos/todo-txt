@@ -179,8 +179,11 @@ export function focusCommand(filePath: string): void {
   const windowEnd = addDays(todayStr, 14);
   const tasks = readTasks(filePath);
 
-  const effToday = (t: Task) =>
-    t.done ? addDays(t.completionDate ?? todayStr, 1) : todayStr;
+  const effToday = (t: Task) => {
+    if (t.done) return addDays(t.completionDate ?? todayStr, 1);
+    if (t.extensions['last-done'] === todayStr) return addDays(todayStr, 1);
+    return todayStr;
+  };
 
   const relevant = tasks.filter(t => {
     if (t.done) {
@@ -191,7 +194,6 @@ export function focusCommand(filePath: string): void {
       if (recurUntil && recurUntil < addDays(t.completionDate ?? todayStr, 1)) return false;
       return true;
     }
-    if (t.extensions['last-done'] === todayStr) return false;
     return !isPastEvent(t, todayStr);
   });
   const focused = relevant.filter(t => isInFocusWindow(t, effToday(t), windowEnd));

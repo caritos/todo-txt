@@ -8,8 +8,11 @@ export function sortByPriority(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => rank(a.priority) - rank(b.priority));
 }
 
+const YEARLY_TYPES = new Set(['anniversary', 'birthday']);
+
 export function isPastEvent(task: Task, todayStr: string): boolean {
   if (!task.extensions['type']) return false;
+  if (YEARLY_TYPES.has(task.extensions['type']!)) return false;
   const start = task.extensions['start'];
   if (!start) return false;
   if (task.extensions['frequency']) {
@@ -42,7 +45,7 @@ export function listCommand(filePath: string, filters: string[]): void {
 
   const todayStr = today();
   const tasks = readTasks(filePath);
-  const open = tasks.filter(t => !t.done && !isPastEvent(t, todayStr));
+  const open = tasks.filter(t => !t.done);
   const filtered = filters.length > 0 ? open.filter(t => matchesFilters(t, filters)) : open;
 
   sortByPriority(filtered).forEach(t => console.log(formatTask(t, todayStr)));
