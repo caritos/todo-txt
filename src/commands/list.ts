@@ -12,13 +12,14 @@ const YEARLY_TYPES = new Set(['anniversary', 'birthday']);
 
 export function isPastEvent(task: Task, todayStr: string): boolean {
   if (!task.extensions['type']) return false;
-  if (YEARLY_TYPES.has(task.extensions['type']!)) return false;
   const start = task.extensions['start'];
   if (!start) return false;
   if (task.extensions['frequency']) {
     const until = task.extensions['recur-until'];
     return until !== undefined && until < todayStr;
   }
+  // anniversary/birthday without frequency are inherently yearly-recurring; never "past"
+  if (YEARLY_TYPES.has(task.extensions['type']!)) return false;
   return start.slice(0, 10) < todayStr;
 }
 
