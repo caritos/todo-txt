@@ -207,7 +207,14 @@ export function focusCommand(filePath: string): void {
     }
     return !isPastEvent(t, todayStr);
   });
-  const focused = relevant.filter(t => isInFocusWindow(t, effToday(t), windowEnd));
+  const tomorrow = addDays(todayStr, 1);
+  const focused = relevant.filter(t => {
+    const et = effToday(t);
+    // Hide a task done today whose next occurrence is only tomorrow — it will
+    // reappear naturally when that date arrives.
+    if (!t.done && t.extensions['last-done'] === todayStr && et <= tomorrow) return false;
+    return isInFocusWindow(t, et, windowEnd);
+  });
 
   if (focused.length === 0) {
     console.log(`\x1b[2mNothing in focus for the next 2 weeks.\x1b[0m`);
