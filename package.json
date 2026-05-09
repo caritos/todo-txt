@@ -6,10 +6,14 @@
     "todo": "./src/index.ts"
   },
   "scripts": {
-    "test": "bun test"
+    "test": "jest"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.2",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.9"
   },
   "dependencies": {
     "ical.js": "^2.2.1"

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from '@jest/globals';
 import { validateFrequency } from '../src/recurrence';
 
 const origExit = process.exit;

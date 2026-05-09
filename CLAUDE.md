@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-bun test                        # run all tests
-bun test tests/parser.test.ts   # run a single test file
+npx jest                        # run all tests
+npx jest tests/parser.test.ts  # run a single test file
 bun run ./src/index.ts help     # run the CLI directly
 ```
 
