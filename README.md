@@ -54,6 +54,7 @@ todo search "dentist"
 | `listall [filters]` | All tasks including completed |
 | `search <term>` | Full-text search (multiple terms are ANDed) |
 | `done <n>` | Mark task complete (accepts multiple numbers) |
+| `skip <n>` | Skip the next occurrence of a recurring task without deleting it |
 | `edit <n> <text>` | Replace task text (preserves creation date) |
 | `rm <n>` | Delete a task permanently |
 | `pri <n> <A-Z>` | Set priority |
@@ -79,6 +80,17 @@ Add these `key:value` pairs to any task or event:
 | `frequency-month-day:<val>` | Day of month: `1–31` or `first-monday`, `last-weekend-day`, … | `frequency-month-day:first-tuesday` |
 | `frequency-month:<months>` | Months for yearly recurrence | `frequency-month:Jan,Jun` |
 
+### Positional day values for `frequency-month-day`
+
+`first` · `second` · `third` · `fourth` · `fifth` · `last` combined with a day type:
+
+| Day type | Meaning |
+|---|---|
+| `monday` … `sunday` | Specific weekday |
+| `weekday` | Any Mon–Fri |
+| `weekend-day` | Sat or Sun |
+| `day` | Any calendar day |
+
 ### Examples
 
 ```bash
@@ -86,7 +98,16 @@ todo event "Standup start:2026-05-10T09:00 frequency:weekly frequency-day:M,W,F"
 todo add "Pay rent frequency:monthly frequency-month-day:1"
 todo event "Book club start:2026-05-06 frequency:monthly frequency-month-day:first-tuesday"
 todo edit 45 "Mom's birthday start:1975-05-15 frequency:yearly type:anniversary"
+todo edit 45 "Mother's Day start:2026-05-10 frequency:yearly frequency-month-day:second-sunday type:anniversary"
+todo skip 23       # skip this week's basketball; it moves to next occurrence
 ```
+
+### Focus behaviour
+
+- Recurring tasks show their **next upcoming occurrence** even after same-day completion.
+- Multi-day events (`start:` … `end:`) appear as **today** while the event is ongoing.
+- A task whose `start:` is in the future appears on that future date, not today.
+- `recur-until:<date>` ends a recurring series; tasks older than 2 years auto-expire.
 
 ## Format
 
