@@ -206,3 +206,72 @@ describe('list command — past event filtering', () => {
     expect(stdout).toContain('Weekly Standup');
   });
 });
+
+const JSON_FIXTURE = `(A) 2026-05-01 Fix login bug +backend @work due:2026-05-15
+(B) 2026-05-04 Write release notes +docs @work due:2026-05-20
+2026-05-04 Buy groceries @personal
+x 2026-05-07 2026-05-01 Deploy staging server +backend @work
+x 2026-05-09 2026-05-05 Write docs +docs @work
+`;
+
+describe('list --json', () => {
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-json-'));
+    todoFile = join(dir, 'todo.txt');
+    writeFileSync(todoFile, JSON_FIXTURE, 'utf8');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('--json returns valid JSON array', () => {
+    const { stdout, code } = run(['--file', todoFile, 'list', '--json']);
+    expect(code).toBe(0);
+    const tasks = JSON.parse(stdout);
+    expect(Array.isArray(tasks)).toBe(true);
+  });
+
+  test('--json standalone returns only open tasks', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.every((t: { done: boolean }) => !t.done)).toBe(true);
+    expect(tasks.length).toBe(3);
+  });
+
+  test('--json output has correct shape with null for absent fields', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json']);
+    const tasks = JSON.parse(stdout);
+    const grocery = tasks.find((t: { description: string }) => t.description === 'Buy groceries @personal');
+    expect(grocery).toBeDefined();
+    expect(grocery.done).toBe(false);
+    expect(grocery.completionDate).toBeNull();
+    expect(grocery.creationDate).toBe('2026-05-04');
+    expect(grocery.priority).toBeNull();
+    expect(grocery.projects).toEqual([]);
+    expect(grocery.contexts).toEqual(['@personal']);
+    expect(grocery.extensions).toEqual({});
+  });
+
+  test('--json output strips extensions from description', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json']);
+    const tasks = JSON.parse(stdout);
+    const bug = tasks.find((t: { description: string }) => t.description.includes('Fix login bug'));
+    expect(bug.text).toContain('due:2026-05-15');
+    expect(bug.description).not.toContain('due:');
+  });
+
+  test('--json does not print summary line', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json']);
+    expect(stdout).not.toContain('open');
+  });
+
+  test('without --json, list still works as before', () => {
+    const { stdout } = run(['--file', todoFile, 'list']);
+    expect(() => JSON.parse(stdout)).toThrow();
+    expect(stdout).toContain('open');
+  });
+});
