@@ -323,6 +323,18 @@ describe('list --json --done', () => {
     const tasks = JSON.parse(stdout);
     expect(tasks).toEqual([]);
   });
+
+  test('--done ignores --due-from (silently)', () => {
+    const withDueFrom = run(['--file', todoFile, 'list', '--json', '--done', '--due-from', '2099-01-01']).stdout;
+    const withoutDueFrom = run(['--file', todoFile, 'list', '--json', '--done']).stdout;
+    expect(JSON.parse(withDueFrom)).toEqual(JSON.parse(withoutDueFrom));
+  });
+
+  test('--done takes precedence over --pending', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--done', '--pending']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.every((t: { done: boolean }) => t.done)).toBe(true);
+  });
 });
 
 describe('list --json --pending due-date filters', () => {

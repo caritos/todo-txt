@@ -18,7 +18,7 @@ export type JsonTask = {
 
 export function toJsonTask(task: Task): JsonTask {
   return {
-    line: task.line,
+    line: task.line, // valid at query time only — renumbers on every read
     done: task.done,
     completionDate: task.completionDate ?? null,
     creationDate: task.creationDate ?? null,
@@ -93,10 +93,22 @@ function parseListArgs(args: string[]): ListArgs {
     if (arg === '--json') { json = true; }
     else if (arg === '--done') { done = true; }
     else if (arg === '--pending') { /* default, no-op */ }
-    else if (arg === '--from') { from = args[++i]; }
-    else if (arg === '--to') { to = args[++i]; }
-    else if (arg === '--due-from') { dueFrom = args[++i]; }
-    else if (arg === '--due-to') { dueTo = args[++i]; }
+    else if (arg === '--from') {
+      if (i + 1 >= args.length) { console.error('--from requires a date argument'); process.exit(1); }
+      from = args[++i];
+    }
+    else if (arg === '--to') {
+      if (i + 1 >= args.length) { console.error('--to requires a date argument'); process.exit(1); }
+      to = args[++i];
+    }
+    else if (arg === '--due-from') {
+      if (i + 1 >= args.length) { console.error('--due-from requires a date argument'); process.exit(1); }
+      dueFrom = args[++i];
+    }
+    else if (arg === '--due-to') {
+      if (i + 1 >= args.length) { console.error('--due-to requires a date argument'); process.exit(1); }
+      dueTo = args[++i];
+    }
     else { filters.push(arg); }
   }
 
