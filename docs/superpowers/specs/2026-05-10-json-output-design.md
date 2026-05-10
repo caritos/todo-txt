@@ -75,6 +75,7 @@ Each element of the output array:
 - `--done` and `--pending` are mutually exclusive; `--done` takes precedence if both are passed
 - `--from`/`--to` only filter when `--done` is active; silently ignored in pending mode
 - `--due-from`/`--due-to` only filter when in pending mode; silently ignored in `--done` mode
+- Pending tasks with no `due:` extension are excluded when `--due-from` or `--due-to` is provided
 - Without `--json`, all new flags are ignored — no change to existing human-readable output
 - Errors go to stderr as plain text; exit code 1 on error (same as today)
 
