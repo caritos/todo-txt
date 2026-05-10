@@ -324,3 +324,94 @@ describe('list --json --done', () => {
     expect(tasks).toEqual([]);
   });
 });
+
+describe('list --json --pending due-date filters', () => {
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-due-'));
+    todoFile = join(dir, 'todo.txt');
+    writeFileSync(todoFile, JSON_FIXTURE, 'utf8');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('--json --due-from filters pending tasks by due: lower bound', () => {
+    const { stdout, code } = run(['--file', todoFile, 'list', '--json', '--due-from', '2026-05-18']);
+    expect(code).toBe(0);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.length).toBe(1);
+    expect(tasks[0].extensions.due).toBe('2026-05-20');
+  });
+
+  test('--json --due-to filters pending tasks by due: upper bound', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--due-to', '2026-05-15']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.length).toBe(1);
+    expect(tasks[0].extensions.due).toBe('2026-05-15');
+  });
+
+  test('--json --due-from --due-to returns tasks in range (inclusive)', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--due-from', '2026-05-15', '--due-to', '2026-05-20']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.length).toBe(2);
+  });
+
+  test('--pending flag is a no-op (same as default)', () => {
+    const withPending = run(['--file', todoFile, 'list', '--json', '--pending']).stdout;
+    const withoutPending = run(['--file', todoFile, 'list', '--json']).stdout;
+    expect(JSON.parse(withPending)).toEqual(JSON.parse(withoutPending));
+  });
+
+  test('tasks without due: are excluded when --due-from is provided', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--due-from', '2026-05-01']);
+    const tasks = JSON.parse(stdout);
+    const noDue = tasks.filter((t: { extensions: Record<string, string> }) => !t.extensions['due']);
+    expect(noDue.length).toBe(0);
+  });
+
+  test('--json --due-from --due-to returns empty array when no match', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--due-from', '2026-06-01', '--due-to', '2026-06-30']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks).toEqual([]);
+  });
+});
+
+describe('list --json with existing filters', () => {
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-jfilter-'));
+    todoFile = join(dir, 'todo.txt');
+    writeFileSync(todoFile, JSON_FIXTURE, 'utf8');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('--json +project filters to matching tasks only', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '+backend']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.every((t: { projects: string[] }) => t.projects.includes('+backend'))).toBe(true);
+    expect(tasks.length).toBe(1);
+  });
+
+  test('--json @context filters to matching tasks only', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '@personal']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.every((t: { contexts: string[] }) => t.contexts.includes('@personal'))).toBe(true);
+    expect(tasks.length).toBe(1);
+  });
+
+  test('--json keyword filter is case-insensitive', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', 'LOGIN']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.length).toBe(1);
+    expect(tasks[0].description).toContain('Fix login bug');
+  });
+});
