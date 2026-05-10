@@ -275,3 +275,52 @@ describe('list --json', () => {
     expect(stdout).toContain('open');
   });
 });
+
+describe('list --json --done', () => {
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-done-'));
+    todoFile = join(dir, 'todo.txt');
+    writeFileSync(todoFile, JSON_FIXTURE, 'utf8');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('--json --done returns only completed tasks', () => {
+    const { stdout, code } = run(['--file', todoFile, 'list', '--json', '--done']);
+    expect(code).toBe(0);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.every((t: { done: boolean }) => t.done)).toBe(true);
+    expect(tasks.length).toBe(2);
+  });
+
+  test('--json --done --from filters by completionDate lower bound', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--done', '--from', '2026-05-09']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.length).toBe(1);
+    expect(tasks[0].completionDate).toBe('2026-05-09');
+  });
+
+  test('--json --done --to filters by completionDate upper bound', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--done', '--to', '2026-05-07']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.length).toBe(1);
+    expect(tasks[0].completionDate).toBe('2026-05-07');
+  });
+
+  test('--json --done --from --to returns tasks in range (inclusive)', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--done', '--from', '2026-05-07', '--to', '2026-05-09']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks.length).toBe(2);
+  });
+
+  test('--json --done --from --to returns empty array when no match', () => {
+    const { stdout } = run(['--file', todoFile, 'list', '--json', '--done', '--from', '2026-06-01', '--to', '2026-06-30']);
+    const tasks = JSON.parse(stdout);
+    expect(tasks).toEqual([]);
+  });
+});
