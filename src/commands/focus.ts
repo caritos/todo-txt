@@ -49,7 +49,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
     if (startDate < addDays(todayStr, -730)) return false;
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates) <= windowEnd;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates) <= windowEnd;
-    return true;
+    return startDate <= windowEnd;
   }
 
   if (start) {
@@ -107,9 +107,10 @@ export function focusSortKey(task: Task, todayStr: string): string {
 
   if (start && frequency) {
     const time = start.slice(10);
+    const startDate = start.slice(0, 10);
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates) + time;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates) + time;
-    return todayStr + time;
+    return (startDate > todayStr ? startDate : todayStr) + time;
   }
 
   if (start) return start.slice(0, 16);

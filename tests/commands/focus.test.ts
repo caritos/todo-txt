@@ -118,6 +118,21 @@ describe('focus command', () => {
     expect(stdout).not.toContain('Old Workshop');
   });
 
+  test('shows daily recurring task whose start: is in the future (within window)', () => {
+    const futureStart = addDays(today, 3);
+    writeFileSync(todoFile, `2026-05-06 Water plants start:${futureStart}T09:00 frequency:daily\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('Water plants');
+    expect(stdout).not.toContain('today');
+  });
+
+  test('hides daily recurring task whose start: is beyond the focus window', () => {
+    const farFuture = addDays(today, 20);
+    writeFileSync(todoFile, `2026-05-06 Far future daily start:${farFuture}T09:00 frequency:daily\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).not.toContain('Far future daily');
+  });
+
   test('shows recurring event whose start: is within 2 years with no recur-until:', () => {
     const recentStart = addDays(today, -60);
     writeFileSync(todoFile, `2026-05-06 Weekly Standup start:${recentStart}T09:00 frequency:weekly type:event\n`, 'utf8');
