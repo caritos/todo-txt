@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { matchesFilters, isPastEvent, sortByPriority } from '../src/commands/list';
+import { matchesFilters, isPastEvent, sortByPriority, toJsonTask } from '../src/commands/list';
 import { parseLine } from '../src/parser';
 
 const TODAY = '2026-05-06';
@@ -124,5 +124,46 @@ describe('sortByPriority', () => {
     const tasks = [parseLine('No pri', 1), parseLine('(A) Pri', 2)];
     sortByPriority(tasks);
     expect(tasks[0]!.priority).toBeUndefined();
+  });
+});
+
+describe('toJsonTask', () => {
+  it('maps all fields, coercing absent optionals to null', () => {
+    const t = parseLine('Buy groceries @personal', 5);
+    const j = toJsonTask(t);
+    expect(j.line).toBe(5);
+    expect(j.done).toBe(false);
+    expect(j.completionDate).toBeNull();
+    expect(j.creationDate).toBeNull();
+    expect(j.priority).toBeNull();
+    expect(j.text).toBe('Buy groceries @personal');
+    expect(j.description).toBe('Buy groceries @personal');
+    expect(j.projects).toEqual([]);
+    expect(j.contexts).toEqual(['@personal']);
+    expect(j.extensions).toEqual({});
+  });
+
+  it('maps a task with all optional fields set', () => {
+    const t = parseLine('(A) 2026-05-01 Fix login bug due:2026-05-15 +backend @work', 3);
+    const j = toJsonTask(t);
+    expect(j.done).toBe(false);
+    expect(j.priority).toBe('A');
+    expect(j.creationDate).toBe('2026-05-01');
+    expect(j.completionDate).toBeNull();
+    expect(j.text).toBe('Fix login bug due:2026-05-15 +backend @work');
+    expect(j.description).toBe('Fix login bug +backend @work');
+    expect(j.projects).toEqual(['+backend']);
+    expect(j.contexts).toEqual(['@work']);
+    expect(j.extensions).toEqual({ due: '2026-05-15' });
+  });
+
+  it('maps a completed task', () => {
+    const t = parseLine('x 2026-05-07 2026-05-01 Deploy server +backend', 2);
+    const j = toJsonTask(t);
+    expect(j.done).toBe(true);
+    expect(j.completionDate).toBe('2026-05-07');
+    expect(j.creationDate).toBe('2026-05-01');
+    expect(j.priority).toBeNull();
+    expect(j.description).toBe('Deploy server +backend');
   });
 });

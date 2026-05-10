@@ -1,7 +1,35 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
 import { today, addDays, formatTask, formatSummary } from '../output';
-import type { Task } from '../parser';
+import { baseText, type Task } from '../parser';
+
+export type JsonTask = {
+  line: number;
+  done: boolean;
+  completionDate: string | null;
+  creationDate: string | null;
+  priority: string | null;
+  text: string;
+  description: string;
+  projects: string[];
+  contexts: string[];
+  extensions: Record<string, string>;
+};
+
+export function toJsonTask(task: Task): JsonTask {
+  return {
+    line: task.line,
+    done: task.done,
+    completionDate: task.completionDate ?? null,
+    creationDate: task.creationDate ?? null,
+    priority: task.priority ?? null,
+    text: task.text,
+    description: baseText(task.text),
+    projects: task.projects,
+    contexts: task.contexts,
+    extensions: task.extensions,
+  };
+}
 
 export function sortByPriority(tasks: Task[]): Task[] {
   const rank = (p: string | undefined) => p === undefined ? 26 : p.charCodeAt(0) - 65;
