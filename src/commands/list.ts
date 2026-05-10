@@ -20,6 +20,9 @@ export function isPastEvent(task: Task, todayStr: string): boolean {
   }
   // anniversary/birthday without frequency are inherently yearly-recurring; never "past"
   if (YEARLY_TYPES.has(task.extensions['type']!)) return false;
+  // Multi-day event: still ongoing if end: is in the future
+  const end = task.extensions['end'];
+  if (end) return end.slice(0, 10) < todayStr;
   return start.slice(0, 10) < todayStr;
 }
 
