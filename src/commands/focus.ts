@@ -285,16 +285,8 @@ export function focusCommand(filePath: string): void {
     }
     return !isPastEvent(t, todayStr);
   });
-  const tomorrow = addDays(todayStr, 1);
   const focused = relevant.filter(t => {
     const et = effToday(t);
-    if (!t.done && t.extensions['last-done'] === todayStr) {
-      // Hide only if the next occurrence is tomorrow or sooner (daily tasks
-      // completed today); weekly/monthly tasks whose next date is further out
-      // should still appear.
-      const nextOcc = focusSortKey(t, et).slice(0, 10);
-      if (nextOcc <= tomorrow) return false;
-    }
     return isInFocusWindow(t, et, windowEnd);
   });
 

@@ -259,12 +259,14 @@ describe('focus - recurring task completion tracking', () => {
     rmSync(dir, { recursive: true });
   });
 
-  test('hides daily recurring task when last-done equals today', () => {
+  test('shows daily recurring task for next day when last-done equals today', () => {
     const today = todayStr();
+    const tomorrow = addDays(today, 1);
     writeFileSync(todoFile, `stoicism start:${daysAgo(1)}T06:00 frequency:daily last-done:${today}\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'focus']);
-    // Completed today — suppress until tomorrow arrives naturally
-    expect(stdout).not.toContain('stoicism');
+    // Completed today — shows as tomorrow's occurrence
+    expect(stdout).toContain('stoicism');
+    expect(stdout).not.toContain('today');
   });
 
   test('shows recurring task when last-done is yesterday', () => {
