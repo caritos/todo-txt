@@ -106,8 +106,17 @@ export function formatFocusTask(task: Task, todayStr: string, effectiveDate: str
   const whenCol = overdue ? c(A.red, when.padEnd(18)) : c(A.dim, when.padEnd(18));
   const recPart = recLabel ? `  ${c(A.dim, recLabel)}` : '';
   const streakPart = streak >= 2 ? `  ${c(A.dim, `×${streak}`)}` : '';
-  if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}${recPart}${streakPart}`;
-  return `${num}  ${whenCol}  ${title}${recPart}${streakPart}`;
+  const end = task.extensions['end'];
+  const start = task.extensions['start'];
+  let thruPart = '';
+  if (end && start && end.slice(0, 10) !== start.slice(0, 10)) {
+    const endDate = end.slice(0, 10);
+    const ed = new Date(endDate + 'T12:00:00');
+    const yearSuffix = endDate.slice(0, 4) !== todayStr.slice(0, 4) ? ` ${ed.getFullYear()}` : '';
+    thruPart = `  ${c(A.dim, `thru ${MON_ABBR[ed.getMonth()]} ${ed.getDate()}${yearSuffix}`)}`;
+  }
+  if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}${thruPart}${recPart}${streakPart}`;
+  return `${num}  ${whenCol}  ${title}${thruPart}${recPart}${streakPart}`;
 }
 
 export function formatSummary(open: number, done: number, overdue: number, dueSoon: number): string {
