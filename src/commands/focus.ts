@@ -5,12 +5,54 @@ import type { Task } from '../parser';
 import { baseText } from '../parser';
 import { isPastEvent } from './list';
 
-export function nextYearlyDate(start: string, todayStr: string, exdates: Set<string> = new Set()): string {
-  const mmdd = start.slice(5, 10);
-  const thisYear = todayStr.slice(0, 4);
-  const thisOccurrence = `${thisYear}-${mmdd}`;
-  const result = thisOccurrence >= todayStr ? thisOccurrence : `${parseInt(thisYear) + 1}-${mmdd}`;
-  if (exdates.has(result)) return nextYearlyDate(start, addDays(result, 1), exdates);
+const POSITIONAL_POSITIONS: Record<string, number> = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5 };
+const POSITIONAL_DAYS: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+};
+
+function matchesDayType(dow: number, dayType: string): boolean {
+  if (dayType === 'weekend-day') return dow === 0 || dow === 6;
+  if (dayType === 'weekday') return dow >= 1 && dow <= 5;
+  if (dayType === 'day') return true;
+  return dow === (POSITIONAL_DAYS[dayType] ?? -1);
+}
+
+function resolvePositionalDay(year: number, month: number, positionalDay: string): number {
+  const dashIdx = positionalDay.indexOf('-');
+  const position = positionalDay.slice(0, dashIdx);
+  const dayType = positionalDay.slice(dashIdx + 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  if (position === 'last') {
+    for (let d = daysInMonth; d >= 1; d--) {
+      if (matchesDayType(new Date(year, month, d).getDay(), dayType)) return d;
+    }
+    return daysInMonth;
+  }
+  const count = POSITIONAL_POSITIONS[position] ?? 1;
+  let found = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    if (matchesDayType(new Date(year, month, d).getDay(), dayType)) {
+      if (++found === count) return d;
+    }
+  }
+  return 1;
+}
+
+export function nextYearlyDate(start: string, todayStr: string, exdates: Set<string> = new Set(), frequencyMonthDay?: string): string {
+  const month0 = parseInt(start.slice(5, 7)) - 1;
+  const thisYear = parseInt(todayStr.slice(0, 4));
+
+  function occurrenceForYear(year: number): string {
+    if (frequencyMonthDay && isNaN(Number(frequencyMonthDay))) {
+      const day = resolvePositionalDay(year, month0, frequencyMonthDay);
+      return `${year}-${String(month0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return `${year}-${start.slice(5, 10)}`;
+  }
+
+  const thisOccurrence = occurrenceForYear(thisYear);
+  const result = thisOccurrence >= todayStr ? thisOccurrence : occurrenceForYear(thisYear + 1);
+  if (exdates.has(result)) return nextYearlyDate(start, addDays(result, 1), exdates, frequencyMonthDay);
   return result;
 }
 
@@ -27,13 +69,13 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
   if (type) {
     if (!start) return false;
     if (frequency === 'yearly') {
-      const next = nextYearlyDate(start.slice(0, 10), todayStr, exdates);
+      const next = nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']);
       return next >= todayStr && next <= windowEnd;
     }
     if (frequency === 'monthly') {
       const startDate = start.slice(0, 10);
       if (startDate < addDays(todayStr, -730)) return false;
-      return nextMonthlyDate(start, todayStr, exdates) <= windowEnd;
+      return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) <= windowEnd;
     }
     if (frequency) {
       const startDate = start.slice(0, 10);
@@ -49,7 +91,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
     const startDate = start.slice(0, 10);
     if (startDate < addDays(todayStr, -730)) return false;
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates) <= windowEnd;
-    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates) <= windowEnd;
+    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) <= windowEnd;
     return startDate <= windowEnd;
   }
 
@@ -81,13 +123,25 @@ export function nextWeeklyDate(startStr: string, todayStr: string, every: number
   return result;
 }
 
-export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set<string> = new Set()): string {
-  const dom = parseInt(startStr.slice(8, 10));
+export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set<string> = new Set(), frequencyMonthDay?: string): string {
   const t = new Date(todayStr + 'T12:00:00');
-  let candidate = new Date(t.getFullYear(), t.getMonth(), dom);
-  if (candidate < t) candidate = new Date(t.getFullYear(), t.getMonth() + 1, dom);
+
+  function dayForMonth(year: number, month: number): number {
+    const fmd = frequencyMonthDay ?? startStr.slice(8, 10);
+    if (isNaN(Number(fmd))) return resolvePositionalDay(year, month, fmd);
+    return parseInt(fmd);
+  }
+
+  let year = t.getFullYear();
+  let month = t.getMonth();
+  let candidate = new Date(year, month, dayForMonth(year, month));
+  if (candidate < t) {
+    month++;
+    if (month > 11) { month = 0; year++; }
+    candidate = new Date(year, month, dayForMonth(year, month));
+  }
   const result = `${candidate.getFullYear()}-${String(candidate.getMonth() + 1).padStart(2, '0')}-${String(candidate.getDate()).padStart(2, '0')}`;
-  if (exdates.has(result)) return nextMonthlyDate(startStr, addDays(result, 1), exdates);
+  if (exdates.has(result)) return nextMonthlyDate(startStr, addDays(result, 1), exdates, frequencyMonthDay);
   return result;
 }
 
@@ -99,9 +153,9 @@ export function focusSortKey(task: Task, todayStr: string): string {
   const exdates = taskExdates(task);
 
   if (type && start) {
-    if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr, exdates);
+    if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']);
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates) + time;
-    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates) + time;
+    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) + time;
     if (frequency) return todayStr + time;
     // Ongoing multi-day event: sort/display as today instead of its past start
     if (start.slice(0, 10) < todayStr) {
@@ -115,7 +169,7 @@ export function focusSortKey(task: Task, todayStr: string): string {
     const time = start.slice(10);
     const startDate = start.slice(0, 10);
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates) + time;
-    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates) + time;
+    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) + time;
     return (startDate > todayStr ? startDate : todayStr) + time;
   }
 
@@ -141,8 +195,8 @@ function focusNextRecurrence(task: Task, todayStr: string): string {
 
   let nextDate: string;
   if (frequency === 'weekly') nextDate = nextWeeklyDate(start, afterCurrent, parseInt(task.extensions['every'] ?? '1'), exdates);
-  else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent, exdates);
-  else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent, exdates);
+  else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent, exdates, task.extensions['frequency-month-day']);
+  else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent, exdates, task.extensions['frequency-month-day']);
   else if (frequency === 'daily') nextDate = afterCurrent;
   else return '';
 
@@ -212,8 +266,8 @@ export function focusCommand(filePath: string): void {
       if (start && freq) {
         const exdates = taskExdates(t);
         if (freq === 'weekly') return addDays(nextWeeklyDate(start, todayStr, parseInt(every), exdates), 1);
-        if (freq === 'monthly') return addDays(nextMonthlyDate(start, todayStr, exdates), 1);
-        if (freq === 'yearly') return addDays(nextYearlyDate(start.slice(0, 10), todayStr, exdates), 1);
+        if (freq === 'monthly') return addDays(nextMonthlyDate(start, todayStr, exdates, t.extensions['frequency-month-day']), 1);
+        if (freq === 'yearly') return addDays(nextYearlyDate(start.slice(0, 10), todayStr, exdates, t.extensions['frequency-month-day']), 1);
       }
       return addDays(todayStr, 1);
     }
