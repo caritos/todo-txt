@@ -14,6 +14,7 @@ import { focusCommand } from './commands/focus';
 import { editCommand } from './commands/edit';
 import { importCommand } from './commands/import';
 import { remindersCommand } from './commands/reminders';
+import { skipCommand } from './commands/skip';
 
 const args = process.argv.slice(2);
 
@@ -115,6 +116,11 @@ switch (cmd) {
 
   case 'reminders': {
     remindersCommand(filePath, filteredArgs.slice(1));
+    break;
+  }
+
+  case 'skip': {
+    skipCommand(filePath, filteredArgs[1]);
     break;
   }
 

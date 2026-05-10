@@ -11,6 +11,7 @@ Commands:
   listall [filters]   List all tasks including completed
   edit <n> <text>     Replace task #n's text (creation date is preserved)
   done <n>            Mark task #n complete
+  skip <n>            Skip the upcoming occurrence of a recurring task
   rm <n>              Delete task #n permanently
   pri <n> <A-Z>       Set priority on task #n
   depri <n>           Remove priority from task #n

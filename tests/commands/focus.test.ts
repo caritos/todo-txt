@@ -7,7 +7,7 @@ import { tmpdir } from 'os';
 const CLI = './src/index.ts';
 
 function run(args: string[]): { stdout: string; stderr: string; code: number } {
-  const result = spawnSync('bun', [CLI, ...args], { encoding: 'utf8' });
+  const result = spawnSync('bun', [CLI, ...args], { encoding: 'utf8', env: { ...process.env, TZ: 'UTC' } });
   return { stdout: result.stdout ?? '', stderr: result.stderr ?? '', code: result.status ?? 0 };
 }
 
