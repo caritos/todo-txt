@@ -234,6 +234,40 @@ describe('focus command', () => {
     const { stdout } = run(['--file', todoFile, 'focus']);
     expect(stdout).not.toContain('Done task');
   });
+
+  test('weekly task with frequency-day shows for next matching day-of-week, not 7-day interval from start', () => {
+    // Start on last Sunday (Sunday is NOT in frequency-day:W,F).
+    // Without frequency-day support, nextWeeklyDate returns next Sunday (wrong).
+    // With fix, it returns the nearest Wednesday or Friday from today.
+    const todayDate = new Date(today + 'T12:00:00');
+    // Last Sunday: go back by today's DOW days (Sun=0 → go back 7 to avoid start=today)
+    const daysBack = todayDate.getDay() || 7;
+    const lastSunday = addDays(today, -daysBack);
+
+    // Find next W (3) or F (5) from today (0 = today itself if today is Wed or Fri)
+    let daysToNextWF = 7;
+    for (let i = 0; i <= 7; i++) {
+      const dow = (todayDate.getDay() + i) % 7;
+      if (dow === 3 || dow === 5) { daysToNextWF = i; break; }
+    }
+    const nextOccurrence = addDays(today, daysToNextWF);
+
+    writeFileSync(todoFile,
+      `2026-01-01 chorus practice frequency:weekly frequency-day:W,F start:${lastSunday}T08:15\n`,
+      'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+
+    expect(stdout).toContain('chorus practice');
+
+    const d = new Date(nextOccurrence + 'T12:00:00');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    if (daysToNextWF === 0) {
+      expect(stdout).toContain('today');
+      expect(stdout).toContain('08:15');
+    } else {
+      expect(stdout).toContain(`${months[d.getMonth()]} ${d.getDate()} 08:15`);
+    }
+  });
 });
 
 describe('focus - recurring task completion tracking', () => {

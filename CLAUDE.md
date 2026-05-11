@@ -35,3 +35,4 @@ src/parser.ts         ← pure functions: parseLine(), serializeTask(), Task typ
 - Extension regex `([^/\s]\S*)` intentionally excludes URL schemes — values starting with `/` are not captured as extensions (prevents `http://` from matching as `http: //`).
 - `matchesFilters()` in `src/commands/list.ts` is exported and reused by `listall` and `search`.
 - `today()` in `output.ts` returns the **local** calendar date (not UTC).
+- `nextWeeklyDate` in `focus.ts` accepts an optional `frequencyDay` param (e.g. `"W,F"`). When present, it finds the next calendar date that falls on one of those weekdays rather than advancing by 7-day intervals from the start date.
