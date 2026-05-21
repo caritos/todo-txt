@@ -181,11 +181,11 @@ describe('focus command', () => {
     expect(stdout).not.toContain('Future scheduled task');
   });
 
-  test('hides regular task with start: in the past (no type, no frequency)', () => {
+  test('shows regular task with start: in the past (no type, no frequency) — overdue', () => {
     const start = addDays(today, -3);
     writeFileSync(todoFile, `2026-05-06 Past scheduled task start:${start}\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'focus']);
-    expect(stdout).not.toContain('Past scheduled task');
+    expect(stdout).toContain('Past scheduled task');
   });
 
   test('sorts regular task with start: by start date', () => {
@@ -342,5 +342,90 @@ describe('focus - recurring task completion tracking', () => {
     const { stdout } = run(['--file', todoFile, 'focus']);
     expect(stdout).toContain('stoicism');
     expect(stdout).toContain('×2');
+  });
+});
+
+describe('focus - overdue recurring tasks', () => {
+  function todayStr(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function daysAgo(n: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  let dir: string;
+  let todoFile: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'todo-test-'));
+    todoFile = join(dir, 'todo.txt');
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true });
+  });
+
+  test('weekly task with start yesterday and no last-done shows as overdue today', () => {
+    const yesterday = daysAgo(1);
+    writeFileSync(todoFile, `weekly review start:${yesterday} frequency:weekly\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('weekly review');
+    expect(stdout).toContain('today');
+  });
+
+  test('weekly task with start yesterday and last-done matching yesterday shows as next occurrence (not overdue)', () => {
+    const yesterday = daysAgo(1);
+    writeFileSync(todoFile, `weekly review start:${yesterday} frequency:weekly last-done:${yesterday}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('weekly review');
+    // Next occurrence is 6 days from now, not today
+    expect(stdout).not.toContain('today');
+  });
+
+  test('monthly task with occurrence yesterday (>14 days gap) still shows in focus as overdue', () => {
+    // Start exactly one month before yesterday so monthly occurrence lands on yesterday
+    const yesterday = daysAgo(1);
+    const d = new Date(yesterday + 'T12:00:00');
+    d.setMonth(d.getMonth() - 1);
+    const startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    writeFileSync(todoFile, `monthly task start:${startDate} frequency:monthly\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('monthly task');
+    expect(stdout).toContain('today');
+  });
+
+  test('weekly task with start tomorrow and last-done today shows next occurrence (not overdue)', () => {
+    const today = todayStr();
+    const tomorrow = addDays(today, 1);
+    writeFileSync(todoFile, `mow lawn start:${tomorrow}T09:00 frequency:weekly last-done:${today}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('mow lawn');
+    // Next occurrence is 8 days out (tomorrow + 7), not today
+    expect(stdout).not.toContain('today');
+  });
+
+  test('weekly task done yesterday shows next occurrence, not today', () => {
+    const today = todayStr();
+    const yesterday = addDays(today, -1);
+    // start = today, done yesterday (one day early) — should not show as "today"
+    writeFileSync(todoFile, `mow lawn start:${today}T09:00 frequency:weekly last-done:${yesterday}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('mow lawn');
+    expect(stdout).not.toContain('today');
+  });
+
+  test('monthly task with last-done matching most recent occurrence is not shown as overdue', () => {
+    // Same setup: start one month before yesterday so occurrence was yesterday
+    const yesterday = daysAgo(1);
+    const d = new Date(yesterday + 'T12:00:00');
+    d.setMonth(d.getMonth() - 1);
+    const startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    writeFileSync(todoFile, `monthly task start:${startDate} frequency:monthly last-done:${yesterday}\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    // Next occurrence is ~30 days away, outside the 14-day window — should not show
+    expect(stdout).not.toContain('monthly task');
   });
 });

@@ -36,3 +36,7 @@ src/parser.ts         ← pure functions: parseLine(), serializeTask(), Task typ
 - `matchesFilters()` in `src/commands/list.ts` is exported and reused by `listall` and `search`.
 - `today()` in `output.ts` returns the **local** calendar date (not UTC).
 - `nextWeeklyDate` in `focus.ts` accepts an optional `frequencyDay` param (e.g. `"W,F"`). When present, it finds the next calendar date that falls on one of those weekdays rather than advancing by 7-day intervals from the start date.
+- `rm` accepts multiple task numbers: `todo rm <n> [n...]`. Re-indexes remaining tasks after each removal so subsequent numbers in the same batch stay correct.
+- `done` advances `start` to the next scheduled occurrence for `frequency:weekly` and `frequency:monthly` tasks. Daily and other frequencies are left unchanged.
+- `focus` shows **overdue** tasks: regular tasks whose `start:` date is in the past, and recurring tasks whose most-recent scheduled occurrence hasn't been marked done. `overdueOccurrenceDate()` in `focus.ts` detects missed occurrences; their sort key is set to today so they sort to the top of the focus list.
+- `formatFocusTask` in `output.ts` appends a dim type icon (``, ``, ``) for tasks with `type:event`, `type:birthday`, or `type:anniversary`.

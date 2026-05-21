@@ -70,7 +70,7 @@ switch (cmd) {
   }
 
   case 'rm': {
-    rmCommand(filePath, filteredArgs[1]);
+    rmCommand(filePath, filteredArgs.slice(1));
     break;
   }
 

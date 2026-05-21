@@ -115,8 +115,12 @@ export function formatFocusTask(task: Task, todayStr: string, effectiveDate: str
     const yearSuffix = endDate.slice(0, 4) !== todayStr.slice(0, 4) ? ` ${ed.getFullYear()}` : '';
     thruPart = `  ${c(A.dim, `thru ${MON_ABBR[ed.getMonth()]} ${ed.getDate()}${yearSuffix}`)}`;
   }
-  if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}${thruPart}${recPart}${streakPart}`;
-  return `${num}  ${whenCol}  ${title}${thruPart}${recPart}${streakPart}`;
+  const taskType = task.extensions['type'];
+  const TYPE_ICON: Record<string, string> = { event: '', birthday: '', anniversary: '' };
+  const typeIcon = taskType ? (TYPE_ICON[taskType] ?? '') : '';
+  const typePart = typeIcon ? `  ${c(A.dim, typeIcon)}` : '';
+  if (task.priority) return `${num}  ${whenCol}  ${colorPriority(task.priority)} ${title}${thruPart}${recPart}${streakPart}${typePart}`;
+  return `${num}  ${whenCol}  ${title}${thruPart}${recPart}${streakPart}${typePart}`;
 }
 
 export function formatSummary(open: number, done: number, overdue: number, dueSoon: number): string {

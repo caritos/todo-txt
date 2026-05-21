@@ -60,6 +60,68 @@ function taskExdates(task: Task): Set<string> {
   return new Set((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
 }
 
+// Returns the most recent scheduled occurrence date that is strictly before todayStr,
+// if that occurrence was not completed (no matching last-done). Returns null otherwise.
+// Only applies to non-type, non-done weekly/monthly tasks without frequency-day.
+function overdueOccurrenceDate(task: Task, todayStr: string): string | null {
+  if (task.done || task.extensions['type']) return null;
+  const start = task.extensions['start'];
+  const frequency = task.extensions['frequency'];
+  const lastDone = task.extensions['last-done'];
+  if (!start || !frequency) return null;
+  const startDate = start.slice(0, 10);
+
+  const exdates = taskExdates(task);
+  let prev: string | null = null;
+
+  if (frequency === 'weekly' && !task.extensions['frequency-day']) {
+    const everyN = parseInt(task.extensions['every'] ?? '1');
+    const cycleDays = everyN * 7;
+    const startD = new Date(startDate + 'T12:00:00');
+    const todayD = new Date(todayStr + 'T12:00:00');
+    const diffDays = Math.round((todayD.getTime() - startD.getTime()) / 86400000);
+    if (diffDays <= 0) return null;
+    const d = new Date(startD);
+    d.setDate(startD.getDate() + Math.floor(diffDays / cycleDays) * cycleDays);
+    prev = isoDate(d);
+    // Walk backwards past any exdated occurrences
+    while (prev && exdates.has(prev)) {
+      const pd = new Date(prev + 'T12:00:00');
+      pd.setDate(pd.getDate() - cycleDays);
+      const p = isoDate(pd);
+      prev = p >= startDate ? p : null;
+    }
+    // Only flag as overdue if the missed occurrence is within the current cycle window
+    // (avoids false positives for long-running tasks with no last-done tracking)
+    if (prev && prev < addDays(todayStr, -(cycleDays - 1))) return null;
+    // Early completion: done anywhere within this cycle (before the occurrence date) counts
+    if (prev && lastDone && lastDone > addDays(prev, -cycleDays)) return null;
+  } else if (frequency === 'monthly') {
+    const fmd = task.extensions['frequency-month-day'];
+    const t = new Date(todayStr + 'T12:00:00');
+    function dayForMonth(year: number, month: number): number {
+      const val = fmd ?? startDate.slice(8, 10);
+      if (isNaN(Number(val))) return resolvePositionalDay(year, month, val);
+      return parseInt(val);
+    }
+    const year = t.getFullYear();
+    const month = t.getMonth();
+    const dayOfMonth = dayForMonth(year, month);
+    const currCandidate = new Date(year, month, dayOfMonth);
+    // Only consider this month's occurrence; if it's upcoming don't look at last month
+    // (avoids clobbering the sort key when nextMonthlyDate is already within the window)
+    if (currCandidate > t) return null;
+    const candStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayOfMonth).padStart(2, '0')}`;
+    if (!exdates.has(candStr)) prev = candStr;
+  } else {
+    return null;
+  }
+
+  if (!prev || prev < startDate || prev > todayStr) return null;
+  if (lastDone && lastDone >= prev) return null;
+  return prev;
+}
+
 function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boolean {
   const type = task.extensions['type'];
   const start = task.extensions['start'];
@@ -91,13 +153,16 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
     const startDate = start.slice(0, 10);
     if (startDate < addDays(todayStr, -730)) return false;
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) <= windowEnd;
-    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) <= windowEnd;
+    if (frequency === 'monthly') {
+      const next = nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']);
+      return next <= windowEnd || overdueOccurrenceDate(task, todayStr) !== null;
+    }
     return startDate <= windowEnd;
   }
 
   if (start) {
     const startDate = start.slice(0, 10);
-    return startDate >= todayStr && startDate <= windowEnd;
+    return startDate <= windowEnd;
   }
 
   const due = task.extensions['due'];
@@ -210,8 +275,21 @@ export function focusSortKey(task: Task, todayStr: string): string {
   if (start && frequency) {
     const time = start.slice(10);
     const startDate = start.slice(0, 10);
-    if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) + time;
-    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) + time;
+    if (frequency === 'weekly') {
+      if (overdueOccurrenceDate(task, todayStr)) return todayStr + time;
+      const everyN = parseInt(task.extensions['every'] ?? '1');
+      const currentOcc = nextWeeklyDate(start, todayStr, everyN, exdates, task.extensions['frequency-day']);
+      const lastDone = task.extensions['last-done'];
+      // If last-done falls within the current cycle, the user already did this — show next occurrence
+      if (lastDone && lastDone > addDays(currentOcc, -(everyN * 7))) {
+        return nextWeeklyDate(start, addDays(currentOcc, 1), everyN, exdates, task.extensions['frequency-day']) + time;
+      }
+      return currentOcc + time;
+    }
+    if (frequency === 'monthly') {
+      if (overdueOccurrenceDate(task, todayStr)) return todayStr + time;
+      return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) + time;
+    }
     return (startDate > todayStr ? startDate : todayStr) + time;
   }
 

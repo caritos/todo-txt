@@ -164,6 +164,31 @@ describe('done command - recurring tasks', () => {
     expect(copy).not.toContain('frequency:');
   });
 
+  test('weekly recurring task advances start to next occurrence on completion', () => {
+    const today = todayStr();
+    const tomorrow = daysAgo(-1);
+    const nextWeek = daysAgo(-8);  // tomorrow + 7
+    writeFileSync(todoFile, `mow lawn start:${tomorrow}T09:00 frequency:weekly\n`, 'utf8');
+    run(['--file', todoFile, 'done', '1']);
+    const content = readFileSync(todoFile, 'utf8');
+    const original = content.split('\n').find(l => l.includes('frequency:weekly'));
+    expect(original).toBeDefined();
+    expect(original).toContain(`start:${nextWeek}T09:00`);
+    expect(original).toContain(`last-done:${today}`);
+  });
+
+  test('daily recurring task does not advance start on completion', () => {
+    const today = todayStr();
+    const yesterday = daysAgo(1);
+    writeFileSync(todoFile, `stoicism start:${yesterday}T06:00 frequency:daily\n`, 'utf8');
+    run(['--file', todoFile, 'done', '1']);
+    const content = readFileSync(todoFile, 'utf8');
+    const original = content.split('\n').find(l => l.includes('frequency:daily'));
+    expect(original).toBeDefined();
+    expect(original).toContain(`start:${yesterday}T06:00`);
+    expect(original).toContain(`last-done:${today}`);
+  });
+
   test('completes only once when same recurring task number given twice', () => {
     writeFileSync(todoFile, `stoicism start:${daysAgo(1)}T06:00 frequency:daily\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'done', '1', '1']);

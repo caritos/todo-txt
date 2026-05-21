@@ -1,7 +1,8 @@
 import { readTasks, writeTasks } from '../store';
-import { today, formatTask } from '../output';
+import { today, formatTask, addDays } from '../output';
 import { serializeTask, baseText } from '../parser';
 import type { Task } from '../parser';
+import { nextWeeklyDate, nextMonthlyDate } from './focus';
 
 export function doneCommand(filePath: string, nStrs: string[]): void {
   if (nStrs.length === 0) {
@@ -66,6 +67,27 @@ export function doneCommand(filePath: string, nStrs: string[]): void {
         task.text = `${task.text} last-done:${todayStr}`;
       }
       task.extensions['last-done'] = todayStr;
+
+      // Advance start to the next scheduled occurrence so focus defers until then
+      const startVal = task.extensions['start'];
+      const freq = task.extensions['frequency'];
+      if (startVal && (freq === 'weekly' || freq === 'monthly')) {
+        const every = parseInt(task.extensions['every'] ?? '1');
+        const exdates = new Set<string>((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
+        const freqDay = task.extensions['frequency-day'];
+        const freqMonthDay = task.extensions['frequency-month-day'];
+        const currentOcc = freq === 'weekly'
+          ? nextWeeklyDate(startVal, todayStr, every, exdates, freqDay)
+          : nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay);
+        const nextOcc = freq === 'weekly'
+          ? nextWeeklyDate(startVal, addDays(currentOcc, 1), every, exdates, freqDay)
+          : nextMonthlyDate(startVal, addDays(currentOcc, 1), exdates, freqMonthDay);
+        const timePart = startVal.slice(10);
+        const newStart = nextOcc + timePart;
+        task.text = task.text.replace(/\bstart:\S+/g, `start:${newStart}`);
+        task.extensions['start'] = newStart;
+      }
+
       task.raw = serializeTask(task);
 
       tasks.push(copy);
