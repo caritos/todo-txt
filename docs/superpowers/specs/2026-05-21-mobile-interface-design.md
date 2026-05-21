@@ -48,6 +48,56 @@ todo-txt/
 
 ---
 
+## todo.txt Format
+
+**Reference:** https://github.com/todotxt/todo.txt
+
+### Base Format
+
+A single line = a single task.
+
+**Incomplete task:**
+```
+(A) 2026-05-21 Call the dentist +health @phone due:2026-05-30
+^   ^          ^                ^        ^      ^
+|   |          |                |        |      key:value extension
+|   |          |                |        context (@)
+|   |          |                project (+)
+|   |          task text
+|   creation date (YYYY-MM-DD, optional)
+priority (A–Z in parens, optional, must be first)
+```
+
+**Complete task:**
+```
+x 2026-05-21 2026-05-20 Call the dentist +health @phone
+^ ^          ^
+| |          creation date
+| completion date (YYYY-MM-DD, required when marking done)
+completion marker (lowercase x + space, must be first)
+```
+
+### App Extensions (key:value)
+
+Beyond the base spec, this app uses the following `key:value` extensions (all handled by `parser.ts` and fully supported on both console and mobile):
+
+| Key | Example | Purpose |
+|-----|---------|---------|
+| `due:` | `due:2026-05-30` | Due date for list/focus filtering |
+| `start:` | `start:2026-05-21T09:00` | Scheduled start; optional time component |
+| `frequency:` | `frequency:weekly` | Recurrence: `daily`, `weekly`, `monthly` |
+| `every:` | `every:2` | Recurrence interval (default 1) |
+| `frequency-day:` | `frequency-day:M,F` | Weekday(s) for weekly recurrence |
+| `frequency-month-day:` | `frequency-month-day:15` | Day-of-month for monthly recurrence |
+| `exdate:` | `exdate:2026-06-07,2026-06-14` | Comma-separated dates to skip |
+| `last-done:` | `last-done:2026-05-14` | Date of most recent completion (recurring) |
+| `type:` | `type:event` | Task type: `event`, `birthday`, `anniversary` |
+| `end:` | `end:2026-05-23` | End date for multi-day events |
+
+The mobile app reads and writes all extensions verbatim through the shared `parser.ts` — no mobile-specific parsing logic.
+
+---
+
 ## Shared Layer
 
 ### Pure Transform Pattern
