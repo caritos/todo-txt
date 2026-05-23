@@ -27,16 +27,28 @@
   },
   "devDependencies": {
     "@babel/core": "*",
+    "@babel/preset-env": "^7.29.5",
+    "@babel/preset-typescript": "^7.28.5",
     "@types/react": "*",
+    "babel-jest": "^30.4.1",
     "babel-plugin-module-resolver": "*",
     "jest": "*",
     "jest-expo": "*",
     "typescript": "*"
   },
   "jest": {
-    "preset": "jest-expo",
-    "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|chrono-node)"
+    "testEnvironment": "node",
+    "transform": {
+      "^.+\\.tsx?$": [
+        "babel-jest"
+      ]
+    },
+    "moduleNameMapper": {
+      "^@shared/(.*)$": "<rootDir>/../shared/$1"
+    },
+    "testMatch": [
+      "**/__tests__/**/*.test.ts",
+      "**/__tests__/**/*.test.tsx"
     ]
   }
 }
