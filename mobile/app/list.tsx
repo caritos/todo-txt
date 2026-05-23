@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useTasks } from '../src/context/TaskContext';
 import { TaskRow } from '../src/components/TaskRow';
 import { StatsCard } from '../src/components/StatsCard';
+import { AddTaskModal } from '../src/components/AddTaskModal';
 import { sortByPriority } from '@shared/commands/list';
 import { applyDone } from '@shared/commands/done';
 import { applyRm } from '@shared/commands/rm';
@@ -17,6 +18,7 @@ export default function ListScreen() {
   const todayStr = today();
 
   const [showAll, setShowAll] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const openTasks = useMemo(
     () => sortByPriority(showAll ? tasks : tasks.filter(t => !t.done)),
     [tasks, showAll]
@@ -52,6 +54,10 @@ export default function ListScreen() {
         ))}
       </ScrollView>
       <View style={styles.separator} />
+      <TouchableOpacity onPress={() => setShowAddModal(true)} style={styles.addButton}>
+        <Text style={styles.addButtonText}>+ Add Task</Text>
+      </TouchableOpacity>
+      <View style={styles.separator} />
       <TouchableOpacity onPress={() => setShowAll(s => !s)} style={styles.allToggle}>
         <Text style={styles.allToggleText}>{showAll ? 'Show open only' : 'Show all (including done)'}</Text>
       </TouchableOpacity>
@@ -83,6 +89,7 @@ export default function ListScreen() {
         )}
         contentContainerStyle={{ paddingBottom: 120 }}
       />
+      <AddTaskModal visible={showAddModal} onClose={() => setShowAddModal(false)} />
     </View>
   );
 }
@@ -91,6 +98,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   cards: { flexDirection: 'row', gap: 1, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.separator },
+  addButton: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
+  addButtonText: { fontSize: 15, color: Colors.accent },
   allToggle: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   allToggleText: { fontSize: 13, color: Colors.accent },
   empty: { padding: Spacing.xl, alignItems: 'center' },
