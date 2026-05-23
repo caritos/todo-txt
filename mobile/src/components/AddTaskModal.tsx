@@ -78,8 +78,12 @@ export function AddTaskModal({ visible, onClose }: Props) {
       return;
     }
     const newTask = parseLine(raw, tasks.length + 1);
-    await save([...tasks, newTask]);
-    handleClose();
+    try {
+      await save([...tasks, newTask]);
+      handleClose();
+    } catch (e) {
+      setError(`Failed to save task: ${(e as Error).message}`);
+    }
   }
 
   const QUICK_CHARS = ['/', ':', '-', '.', 'T'];
@@ -317,7 +321,7 @@ const styles = StyleSheet.create({
     color: Colors.accent,
   },
   errorText: {
-    color: '#FF6B6B',
+    color: Colors.accent,
     fontSize: 14,
     margin: Spacing.md,
     textAlign: 'center',
