@@ -1,4 +1,5 @@
-import { View, Text } from 'react-native';
+import { Redirect } from 'expo-router';
+
 export default function Index() {
-  return <View style={{ flex: 1, backgroundColor: '#1A1A1A' }}><Text style={{ color: '#F0F0F0', padding: 20 }}>Loading…</Text></View>;
+  return <Redirect href="/focus" />;
 }
