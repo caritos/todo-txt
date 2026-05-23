@@ -22,12 +22,12 @@ export default function ReportScreen() {
 
   const projectEntries = useMemo(
     () => Array.from(report.byProject.entries()).sort(([a], [b]) => a.localeCompare(b)),
-    [report.byProject]
+    [report]
   );
 
   const contextEntries = useMemo(
     () => Array.from(report.byContext.entries()).sort(([a], [b]) => a.localeCompare(b)),
-    [report.byContext]
+    [report]
   );
 
   return (
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
+    paddingVertical: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
   },
