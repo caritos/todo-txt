@@ -1,6 +1,6 @@
 import { readTasks, writeTasks } from '../store';
 import { today, formatTask } from '../output';
-import { serializeTask } from '../../shared/parser';
+import { applyPri, applyDepri } from '../../shared/commands/pri';
 
 export function priCommand(filePath: string, nStr: string | undefined, priStr: string | undefined): void {
   if (!nStr || !priStr) {
@@ -21,24 +21,15 @@ export function priCommand(filePath: string, nStr: string | undefined, priStr: s
   }
 
   const tasks = readTasks(filePath);
-  const task = tasks.find(t => t.line === n);
-
-  if (!task) {
-    console.error(`Error: no task #${n}`);
+  let result: ReturnType<typeof applyPri>;
+  try {
+    result = applyPri(tasks, n, p);
+  } catch (e) {
+    console.error(`Error: ${(e as Error).message}`);
     process.exit(1);
   }
-
-  if (task.done) {
-    console.error(`Error: cannot set priority on completed task #${n}`);
-    process.exit(1);
-  }
-
-  task.priority = p;
-  task.raw = serializeTask(task);
-  writeTasks(filePath, tasks);
-
-  const todayStr = today();
-  console.log(`Priority set: ${formatTask(task, todayStr)}`);
+  writeTasks(filePath, result.tasks);
+  console.log(`Priority set: ${formatTask(result.updated, today())}`);
 }
 
 export function depriCommand(filePath: string, nStr: string | undefined): void {
@@ -54,22 +45,18 @@ export function depriCommand(filePath: string, nStr: string | undefined): void {
   }
 
   const tasks = readTasks(filePath);
-  const task = tasks.find(t => t.line === n);
-
-  if (!task) {
-    console.error(`Error: no task #${n}`);
+  let result: ReturnType<typeof applyDepri>;
+  try {
+    result = applyDepri(tasks, n);
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg.includes('no priority')) {
+      console.log(`Task #${n} has no priority.`);
+      return;
+    }
+    console.error(`Error: ${msg}`);
     process.exit(1);
   }
-
-  if (!task.priority) {
-    console.log(`Task #${n} has no priority.`);
-    return;
-  }
-
-  task.priority = undefined;
-  task.raw = serializeTask(task);
-  writeTasks(filePath, tasks);
-
-  const todayStr = today();
-  console.log(`Priority removed: ${formatTask(task, todayStr)}`);
+  writeTasks(filePath, result.tasks);
+  console.log(`Priority removed: ${formatTask(result.updated, today())}`);
 }
