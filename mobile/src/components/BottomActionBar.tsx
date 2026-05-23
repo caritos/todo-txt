@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111111',
+    backgroundColor: Colors.navBar,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.separator,
     paddingHorizontal: Spacing.md,

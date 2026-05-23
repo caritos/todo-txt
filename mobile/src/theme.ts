@@ -8,6 +8,8 @@ export const Colors = {
   checkboxBorder: '#555555',
   actionDone: '#E8461A',
   actionDelete: '#6B0000',
+  navBar: '#111111',
+  overlay: 'rgba(0,0,0,0.6)',
 } as const;
 
 export const Fonts = {
