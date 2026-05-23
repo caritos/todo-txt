@@ -4,10 +4,7 @@ import { Colors, Spacing } from '../theme';
 const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 function weekDates(anchorDate: string): string[] {
-  const d = new Date(anchorDate + 'T12:00:00');
-  const dow = d.getDay();
-  const start = new Date(d);
-  start.setDate(d.getDate() - dow);
+  const start = new Date(anchorDate + 'T12:00:00');
   return Array.from({ length: 7 }, (_, i) => {
     const day = new Date(start);
     day.setDate(start.getDate() + i);
