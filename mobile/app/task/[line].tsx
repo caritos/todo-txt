@@ -1,6 +1,6 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTasks } from '../../src/context/TaskContext';
 import { PriorityPicker } from '../../src/components/PriorityPicker';
 import { applyDone } from '@shared/commands/done';
@@ -23,6 +23,13 @@ export default function TaskDetail() {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(task?.text ?? '');
   const [priority, setPriority] = useState<string | undefined>(task?.priority);
+
+  useEffect(() => {
+    if (task && !editing) {
+      setEditText(task.text);
+      setPriority(task.priority);
+    }
+  }, [task]);
 
   if (!task) {
     return (
@@ -66,7 +73,9 @@ export default function TaskDetail() {
         result = applyDepri([...tasks], lineNum);
       }
       await save(result.tasks);
-    } catch {}
+    } catch (e) {
+      Alert.alert('Error', (e as Error).message);
+    }
   }
 
   async function handleSkip() {
