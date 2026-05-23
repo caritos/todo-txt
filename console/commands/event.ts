@@ -26,7 +26,8 @@ function validateStartEnd(text: string): void {
 function injectEnd(text: string): string {
   const startVal = getExtValue(text, 'start');
   const endVal = getExtValue(text, 'end');
-  if (startVal !== undefined && endVal === undefined) {
+  const isRecurring = getExtValue(text, 'frequency') !== undefined;
+  if (startVal !== undefined && endVal === undefined && !isRecurring) {
     return `${text} end:${startVal}`;
   }
   return text;

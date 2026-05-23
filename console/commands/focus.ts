@@ -290,6 +290,11 @@ export function focusSortKey(task: Task, todayStr: string): string {
       if (overdueOccurrenceDate(task, todayStr)) return todayStr + time;
       return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) + time;
     }
+    if (frequency === 'daily') {
+      let d = startDate > todayStr ? startDate : todayStr;
+      while (exdates.has(d)) d = addDays(d, 1);
+      return d + time;
+    }
     return (startDate > todayStr ? startDate : todayStr) + time;
   }
 
