@@ -1,4 +1,4 @@
-import type { Task } from './parser';
+import type { Task } from '../shared/parser';
 
 const A = {
   reset:         '\x1b[0m',

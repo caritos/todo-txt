@@ -1,8 +1,8 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
 import { today, addDays, formatFocusTask } from '../output';
-import type { Task } from '../parser';
-import { baseText } from '../parser';
+import type { Task } from '../../shared/parser';
+import { baseText } from '../../shared/parser';
 import { isPastEvent } from './list';
 
 const POSITIONAL_POSITIONS: Record<string, number> = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5 };

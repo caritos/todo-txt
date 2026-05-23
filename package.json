@@ -1,9 +1,9 @@
 {
   "name": "todo",
   "version": "0.1.0",
-  "module": "src/index.ts",
+  "module": "console/index.ts",
   "bin": {
-    "todo": "./src/index.ts"
+    "todo": "./console/index.ts"
   },
   "scripts": {
     "test": "bun test"

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
-import { matchesFilters, isPastEvent, sortByPriority, toJsonTask } from '../src/commands/list';
-import { parseLine } from '../src/parser';
+import { matchesFilters, isPastEvent, sortByPriority, toJsonTask } from '../commands/list';
+import { parseLine } from '../../shared/parser';
 
 const TODAY = '2026-05-06';
 

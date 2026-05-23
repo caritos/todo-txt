@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'bun:test';
 import { writeFileSync, unlinkSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { readTasks, writeTasks, resolveFile } from '../src/store';
+import { readTasks, writeTasks, resolveFile } from '../store';
 
 const TMP = join(tmpdir(), `todo-store-test-${process.pid}.txt`);
 

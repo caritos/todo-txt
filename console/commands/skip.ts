@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { readTasks, writeTasks } from '../store';
 import { today } from '../output';
-import { serializeTask } from '../parser';
+import { serializeTask } from '../../shared/parser';
 import { nextWeeklyDate, nextMonthlyDate, nextYearlyDate, focusSortKey } from './focus';
 
 export function skipCommand(filePath: string, lineArg: string | undefined): void {

@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
 import { today, addDays, formatTask, formatSummary } from '../output';
-import { baseText, type Task } from '../parser';
+import { baseText, type Task } from '../../shared/parser';
 
 export type JsonTask = {
   line: number;

@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, renameSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { parseLine } from './parser';
-import type { Task } from './parser';
+import { parseLine } from '../shared/parser';
+import type { Task } from '../shared/parser';
 
 export function resolveFile(flag?: string): string {
   return flag ?? process.env.TODO_FILE ?? resolve(process.cwd(), 'todo.txt');

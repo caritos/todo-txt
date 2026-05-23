@@ -1,7 +1,7 @@
 import { readTasks, writeTasks } from '../store';
 import { today, formatTask } from '../output';
-import { parseLine, serializeTask } from '../parser';
-import { validateFrequency } from '../recurrence';
+import { parseLine, serializeTask } from '../../shared/parser';
+import { validateFrequency } from '../../shared/recurrence';
 
 export function editCommand(filePath: string, nStr: string | undefined, textParts: string[]): void {
   if (!nStr || textParts.length === 0) {

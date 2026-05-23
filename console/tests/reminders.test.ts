@@ -7,8 +7,8 @@ import {
   sanitizeListName,
   buildExistingIds,
   remindersCommand,
-} from '../src/commands/reminders';
-import type { ReminderRecord, JXAExecutor } from '../src/commands/reminders';
+} from '../commands/reminders';
+import type { ReminderRecord, JXAExecutor } from '../commands/reminders';
 
 const TMP = join(tmpdir(), `todo-reminders-test-${process.pid}.txt`);
 afterEach(() => { if (existsSync(TMP)) unlinkSync(TMP); });

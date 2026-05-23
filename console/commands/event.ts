@@ -1,7 +1,7 @@
 import { appendFileSync } from 'fs';
 import { readTasks } from '../store';
 import { today, formatTask } from '../output';
-import { validateFrequency } from '../recurrence';
+import { validateFrequency } from '../../shared/recurrence';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;

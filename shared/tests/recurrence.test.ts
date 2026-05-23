@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { validateFrequency } from '../src/recurrence';
+import { validateFrequency } from '../recurrence';
 
 const origExit = process.exit;
 const origError = console.error;

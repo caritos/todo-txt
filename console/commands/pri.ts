@@ -1,6 +1,6 @@
 import { readTasks, writeTasks } from '../store';
 import { today, formatTask } from '../output';
-import { serializeTask } from '../parser';
+import { serializeTask } from '../../shared/parser';
 
 export function priCommand(filePath: string, nStr: string | undefined, priStr: string | undefined): void {
   if (!nStr || !priStr) {

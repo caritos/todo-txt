@@ -1,7 +1,7 @@
 import { readTasks, writeTasks } from '../store';
 import { today, formatTask, addDays } from '../output';
-import { serializeTask, baseText } from '../parser';
-import type { Task } from '../parser';
+import { serializeTask, baseText } from '../../shared/parser';
+import type { Task } from '../../shared/parser';
 import { nextWeeklyDate, nextMonthlyDate } from './focus';
 
 export function doneCommand(filePath: string, nStrs: string[]): void {

@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
 import { today, addDays } from '../output';
-import type { Task } from '../parser';
+import type { Task } from '../../shared/parser';
 
 function countByTag(tasks: Task[], getTag: (t: Task) => string[]): Map<string, { open: number; done: number }> {
   const map = new Map<string, { open: number; done: number }>();
