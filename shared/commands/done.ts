@@ -66,18 +66,12 @@ export function applyDone(
         const exdates = new Set<string>((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
         const freqDay = task.extensions['frequency-day'];
         const freqMonthDay = task.extensions['frequency-month-day'];
-        const startDateOnly = startVal.slice(0, 10);
-        const isOverdue = startDateOnly < todayStr;
-        // For overdue tasks: advance start to the next occurrence >= today (currentOcc).
-        // For tasks not yet due: advance start to the occurrence after the current one (nextOcc).
         const currentOcc = freq === 'weekly'
           ? nextWeeklyDate(startVal, todayStr, every, exdates, freqDay)
           : nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay);
-        const nextOcc = isOverdue
-          ? currentOcc
-          : (freq === 'weekly'
-            ? nextWeeklyDate(startVal, addDays(currentOcc, 1), every, exdates, freqDay)
-            : nextMonthlyDate(startVal, addDays(currentOcc, 1), exdates, freqMonthDay));
+        const nextOcc = freq === 'weekly'
+          ? nextWeeklyDate(startVal, addDays(currentOcc, 1), every, exdates, freqDay)
+          : nextMonthlyDate(startVal, addDays(currentOcc, 1), exdates, freqMonthDay);
         const timePart = startVal.slice(10);
         const newStart = nextOcc + timePart;
         task.text = task.text.replace(/\bstart:\S+/g, `start:${newStart}`);

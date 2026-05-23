@@ -30,7 +30,7 @@ describe('applyDone', () => {
     const { tasks: updated, copies } = applyDone(tasks, [1], '2026-05-23');
     expect(copies).toHaveLength(1);
     expect(copies[0]!.done).toBe(true);
-    // Original advances start by 7 days
-    expect(updated[0]!.extensions['start']).toBe('2026-05-29T09:00');
+    // Original two-call pattern: currentOcc=2026-05-29, nextOcc=2026-06-05
+    expect(updated[0]!.extensions['start']).toBe('2026-06-05T09:00');
   });
 });
