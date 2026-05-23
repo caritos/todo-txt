@@ -155,62 +155,119 @@ Matches the fressh mobile app exactly:
 
 ### Navigation
 
-Bottom tab bar with four tabs:
+**Bottom action bar** (not a tab bar) — matches Fantastical's pattern, less chrome:
 
 ```
-[ Focus ]  [ List ]  [ Search ]  [ Report ]
+[ ≡ ]          [ Focus ]          [ 🔍 ]  [ + ]
 ```
 
-Settings accessible via a gear icon in the navigation bar header.
+- `≡` opens a popover sheet with view options: Focus, List, Search, Report, Settings
+- Center label shows the current view name (tappable, also opens the popover)
+- `🔍` opens Search inline
+- `+` opens the Add Task modal from anywhere
 
 ### Screen Map
 
 ```
 mobile/app/
-├── _layout.tsx                  ← root layout, font loading, store init
-├── (tabs)/
-│   ├── _layout.tsx              ← tab bar
-│   ├── index.tsx                ← Focus tab (default — next 14 days)
-│   ├── list.tsx                 ← List / ListAll (toggle)
-│   ├── search.tsx               ← Search
-│   └── report.tsx               ← Report (stats summary)
+├── _layout.tsx                  ← root layout, fonts, store init, bottom action bar
+├── focus.tsx                    ← Focus screen (default — next 14 days)
+├── list.tsx                     ← List screen (all open tasks + stats)
+├── search.tsx                   ← Search screen
+├── report.tsx                   ← Report screen (stats summary)
 ├── task/
 │   └── [line].tsx               ← Task detail sheet: edit, pri, skip, rm
 └── settings.tsx                 ← file location + iCloud toggle
 ```
 
-### Focus Screen Layout (Fantastical-inspired, Braun/Bauhaus aesthetic)
+### Focus Screen
 
-- **Header**: large `May 2026` — month in off-white, year in orange (`#E8461A`)
-- **Week strip**: horizontal scrollable row of 7 days; today's date in a filled orange circle; dots below dates indicate tasks that day
-- **Day-grouped sections**: `TODAY`, `TOMORROW`, `Thu May 23`, etc. — mirrors `focus` sort order
-- **Task rows**: orange left-edge bar for today/overdue items, gray for future; title in off-white; time right-aligned if present; monospace font for task text
+Modelled directly on Fantastical's DayTicker view.
+
+**Header:** large `May 2026` — month in off-white, year in orange (`#E8461A`)
+
+**Collapsible calendar header:**
+- Default state: scrollable week strip (7 days visible). Today in a filled orange circle. Small dots below each date indicate tasks on that day.
+- Pull the drag handle down → expands to a full month grid. Dates with tasks have dots. Tap a date to jump to that day's section in the list below.
+- Pull the handle up → collapses back to week strip.
+
+**Day-grouped list** (below the calendar header):
+- Section headers: `TODAY 5/23/26`, `TOMORROW 5/24/26`, `MON 5/25/26`, etc. — mirrors `focus` sort order
+- **Event pills**: tasks with `type:event` render as a full-width colored pill (like Fantastical's holiday pills) rather than a row
+- **Task rows**: `□` square checkbox + date/time label (gray, right-aligned) + `↻` icon if recurring + task title in monospace
+- Overdue tasks: checkbox outline in orange
 - **Swipe left**: reveals **Done** and **Delete** fast-path actions
 - **Tap**: opens `task/[line].tsx` detail sheet
 
+### List Screen
+
+Modelled on Fantastical's All Tasks view.
+
+- **Stats cards** at top: total open count, count by `+project` (one card per project tag found in the file)
+- **`+ Add Task`** inline button below the stats cards (orange text, no fill — Bauhaus restraint)
+- **Task rows**: same `□` + date label + `↻` + title pattern as Focus, but flat (no day grouping), sorted by priority then date
+- ListAll toggle (shows completed tasks) accessible via the `⋯` button in the header
+
+### Search Screen
+
+Plain text input at top, results appear below as a flat task list using the same `TaskRow` component. No day grouping.
+
+### Report Screen
+
+Summary stats: open tasks, completed today, overdue, due soon. Maps directly to `applyReport()` output.
+
 ### Task Detail Sheet
 
-Bottom sheet opened by tapping a task row. Actions:
-- **Done** — marks complete (calls `applyDone`)
-- **Edit** — inline text field replacing task text (calls `applyEdit`)
-- **Priority** — A–Z geometric picker (calls `applyPri`)
-- **Skip** — visible only for recurring tasks (calls `applySkip`)
-- **Delete** — with confirmation (calls `applyRm`)
+Bottom sheet opened by tapping any task row. Actions:
+- **Done** — marks complete (`applyDone`)
+- **Edit** — inline text field for raw task text (`applyEdit`)
+- **Priority** — A–Z geometric single-letter picker (`applyPri`)
+- **Skip** — visible only for recurring tasks (`applySkip`)
+- **Delete** — with tap-to-confirm (`applyRm`)
 
-### Add Task
+### Add Task Modal
 
-`+` FAB button (orange, bottom-right) on Focus and List screens. Opens a modal with a plain text input. Submits via `applyAdd`.
+Opened by the `+` button in the bottom action bar from any screen.
+
+**Natural language input** (primary, shown first):
+- Large plain text field: user types `call dentist tomorrow at 2pm (A)` — the app parses this into the correct todo.txt format before calling `applyAdd`
+- Special input accessory row above the keyboard: `/ : - . T` for quick date/time character entry (matches Fantastical's number/punctuation row)
+- `[ 📅 ]` icon switches to the structured form view
+
+**Structured form** ("Show More"):
+- Task text field
+- Priority picker (A–Z or None)
+- Start date + time (populates `start:`)
+- Due date (populates `due:`)
+- Recurrence picker (see below)
+- Projects / contexts (tag picker or type inline)
+
+**Recurrence picker** (maps to `frequency:` + `every:` extensions):
+
+| Picker option | Written as |
+|---|---|
+| Never | *(no extension)* |
+| Every Day | `frequency:daily` |
+| Every Week | `frequency:weekly` |
+| Every 2 Weeks | `frequency:weekly every:2` |
+| Every Month | `frequency:monthly` |
+| Custom | advanced form: frequency + every + frequency-day |
 
 ### Components
 
 ```
 mobile/src/components/
-├── TaskRow.tsx          ← shared list item (priority indicator, title, time, tags)
-├── FocusRow.tsx         ← focus variant with orange/gray left-edge bar
-├── WeekStrip.tsx        ← scrollable 7-day header strip
-├── AddTaskModal.tsx     ← text input sheet
-├── PriorityPicker.tsx   ← geometric A–Z letter picker
-└── NavBar.tsx           ← shared header with gear icon
+├── TaskRow.tsx           ← □ + date + ↻ + title; swipe actions
+├── EventPill.tsx         ← full-width pill for type:event tasks
+├── WeekStrip.tsx         ← 7-day scrollable strip with dot indicators
+├── MonthGrid.tsx         ← full month calendar grid (expanded state)
+├── CalendarHeader.tsx    ← collapsible wrapper: WeekStrip ↔ MonthGrid + drag handle
+├── StatsCard.tsx         ← count card for List screen header
+├── AddTaskModal.tsx      ← NL input + structured form (Show More)
+├── RecurrencePicker.tsx  ← Never / Every Day / … / Custom picker
+├── PriorityPicker.tsx    ← geometric A–Z single-letter picker
+├── BottomActionBar.tsx   ← ≡ | view name | 🔍 | +
+└── ViewSwitcher.tsx      ← popover sheet opened by ≡
 ```
 
 ---
