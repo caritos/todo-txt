@@ -1,0 +1,42 @@
+{
+  "name": "todo-mobile",
+  "version": "0.1.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@expo-google-fonts/jetbrains-mono": "*",
+    "chrono-node": "*",
+    "expo": "~52.0.0",
+    "expo-constants": "*",
+    "expo-file-system": "*",
+    "expo-font": "*",
+    "expo-haptics": "*",
+    "expo-linking": "*",
+    "expo-router": "*",
+    "expo-status-bar": "*",
+    "react": "18.3.1",
+    "react-native": "0.76.5",
+    "react-native-gesture-handler": "*",
+    "react-native-reanimated": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-screens": "*"
+  },
+  "devDependencies": {
+    "@babel/core": "*",
+    "@types/react": "*",
+    "babel-plugin-module-resolver": "*",
+    "jest": "*",
+    "jest-expo": "*",
+    "typescript": "*"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|chrono-node)"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Todo",
+    "slug": "todo-txt",
+    "version": "0.1.0",
+    "scheme": "todo",
+    "platforms": ["ios"],
+    "orientation": "portrait",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.caritos.todo"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
