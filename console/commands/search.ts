@@ -1,6 +1,7 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
 import { today, formatTask } from '../output';
+import { applySearch } from '../../shared/commands/search';
 
 export function searchCommand(filePath: string, termParts: string[]): void {
   if (termParts.length === 0) {
@@ -13,14 +14,14 @@ export function searchCommand(filePath: string, termParts: string[]): void {
     process.exit(1);
   }
 
-  const term = termParts.join(' ').toLowerCase();
+  const term = termParts.join(' ');
   const todayStr = today();
   const tasks = readTasks(filePath);
+  const matches = applySearch(tasks, term);
 
-  const matches = tasks.filter(t => t.raw.toLowerCase().includes(term));
   matches.forEach(t => console.log(formatTask(t, todayStr)));
 
   if (matches.length === 0) {
-    console.log(`No tasks matching "${termParts.join(' ')}".`);
+    console.log(`No tasks matching "${term}".`);
   }
 }
