@@ -1,20 +1,7 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
-import { today, addDays } from '../output';
-import type { Task } from '../../shared/parser';
-
-function countByTag(tasks: Task[], getTag: (t: Task) => string[]): Map<string, { open: number; done: number }> {
-  const map = new Map<string, { open: number; done: number }>();
-  for (const task of tasks) {
-    for (const tag of getTag(task)) {
-      const entry = map.get(tag) ?? { open: 0, done: 0 };
-      if (task.done) entry.done++;
-      else entry.open++;
-      map.set(tag, entry);
-    }
-  }
-  return map;
-}
+import { today } from '../output';
+import { applyReport } from '../../shared/commands/report';
 
 export function reportCommand(filePath: string): void {
   if (!existsSync(filePath)) {
@@ -23,29 +10,15 @@ export function reportCommand(filePath: string): void {
   }
 
   const todayStr = today();
-  const weekStart = addDays(todayStr, -6); // last 7 days including today
   const tasks = readTasks(filePath);
+  const { total, open, done, overdue, completedToday, completedThisWeek, byProject, byContext } = applyReport(tasks, todayStr);
 
-  const open = tasks.filter(t => !t.done);
-  const done = tasks.filter(t => t.done);
-
-  const overdue = open.filter(t => {
-    const due = t.extensions['due'];
-    return due !== undefined && due < todayStr;
-  }).length;
-
-  const completedToday = done.filter(t => t.completionDate === todayStr).length;
-  const completedThisWeek = done.filter(t => t.completionDate !== undefined && t.completionDate >= weekStart).length;
-
-  // Tasks section
   console.log('Tasks');
-  console.log(`  Total      ${tasks.length}`);
-  console.log(`  Open       ${open.length}`);
-  console.log(`  Done       ${done.length}`);
+  console.log(`  Total      ${total}`);
+  console.log(`  Open       ${open}`);
+  console.log(`  Done       ${done}`);
   if (overdue > 0) console.log(`  Overdue    ${overdue}`);
 
-  // By Project
-  const byProject = countByTag(tasks, t => t.projects);
   if (byProject.size > 0) {
     console.log('\nBy Project');
     for (const [proj, counts] of [...byProject.entries()].sort()) {
@@ -57,8 +30,6 @@ export function reportCommand(filePath: string): void {
     }
   }
 
-  // By Context
-  const byContext = countByTag(tasks, t => t.contexts);
   if (byContext.size > 0) {
     console.log('\nBy Context');
     for (const [ctx, counts] of [...byContext.entries()].sort()) {
@@ -67,8 +38,7 @@ export function reportCommand(filePath: string): void {
     }
   }
 
-  // Completed
-  if (done.length > 0) {
+  if (done > 0) {
     console.log('\nCompleted');
     console.log(`  Today      ${completedToday}`);
     console.log(`  This week  ${completedThisWeek}`);
