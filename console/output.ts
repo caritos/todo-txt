@@ -22,11 +22,7 @@ export function today(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function addDays(date: string, n: number): string {
-  const d = new Date(date);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
+export { addDays } from '../shared/utils';
 
 function colorPriority(p: string): string {
   if (p === 'A') return c(A.bold + A.red, `(${p})`);
