@@ -2,9 +2,13 @@
 
 > Your tasks are a file. Not a subscription, not a cloud account — a file.
 
-A fast, format-faithful [todo.txt](http://todotxt.org/) CLI with a powerful `focus` view,
+A fast, format-faithful [todo.txt](http://todotxt.org/) CLI **and iOS app** with a powerful `focus` view,
 rich recurrence rules, and zero lock-in. Your data is always a plain `.txt` file you own,
 sync however you like, and read without any app.
+
+The CLI and iOS app share all business logic — the same pure functions power both interfaces.
+Point the iOS app at the same file as your CLI (via iCloud Drive or a shared path) and they
+stay in sync automatically.
 
 ## In action
 
@@ -23,14 +27,26 @@ Overdue tasks appear in red. Priority tasks lead the line. Recurring items show 
 
 ## Install
 
+### CLI
+
 Requires [Bun](https://bun.sh).
 
 ```bash
 git clone https://github.com/caritos/todo-txt
 cd todo-txt
 bun install
-ln -s "$PWD/src/index.ts" /usr/local/bin/todo
+bun link   # registers the global `todo` command
 ```
+
+### iOS app
+
+```bash
+cd mobile
+npm install
+npx expo run:ios
+```
+
+Requires Xcode and an Apple Developer account for device builds. The simulator works without one.
 
 ## Quick start
 
