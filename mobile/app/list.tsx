@@ -41,11 +41,13 @@ export default function ListScreen() {
   }
 
   async function handleDelete(lineNum: number) {
-    const { tasks: updated } = applyRm([...tasks], [lineNum]);
-    await save(updated);
+    try {
+      const { tasks: updated } = applyRm([...tasks], [lineNum]);
+      await save(updated);
+    } catch {}
   }
 
-  const ListHeader = (
+  const ListHeader = useMemo(() => (
     <View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cards}>
         <StatsCard label="Open" count={openTasks.length} />
@@ -62,7 +64,7 @@ export default function ListScreen() {
         <Text style={styles.allToggleText}>{showAll ? 'Show open only' : 'Show all (including done)'}</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), [openTasks, projectCounts, showAll, showAddModal]);
 
   return (
     <View style={styles.screen}>
