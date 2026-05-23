@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { readTasks } from '../store';
 import { today, addDays, formatTask, formatSummary } from '../output';
-import { matchesFilters } from './list';
+import { matchesFilters } from '../../shared/commands/list';
 
 export function listallCommand(filePath: string, filters: string[]): void {
   if (!existsSync(filePath)) {
