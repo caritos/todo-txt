@@ -25,14 +25,14 @@
     "production": {
       "ios": {
         "appleId": "eladio@caritos.com",
-        "ascAppId": "YOUR_ASC_APP_ID",
+        "ascAppId": "6772774783",
         "appleTeamId": "3U8L77G9QV"
       }
     },
     "development": {
       "ios": {
         "appleId": "eladio@caritos.com",
-        "ascAppId": "YOUR_ASC_APP_ID",
+        "ascAppId": "6772774783",
         "appleTeamId": "3U8L77G9QV"
       }
     }
