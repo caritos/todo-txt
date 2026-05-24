@@ -16,6 +16,12 @@ bun run ./console/index.ts help
 
 # Mobile unit tests (Jest)
 cd mobile && npm test
+
+# Mobile: build and run on simulator / USB device / TestFlight
+mobile/scripts/sim.sh
+
+# Mobile: build and submit to App Store
+mobile/scripts/ship.sh
 ```
 
 ## Repo Structure
