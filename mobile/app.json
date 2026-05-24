@@ -8,7 +8,7 @@
     "orientation": "portrait",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.caritos.todo"
+      "bundleIdentifier": "com.caritos.todo-txt"
     },
     "plugins": [
       "expo-router"
