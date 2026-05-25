@@ -29,6 +29,11 @@ export function skipCommand(filePath: string, lineArg: string | undefined): void
     process.exit(1);
   }
 
+  if (result.removed) {
+    writeTasks(filePath, result.tasks);
+    console.log(`Skipped and removed #${lineNum}`);
+    return;
+  }
   const { tasks: updated, skippedDate, nextDate } = result;
   if (skippedDate === nextDate) {
     console.log(`Already skipping ${skippedDate} for #${lineNum}.`);

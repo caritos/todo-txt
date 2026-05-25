@@ -2,14 +2,20 @@ import { serializeTask } from '../parser';
 import type { Task } from '../parser';
 import { focusSortKey } from './focus';
 
+export type SkipResult =
+  | { tasks: Task[]; removed: true }
+  | { tasks: Task[]; removed: false; skippedDate: string; nextDate: string };
+
 export function applySkip(
   tasks: Task[],
   lineNum: number,
   todayStr: string,
-): { tasks: Task[]; skippedDate: string; nextDate: string } {
+): SkipResult {
   const task = tasks.find(t => t.line === lineNum);
   if (!task) throw new Error(`task #${lineNum} not found`);
-  if (!task.extensions['frequency']) throw new Error(`task #${lineNum} is not recurring`);
+  if (!task.extensions['frequency']) {
+    return { tasks: tasks.filter(t => t.line !== lineNum), removed: true };
+  }
 
   const skipDate = focusSortKey(task, todayStr).slice(0, 10);
 
@@ -31,5 +37,5 @@ export function applySkip(
   task.raw = serializeTask(task);
 
   const nextDate = focusSortKey(task, todayStr).slice(0, 10);
-  return { tasks, skippedDate: skipDate, nextDate };
+  return { tasks, removed: false, skippedDate: skipDate, nextDate };
 }

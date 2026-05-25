@@ -106,6 +106,7 @@ mobile/                       ← Expo Router iOS app
 - `nextWeeklyDate` in `shared/commands/focus.ts` accepts an optional `frequencyDay` param (e.g. `"W,F"`). When present, it finds the next calendar date that falls on one of those weekdays rather than advancing by 7-day intervals.
 - `rm` accepts multiple task numbers. Re-indexes remaining tasks after each removal so subsequent numbers in the same batch stay correct.
 - `done` advances `start` to the next scheduled occurrence for `frequency:weekly` and `frequency:monthly` tasks. Daily and other frequencies are left unchanged.
+- `skip` on a non-recurring task (no `frequency:` extension) removes it from the list instead of erroring. `applySkip` returns a `SkipResult` union: `{ removed: true }` or `{ removed: false; skippedDate; nextDate }`.
 - `focus` shows **overdue** tasks: regular tasks whose `start:` date is in the past, and recurring tasks whose most-recent scheduled occurrence hasn't been marked done. `overdueOccurrenceDate()` detects missed occurrences; their sort key is set to today so they sort to the top.
 - **Task line numbers** are 1-based positions in the non-empty task list (blank lines stripped by `readTasks`). They renumber on every read — `task.line` is display position, not a stable ID.
 - `WeekStrip` (mobile) starts from today and shows the next 7 days — not a fixed Sunday-to-Saturday week.

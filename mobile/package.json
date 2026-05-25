@@ -5,12 +5,14 @@
   "scripts": {
     "start": "expo start",
     "ios": "expo run:ios",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "android": "expo run:android"
   },
   "dependencies": {
     "@expo-google-fonts/jetbrains-mono": "*",
     "chrono-node": "*",
     "expo": "~52.0.0",
+    "expo-asset": "~11.0.5",
     "expo-constants": "~17.0.8",
     "expo-dev-client": "~5.0.20",
     "expo-file-system": "~18.0.12",

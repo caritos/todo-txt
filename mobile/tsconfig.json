@@ -5,8 +5,16 @@
     "verbatimModuleSyntax": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../shared/*"]
+      "@shared/*": [
+        "../shared/*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.d.ts", "expo-env.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.d.ts",
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
+  ]
 }
