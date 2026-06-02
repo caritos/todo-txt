@@ -58,10 +58,19 @@ describe('done command', () => {
     expect(stderr).toContain('no task #99');
   });
 
-  test('exits with error for non-numeric argument', () => {
-    const { stderr, code } = run(['--file', todoFile, 'done', 'abc']);
-    expect(code).toBe(1);
-    expect(stderr).toContain('Usage:');
+  test('creates and marks done a new task from text', () => {
+    const { stdout, code } = run(['--file', todoFile, 'done', "buy nina's yearbook"]);
+    expect(code).toBe(0);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toMatch(/^x \d{4}-\d{2}-\d{2} \d{4}-\d{2}-\d{2} buy nina's yearbook$/m);
+    expect(stdout).toContain("buy nina's yearbook");
+  });
+
+  test('multi-word text args joined into single task', () => {
+    const { code } = run(['--file', todoFile, 'done', 'buy', 'groceries', 'today']);
+    expect(code).toBe(0);
+    const content = readFileSync(todoFile, 'utf8');
+    expect(content).toMatch(/^x \d{4}-\d{2}-\d{2} \d{4}-\d{2}-\d{2} buy groceries today$/m);
   });
 
   test('exits with error if no argument given', () => {

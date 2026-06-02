@@ -11,6 +11,7 @@ Commands:
   listall [filters]   List all tasks including completed
   edit <n> <text>     Replace task #n's text (creation date is preserved)
   done <n>            Mark task #n complete
+  done <text>         Log ad-hoc task as already done (creates + completes in one step)
   skip <n>            Skip the upcoming occurrence of a recurring task
   rm <n>              Delete task #n permanently
   pri <n> <A-Z>       Set priority on task #n
@@ -44,6 +45,7 @@ Examples:
   todo list +backend
   todo list @work (B)
   todo done 3
+  todo done "buy nina's yearbook"
   todo pri 5 A
   todo import family.ics
   todo --file work.txt import meetings.ics

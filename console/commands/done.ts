@@ -1,16 +1,26 @@
+import { appendFileSync } from 'fs';
 import { readTasks, writeTasks } from '../store';
 import { today, formatTask } from '../output';
 import { applyDone } from '../../shared/commands/done';
 
 export function doneCommand(filePath: string, nStrs: string[]): void {
   if (nStrs.length === 0) {
-    console.error('Usage: todo done <n> [n...]');
+    console.error('Usage: todo done <n> [n...] | done <task text>');
     process.exit(1);
+  }
+
+  // If the first arg isn't a number, treat all args as ad-hoc task text to log as done
+  if (isNaN(parseInt(nStrs[0]!, 10))) {
+    const text = nStrs.join(' ');
+    const todayStr = today();
+    appendFileSync(filePath, `x ${todayStr} ${todayStr} ${text}\n`, 'utf8');
+    console.log(`Done: ${text}`);
+    return;
   }
 
   const nums = nStrs.map(s => parseInt(s, 10));
   if (nums.some(isNaN)) {
-    console.error('Usage: todo done <n> [n...]');
+    console.error('Usage: todo done <n> [n...] | done <task text>');
     process.exit(1);
   }
 
