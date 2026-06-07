@@ -55,9 +55,12 @@ export function eventCommand(filePath: string, textParts: string[]): void {
     process.exit(1);
   }
 
+  const todayStr = today();
+  if (!getExtValue(text, 'start')) {
+    text = `${text} start:${todayStr}`;
+  }
   text = injectEnd(text);
 
-  const todayStr = today();
   const normalized = text.replace(/(?:^|\s)type:(?:event|anniversary|birthday)(?=\s|$)/g, ' ').trim();
   const raw = `${todayStr} ${normalized} type:${type}`;
 

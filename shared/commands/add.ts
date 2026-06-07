@@ -64,10 +64,12 @@ function validateFrequencyThrows(text: string): void {
 
 export function buildAddRaw(text: string, todayStr: string): string {
   validateFrequencyThrows(text);
-  const priorityMatch = text.match(/^\(([A-Z])\)\s+/);
+  const exts = extractFreqExts(text);
+  const body = 'start' in exts ? text : `${text} start:${todayStr}`;
+  const priorityMatch = body.match(/^\(([A-Z])\)\s+/);
   if (priorityMatch) {
-    const rest = text.slice(priorityMatch[0].length);
+    const rest = body.slice(priorityMatch[0].length);
     return `(${priorityMatch[1]}) ${todayStr} ${rest}`;
   }
-  return `${todayStr} ${text}`;
+  return `${todayStr} ${body}`;
 }

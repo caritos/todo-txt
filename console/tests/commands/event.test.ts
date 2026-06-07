@@ -32,10 +32,10 @@ describe('event command', () => {
     expect(existsSync(todoFile)).toBe(true);
   });
 
-  test('appends event with type:event extension', () => {
+  test('appends event with start:today, end:today, and type:event', () => {
     run(['--file', todoFile, 'event', 'Team standup']);
     const content = readFileSync(todoFile, 'utf8');
-    expect(content).toMatch(/^\d{4}-\d{2}-\d{2} Team standup type:event\n$/);
+    expect(content).toMatch(/^\d{4}-\d{2}-\d{2} Team standup start:\d{4}-\d{2}-\d{2} end:\d{4}-\d{2}-\d{2} type:event\n$/);
   });
 
   test('prints confirmation with event text', () => {
@@ -98,10 +98,11 @@ describe('event command', () => {
     expect(content).toContain('end:2026-05-12');
   });
 
-  test('does not inject end: when no start: given', () => {
+  test('injects start:today and end:today when no start: given', () => {
     run(['--file', todoFile, 'event', 'Team standup']);
     const content = readFileSync(todoFile, 'utf8');
-    expect(content).not.toContain('end:');
+    expect(content).toContain('start:');
+    expect(content).toContain('end:');
   });
 
   test('exits with error for invalid start: format', () => {

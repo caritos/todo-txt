@@ -32,16 +32,16 @@ describe('add command', () => {
     expect(existsSync(todoFile)).toBe(true);
   });
 
-  test('appends task with creation date', () => {
+  test('appends task with creation date and start:today', () => {
     run(['--file', todoFile, 'add', 'Buy groceries']);
     const content = readFileSync(todoFile, 'utf8');
-    expect(content).toMatch(/^\d{4}-\d{2}-\d{2} Buy groceries\n$/);
+    expect(content).toMatch(/^\d{4}-\d{2}-\d{2} Buy groceries start:\d{4}-\d{2}-\d{2}\n$/);
   });
 
-  test('preserves priority when provided', () => {
+  test('preserves priority when provided and injects start:today', () => {
     run(['--file', todoFile, 'add', '(A) Fix critical bug']);
     const content = readFileSync(todoFile, 'utf8');
-    expect(content).toMatch(/^\(A\) \d{4}-\d{2}-\d{2} Fix critical bug\n$/);
+    expect(content).toMatch(/^\(A\) \d{4}-\d{2}-\d{2} Fix critical bug start:\d{4}-\d{2}-\d{2}\n$/);
   });
 
   test('prints confirmation with line number', () => {

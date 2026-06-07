@@ -243,6 +243,9 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
       const next = nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']);
       return next <= windowEnd || overdueOccurrenceDate(task, todayStr) !== null;
     }
+    if (frequency === 'yearly') {
+      return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']) <= windowEnd;
+    }
     return startDate <= windowEnd;
   }
 
@@ -298,6 +301,9 @@ export function focusSortKey(task: Task, todayStr: string): string {
       let d = startDate > todayStr ? startDate : todayStr;
       while (exdates.has(d)) d = addDays(d, 1);
       return d + time;
+    }
+    if (frequency === 'yearly') {
+      return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']) + time;
     }
     return (startDate > todayStr ? startDate : todayStr) + time;
   }

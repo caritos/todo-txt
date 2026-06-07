@@ -1,4 +1,5 @@
 import type { Task } from '../shared/parser';
+import { addDays } from '../shared/utils';
 
 const A = {
   reset:         '\x1b[0m',
