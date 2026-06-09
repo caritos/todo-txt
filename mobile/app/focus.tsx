@@ -8,7 +8,7 @@ import { EventPill } from '../src/components/EventPill';
 import { applyFocus } from '@shared/commands/focus';
 import { applyDone } from '@shared/commands/done';
 import { applyRm } from '@shared/commands/rm';
-import { Colors, Spacing } from '../src/theme';
+import { Colors, Fonts, Spacing } from '../src/theme';
 import { today, formatDateLabel, sectionHeader } from '../src/utils';
 import * as Haptics from 'expo-haptics';
 import type { FocusItem } from '@shared/commands/focus';
@@ -65,6 +65,9 @@ export default function FocusScreen() {
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
+            <Text style={styles.sectionCount}>
+              {section.data.length === 1 ? '1 item' : `${section.data.length} items`}
+            </Text>
           </View>
         )}
         renderItem={({ item }) => {
@@ -106,6 +109,9 @@ export default function FocusScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.md,
     paddingBottom: 4,
@@ -116,6 +122,11 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     letterSpacing: 2,
     fontWeight: '600',
+  },
+  sectionCount: {
+    fontSize: 10,
+    color: '#444444',
+    fontFamily: Fonts.mono,
   },
   empty: { padding: Spacing.xl, alignItems: 'center' },
   emptyText: { color: Colors.textSecondary, fontStyle: 'italic' },
