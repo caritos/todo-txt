@@ -37,7 +37,7 @@ function dateToISO(d: Date): string {
 
 function getTagPrefix(text: string): { type: TagSigil; partial: string } | null {
   const words = text.split(' ');
-  const last = words[words.length - 1] ?? '';
+  const last = words[words.length - 1]!;
   if (last.startsWith('+')) return { type: '+', partial: last };
   if (last.startsWith('@')) return { type: '@', partial: last };
   if (last.startsWith('%')) return { type: '%', partial: last };
@@ -141,6 +141,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
       animationType="slide"
       presentationStyle="formSheet"
       onRequestClose={handleClose}
+      onShow={() => inputRef.current?.focus()}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -184,7 +185,6 @@ export function AddTaskModal({ visible, onClose }: Props) {
               placeholderTextColor="#444444"
               value={title}
               onChangeText={setTitle}
-              autoFocus
               returnKeyType="done"
               onSubmitEditing={handleAdd}
             />
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   },
   frowLast: { borderBottomWidth: 0 },
   flabel: { fontSize: 14, color: Colors.textSecondary, flex: 1 },
-  fnone: { fontSize: 14, color: '#333333' },
+  fnone: { fontSize: 14, color: Colors.textSecondary },
   fval: { fontSize: 14, color: Colors.accent },
 
   compactPicker: { height: 34 },
