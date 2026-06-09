@@ -6,6 +6,7 @@ type View_ = { label: string; route: string };
 
 const VIEWS: View_[] = [
   { label: 'Week', route: '/focus' },
+  { label: 'Year', route: '/year' },
   { label: 'Done', route: '/done' },
   { label: 'List', route: '/list' },
   { label: 'Search', route: '/search' },
