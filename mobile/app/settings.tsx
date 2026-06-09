@@ -1,13 +1,25 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { useState } from 'react';
 import { useTasks } from '../src/context/TaskContext';
 import { setFilePath } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import * as FileSystem from 'expo-file-system';
 
-const ICLOUD_PATH = FileSystem.documentDirectory
-  ? `${FileSystem.documentDirectory}../Library/Mobile Documents/iCloud~com~apple~CloudDocs/todo.txt`
-  : null;
+// On simulator, documentDirectory is inside CoreSimulator and the relative path doesn't reach
+// the real iCloud Drive. Use the Mac's actual iCloud Drive path directly instead.
+const IS_SIMULATOR = Platform.OS === 'ios' && !Platform.isPad && __DEV__ &&
+  (FileSystem.documentDirectory ?? '').includes('CoreSimulator');
+
+const ICLOUD_PATH = (() => {
+  if (!FileSystem.documentDirectory) return null;
+  if (IS_SIMULATOR) {
+    // Extract the Mac username from documentDirectory and build the real Mac iCloud path
+    const match = (FileSystem.documentDirectory).match(/^file:\/\/\/Users\/([^/]+)\//);
+    if (!match) return null;
+    return `file:///Users/${match[1]}/Library/Mobile%20Documents/com~apple~CloudDocs/todo.txt`;
+  }
+  return `${FileSystem.documentDirectory}../Library/Mobile Documents/iCloud~com~apple~CloudDocs/todo.txt`;
+})();
 
 export default function SettingsScreen() {
   const { filePath, reload } = useTasks();
