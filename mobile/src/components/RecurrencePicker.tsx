@@ -22,6 +22,10 @@ export function recurrenceExtensions(value: RecurrenceValue): string {
   return OPTIONS.find(o => o.value === value)?.extensions ?? '';
 }
 
+export function recurrenceLabel(value: RecurrenceValue): string {
+  return OPTIONS.find(o => o.value === value)?.label ?? 'Never';
+}
+
 type Props = {
   value: RecurrenceValue;
   onChange: (value: RecurrenceValue) => void;
