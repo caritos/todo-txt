@@ -1,4 +1,4 @@
-import { View, Text, SectionList, StyleSheet } from 'react-native';
+import { View, Text, SectionList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react';
 import { useTasks } from '../src/context/TaskContext';
@@ -64,7 +64,9 @@ export default function FocusScreen() {
         keyExtractor={item => String(item.task.line)}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <TouchableOpacity onPress={() => router.push(`/day/${section.date}` as any)}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            </TouchableOpacity>
             <Text style={styles.sectionCount}>
               {section.data.length === 1 ? '1 item' : `${section.data.length} items`}
             </Text>
