@@ -6,7 +6,7 @@ import { ViewSwitcher } from './ViewSwitcher';
 import { AddTaskModal } from './AddTaskModal';
 
 const ROUTE_LABELS: Record<string, string> = {
-  '/focus': 'Focus',
+  '/focus': 'Week',
   '/list': 'List',
   '/search': 'Search',
   '/report': 'Report',
@@ -19,7 +19,7 @@ export function BottomActionBar() {
   const [switcherVisible, setSwitcherVisible] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
 
-  const label = ROUTE_LABELS[pathname] ?? 'Focus';
+  const label = ROUTE_LABELS[pathname] ?? 'Week';
 
   return (
     <>

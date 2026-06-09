@@ -5,7 +5,7 @@ import { Colors, Spacing } from '../theme';
 type View_ = { label: string; route: string };
 
 const VIEWS: View_[] = [
-  { label: 'Focus', route: '/focus' },
+  { label: 'Week', route: '/focus' },
   { label: 'List', route: '/list' },
   { label: 'Search', route: '/search' },
   { label: 'Report', route: '/report' },
