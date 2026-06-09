@@ -31,11 +31,10 @@ export default function SettingsScreen() {
       return;
     }
     setPathInput(ICLOUD_PATH);
-    Alert.alert(
-      'iCloud Path Set',
-      'The path has been populated. Tap Save to apply. Make sure iCloud Drive is enabled on this device.',
-      [{ text: 'OK' }]
-    );
+    await setFilePath(ICLOUD_PATH);
+    await reload();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   return (
