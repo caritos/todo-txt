@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
@@ -11,18 +11,12 @@ const START_HOUR = 6;
 const END_HOUR = 22;
 const TIMELINE_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT; // 960
 const LABEL_WIDTH = 52;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COL_WIDTH = Math.floor((SCREEN_WIDTH - LABEL_WIDTH) / 7);
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
-}
 
 function taskTime(task: Task): { hours: number; minutes: number } | null {
   const start = task.extensions['start'];
@@ -49,18 +43,17 @@ function cleanTitle(text: string): string {
 }
 
 export default function TimelineScreen() {
+  const { width: screenWidth } = useWindowDimensions();
+  const colWidth = Math.floor((screenWidth - LABEL_WIDTH) / 7);
   const { tasks } = useTasks();
   const scrollRef = useRef<ScrollView>(null);
   const todayStr = today();
   const [anchorDate, setAnchorDate] = useState(todayStr);
 
   const { sundayStr, weekDates } = useMemo(() => {
-    const d = new Date(anchorDate + 'T12:00:00');
-    const dow = d.getDay(); // 0 = Sunday
-    const sun = new Date(d);
-    sun.setDate(d.getDate() - dow);
-    const s = `${sun.getFullYear()}-${pad(sun.getMonth() + 1)}-${pad(sun.getDate())}`;
-    return { sundayStr: s, weekDates: Array.from({ length: 7 }, (_, i) => addDays(s, i)) };
+    const dow = new Date(anchorDate + 'T12:00:00').getDay();
+    const sundayStr = addDays(anchorDate, -dow);
+    return { sundayStr, weekDates: Array.from({ length: 7 }, (_, i) => addDays(sundayStr, i)) };
   }, [anchorDate]);
 
   const weekContainsToday = weekDates.includes(todayStr);
@@ -94,6 +87,12 @@ export default function TimelineScreen() {
       bucket.timed.sort((a, b) => {
         const ta = taskTime(a)!, tb = taskTime(b)!;
         return ta.hours * 60 + ta.minutes - (tb.hours * 60 + tb.minutes);
+      });
+      bucket.allDay.sort((a, b) => {
+        const pa = a.priority ?? 'ZZZ';
+        const pb = b.priority ?? 'ZZZ';
+        if (pa !== pb) return pa.localeCompare(pb);
+        return a.line - b.line;
       });
     }
     return { tasksPerDay: perDay, busyCounts: counts };
@@ -142,7 +141,7 @@ export default function TimelineScreen() {
           const isToday = dateStr === todayStr;
           const dot = dotStyle(dateStr);
           return (
-            <View key={dateStr} style={[styles.stripCell, { width: COL_WIDTH }]}>
+            <View key={dateStr} style={[styles.stripCell, { width: colWidth }]}>
               <Text style={styles.stripDayName}>{DAY_NAMES[i]}</Text>
               <View style={[styles.stripDayBox, isToday && styles.stripDayBoxToday]}>
                 <Text style={[styles.stripDayNum, isToday && styles.stripDayNumToday]}>
@@ -167,7 +166,7 @@ export default function TimelineScreen() {
           {weekDates.map(dateStr => {
             const allDay = tasksPerDay.get(dateStr)?.allDay ?? [];
             return (
-              <View key={dateStr} style={[styles.allDayCell, { width: COL_WIDTH }]}>
+              <View key={dateStr} style={[styles.allDayCell, { width: colWidth }]}>
                 {allDay.slice(0, 2).map(t => (
                   <View key={t.line} style={styles.allDayChip}>
                     <Text style={styles.allDayChipText} numberOfLines={1}>{cleanTitle(t.text)}</Text>
@@ -209,7 +208,7 @@ export default function TimelineScreen() {
 
               {/* Today column highlight */}
               {todayColIndex >= 0 && (
-                <View style={[styles.todayBg, { left: todayColIndex * COL_WIDTH, width: COL_WIDTH }]} />
+                <View style={[styles.todayBg, { left: todayColIndex * colWidth, width: colWidth }]} />
               )}
 
               {/* Current time line — only when today is in the displayed week */}
@@ -224,7 +223,7 @@ export default function TimelineScreen() {
               {weekDates.map((dateStr, colIndex) => {
                 const timed = tasksPerDay.get(dateStr)?.timed ?? [];
                 return (
-                  <View key={dateStr} style={[styles.column, { left: colIndex * COL_WIDTH, width: COL_WIDTH }]}>
+                  <View key={dateStr} style={[styles.column, { left: colIndex * colWidth, width: colWidth }]}>
                     {timed.map(task => {
                       const t = taskTime(task)!;
                       const rawTop = topOffset(t.hours, t.minutes);
