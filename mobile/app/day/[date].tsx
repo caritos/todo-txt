@@ -35,8 +35,10 @@ function cleanTitle(text: string): string {
 function taskTime(task: Task): { hours: number; minutes: number } | null {
   const start = task.extensions['start'];
   if (!start || start.length <= 10) return null;
-  const [hStr, mStr] = start.slice(11, 16).split(':');
-  return { hours: parseInt(hStr ?? '0', 10), minutes: parseInt(mStr ?? '0', 10) };
+  const timePart = start.slice(11, 16);
+  if (!/^\d{2}:\d{2}$/.test(timePart)) return null;
+  const [hStr, mStr] = timePart.split(':');
+  return { hours: parseInt(hStr!, 10), minutes: parseInt(mStr!, 10) };
 }
 
 function topOffset(hours: number, minutes: number): number {
@@ -56,7 +58,7 @@ export default function DayScreen() {
   const todayStr = today();
   const scrollRef = useRef<ScrollView>(null);
 
-  const dateStr = (Array.isArray(date) ? date[0] : date) ?? todayStr;
+  const dateStr = date ?? todayStr;
   const isToday = dateStr === todayStr;
 
   useEffect(() => {
@@ -142,7 +144,7 @@ export default function DayScreen() {
           ))}
 
           {showNow && (
-            <View style={[styles.nowLine, { top: nowTopValue! }]}>
+            <View style={[styles.nowLine, { top: nowTopValue }]}>
               <View style={styles.nowDot} />
               <View style={styles.nowBar} />
             </View>
@@ -150,8 +152,9 @@ export default function DayScreen() {
 
           {timed.map(task => {
             const t = taskTime(task)!;
-            const top = topOffset(t.hours, t.minutes) + 2;
-            if (top < 0 || top > TIMELINE_HEIGHT) return null;
+            const rawTop = topOffset(t.hours, t.minutes);
+            if (rawTop < 0 || rawTop > TIMELINE_HEIGHT) return null;
+            const top = rawTop + 2;
             return (
               <View key={task.line} style={[styles.eventPill, { top, left: LABEL_WIDTH, right: 8 }]}>
                 <Text style={styles.eventTime}>{formatTime(t.hours, t.minutes)}</Text>
