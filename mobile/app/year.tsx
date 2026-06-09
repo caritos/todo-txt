@@ -148,6 +148,6 @@ const styles = StyleSheet.create({
   dayNumPast: { color: '#444444' },
   dayNumTodayText: { color: '#ffffff', fontWeight: '700' },
   dot: { backgroundColor: Colors.accent, marginTop: 2 },
-  dotPlaceholder: { height: 6, marginTop: 2 },
+  dotPlaceholder: { height: 8, marginTop: 2 },
   monthSep: { height: 1, backgroundColor: '#222222', marginHorizontal: 12 },
 });
