@@ -9,28 +9,9 @@ import { applyFocus } from '@shared/commands/focus';
 import { applyDone } from '@shared/commands/done';
 import { applyRm } from '@shared/commands/rm';
 import { Colors, Spacing } from '../src/theme';
-import { today, formatDateLabel } from '../src/utils';
+import { today, formatDateLabel, sectionHeader } from '../src/utils';
 import * as Haptics from 'expo-haptics';
 import type { FocusItem } from '@shared/commands/focus';
-
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function sectionHeader(dateStr: string, todayStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00');
-  const tomorrowDate = new Date(todayStr + 'T12:00:00');
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrowStr = isoDate(tomorrowDate);
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
-  const yr = d.getFullYear().toString().slice(2);
-  if (dateStr === todayStr) return `TODAY  ${m}/${day}/${yr}`;
-  if (dateStr === tomorrowStr) return `TOMORROW  ${m}/${day}/${yr}`;
-  return `${DAY_NAMES[d.getDay()]!.toUpperCase()}  ${m}/${day}/${yr}`;
-}
 
 type Section = { title: string; date: string; data: FocusItem[] };
 
