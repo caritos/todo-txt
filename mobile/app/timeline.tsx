@@ -193,7 +193,7 @@ export default function TimelineScreen() {
           <View style={{ height: TIMELINE_HEIGHT, position: 'relative' }}>
             {/* Time label column */}
             <View style={styles.labelCol}>
-              {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR).map(hour => (
+              {Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR).map(hour => (
                 <View key={hour} style={[styles.hourLabelCell, { top: (hour - START_HOUR) * HOUR_HEIGHT }]}>
                   <Text style={styles.hourLabelText}>{hourLabel(hour)}</Text>
                 </View>
@@ -203,7 +203,7 @@ export default function TimelineScreen() {
             {/* Grid: hour lines + today highlight + time line + columns */}
             <View style={[styles.grid, { left: LABEL_WIDTH }]}>
               {/* Hour lines spanning all columns */}
-              {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR).map(hour => (
+              {Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR).map(hour => (
                 <View key={hour} style={[styles.hourLine, { top: (hour - START_HOUR) * HOUR_HEIGHT }]} />
               ))}
 
