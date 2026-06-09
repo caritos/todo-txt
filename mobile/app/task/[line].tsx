@@ -115,6 +115,9 @@ export default function TaskDetail() {
     <ScrollView style={styles.sheet} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.handleRow}>
         <View style={styles.handle} />
+        <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+          <Text style={styles.closeText}>✕</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.titleRow}>
@@ -164,8 +167,10 @@ function ActionButton({ label, color, onPress }: { label: string; color: string;
 
 const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: Colors.surface },
-  handleRow: { alignItems: 'center', paddingVertical: Spacing.sm },
+  handleRow: { alignItems: 'center', paddingVertical: Spacing.sm, position: 'relative' },
   handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.separator },
+  closeBtn: { position: 'absolute', right: Spacing.md, top: 0, bottom: 0, justifyContent: 'center', padding: Spacing.sm },
+  closeText: { fontSize: 16, color: Colors.textSecondary },
   titleRow: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.md },
   title: { fontFamily: Fonts.mono, fontSize: 16, color: Colors.text, lineHeight: 22 },
   editInput: {
