@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useTasks } from '../src/context/TaskContext';
 import { Colors, Spacing } from '../src/theme';
 import { today } from '../src/utils';
@@ -29,6 +29,10 @@ export default function YearScreen() {
   const todayYear = parseInt(todayStr.slice(0, 4), 10);
   const [year, setYear] = useState(todayYear);
 
+  const scrollRef = useRef<ScrollView>(null);
+  const monthOffsets = useRef<number[]>([]);
+  const todayMonthIndex = parseInt(todayStr.slice(5, 7), 10) - 1;
+
   const busyCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of tasks) {
@@ -53,7 +57,7 @@ export default function YearScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll}>
         {MONTH_NAMES.map((monthName, monthIndex) => {
           const firstDay = new Date(year, monthIndex, 1).getDay();
           const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
@@ -64,7 +68,15 @@ export default function YearScreen() {
           while (cells.length % 7 !== 0) cells.push(null);
 
           return (
-            <View key={monthIndex}>
+            <View
+              key={monthIndex}
+              onLayout={(e) => {
+                monthOffsets.current[monthIndex] = e.nativeEvent.layout.y;
+                if (monthIndex === todayMonthIndex && year === todayYear) {
+                  scrollRef.current?.scrollTo({ y: e.nativeEvent.layout.y, animated: false });
+                }
+              }}
+            >
               <View style={styles.monthBlock}>
                 <Text style={styles.monthTitle}>{monthName.toUpperCase()}</Text>
                 <View style={styles.weekRow}>

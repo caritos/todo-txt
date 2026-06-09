@@ -83,6 +83,12 @@ export default function DayScreen() {
       if (taskTime(t)) timed.push(t);
       else allDay.push(t);
     }
+    allDay.sort((a, b) => {
+      const pa = a.priority ?? 'ZZZ';
+      const pb = b.priority ?? 'ZZZ';
+      if (pa !== pb) return pa.localeCompare(pb);
+      return a.line - b.line;
+    });
     timed.sort((a, b) => {
       const ta = taskTime(a)!;
       const tb = taskTime(b)!;
