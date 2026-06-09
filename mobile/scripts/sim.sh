@@ -145,7 +145,12 @@ build_args+=(build)
 
 echo "Building..."
 if command -v xcpretty > /dev/null 2>&1; then
-  RCT_NO_LAUNCH_PACKAGER=true xcodebuild "${build_args[@]}" 2>&1 | xcpretty
+  # xcpretty exits non-zero on warnings even when build succeeds; check xcodebuild's exit via PIPESTATUS
+  RCT_NO_LAUNCH_PACKAGER=true xcodebuild "${build_args[@]}" 2>&1 | xcpretty; xcode_status=${PIPESTATUS[0]}
+  if [[ $xcode_status -ne 0 ]]; then
+    echo "Build failed (xcodebuild exit $xcode_status)"
+    exit $xcode_status
+  fi
 else
   RCT_NO_LAUNCH_PACKAGER=true xcodebuild "${build_args[@]}" > /tmp/todo-build.log 2>&1 || {
     echo "Build failed. Log: /tmp/todo-build.log"
