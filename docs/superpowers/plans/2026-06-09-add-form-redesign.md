@@ -167,16 +167,21 @@ function dateToISO(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function getTagPrefix(text: string): { type: '+' | '@'; partial: string } | null {
+type TagSigil = '+' | '@' | '%' | '~';
+
+function getTagPrefix(text: string): { type: TagSigil; partial: string } | null {
   const words = text.split(' ');
   const last = words[words.length - 1] ?? '';
   if (last.startsWith('+')) return { type: '+', partial: last };
   if (last.startsWith('@')) return { type: '@', partial: last };
+  if (last.startsWith('%')) return { type: '%', partial: last };
+  if (last.startsWith('~')) return { type: '~', partial: last };
   return null;
 }
 
-function collectTags(tasks: Task[], type: '+' | '@', partial: string): string[] {
-  const regex = type === '+' ? /\+\S+/g : /@\S+/g;
+function collectTags(tasks: Task[], type: TagSigil, partial: string): string[] {
+  const escaped = type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`${escaped}\\S+`, 'g');
   const set = new Set<string>();
   for (const t of tasks) {
     for (const m of t.text.matchAll(regex)) set.add(m[0]);
@@ -200,7 +205,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
   const [error, setError] = useState('');
 
   const tagPrefix = getTagPrefix(title);
-  const suggestions = tagPrefix ? collectTags(tasks, tagPrefix.type, tagPrefix.partial) : [];
+  const suggestions: string[] = tagPrefix ? collectTags(tasks, tagPrefix.type, tagPrefix.partial) : [];
 
   function reset() {
     setAddType('task');
