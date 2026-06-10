@@ -44,8 +44,16 @@ export function TaskRow({ task, dateLabel, recurrenceLabel, isOverdue, onPress, 
       <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
         <View style={[styles.checkbox, isOverdue && styles.checkboxOverdue]} />
         <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={3}>{title}</Text>
-          {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+          <Text style={[styles.title, isOverdue && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
+          {isOverdue ? (
+            <Text style={styles.meta}>
+              {dateLabel ? <Text style={styles.metaStrike}>{dateLabel}</Text> : null}
+              <Text style={styles.metaOverdue}>{dateLabel ? ' ↑ overdue' : '↑ overdue'}</Text>
+              {recurrenceLabel ? <Text>{'   '}{recurrenceLabel}</Text> : null}
+            </Text>
+          ) : (
+            meta ? <Text style={styles.meta}>{meta}</Text> : null
+          )}
         </View>
         {task.priority ? (
           <Text style={styles.priority}>{task.priority}</Text>
@@ -82,7 +90,10 @@ const styles = StyleSheet.create({
     color: Colors.text,
     lineHeight: 19,
   },
+  titleOverdue: { color: Colors.accent },
   meta: { fontSize: 11, color: Colors.textSecondary, letterSpacing: 0.2 },
+  metaStrike: { fontSize: 11, color: '#555555', textDecorationLine: 'line-through', letterSpacing: 0.2 },
+  metaOverdue: { fontSize: 11, color: Colors.accent, letterSpacing: 0.2 },
   priority: { fontSize: 11, color: Colors.accent, fontWeight: '700', marginTop: 2, flexShrink: 0 },
   actions: { flexDirection: 'row' },
   actionBtn: { justifyContent: 'center', paddingHorizontal: Spacing.md, minWidth: 72 },
