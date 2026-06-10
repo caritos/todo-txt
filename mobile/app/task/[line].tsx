@@ -150,6 +150,7 @@ export default function TaskDetail() {
           <ActionButton label="Skip" color={Colors.textSecondary} onPress={handleSkip} />
         )}
         <ActionButton label="Delete" color={Colors.actionDelete} onPress={handleDelete} />
+        <ActionButton label="Cancel" color={Colors.textSecondary} onPress={() => router.back()} />
       </View>
 
       <Text style={styles.rawText}>{task.raw}</Text>

@@ -1,8 +1,7 @@
 import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Colors, Spacing } from '../theme';
 
-const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-                 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
 type Props = {
   value?: string;
