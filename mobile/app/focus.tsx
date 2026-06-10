@@ -1,6 +1,6 @@
 import { View, Text, SectionList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useTasks } from '../src/context/TaskContext';
 import { CalendarHeader } from '../src/components/CalendarHeader';
 import { TaskRow } from '../src/components/TaskRow';
@@ -20,6 +20,7 @@ export default function FocusScreen() {
   const router = useRouter();
   const todayStr = today();
   const [selectedDate, setSelectedDate] = useState(todayStr);
+  const listRef = useRef<SectionList>(null);
 
   const { sections, dotDates } = useMemo(() => {
     const items = applyFocus(tasks, todayStr);
@@ -51,15 +52,24 @@ export default function FocusScreen() {
     await save(updated);
   }
 
+  function handleSelectDate(date: string) {
+    setSelectedDate(date);
+    const sectionIndex = sections.findIndex(s => s.date === date);
+    if (sectionIndex >= 0) {
+      listRef.current?.scrollToLocation({ sectionIndex, itemIndex: 0, animated: true, viewOffset: 0 });
+    }
+  }
+
   return (
     <View style={styles.screen}>
       <CalendarHeader
         today={todayStr}
         selectedDate={selectedDate}
         dotDates={dotDates}
-        onSelectDate={setSelectedDate}
+        onSelectDate={handleSelectDate}
       />
       <SectionList
+        ref={listRef}
         sections={sections}
         keyExtractor={item => String(item.task.line)}
         renderSectionHeader={({ section }) => (
@@ -103,6 +113,7 @@ export default function FocusScreen() {
         )}
         contentContainerStyle={{ paddingBottom: 120 }}
         stickySectionHeadersEnabled
+        onScrollToIndexFailed={() => {}}
       />
     </View>
   );
