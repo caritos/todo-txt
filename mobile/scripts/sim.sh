@@ -138,8 +138,7 @@ derived_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -
 build_args=(-workspace "$workspace" -configuration "$config" -scheme "$scheme" -destination "id=$udid")
 if [[ -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
   echo "Native dependencies changed — clearing DerivedData..."
-  local dd=(~/Library/Developer/Xcode/DerivedData/${scheme}-*(N))
-  [[ -e ${dd[1]-} ]] && rm -rf "${dd[@]}"
+  rm -rf ~/Library/Developer/Xcode/DerivedData/${scheme}-*(N) 2>/dev/null || true
   build_args+=(clean)
 fi
 build_args+=(build)
