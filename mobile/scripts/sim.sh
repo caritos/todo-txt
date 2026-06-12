@@ -101,7 +101,7 @@ if [[ "$type" == "device" ]]; then
   echo "Building and installing on: $label ($udid)"
   echo "No build credits used — builds locally with Xcode."
   echo ""
-  npx expo run:ios --udid "$udid"
+  npx expo run:ios --device "$udid"
   exit 0
 fi
 
@@ -139,5 +139,5 @@ if [[ "$config_choice" == "2" ]]; then
   echo "App launched in Release mode — ready for screenshots."
 else
   # Debug: expo run:ios handles build + Metro + launch in one step
-  npx expo run:ios --udid "$udid"
+  npx expo run:ios --device "$udid"
 fi
