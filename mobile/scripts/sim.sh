@@ -16,7 +16,7 @@ if [[ ! -d ios ]]; then
 fi
 
 # Ensure pods are installed/synced
-if ! grep -q "EXDevLauncher" ios/Podfile.lock 2>/dev/null; then
+if ! grep -q "expo-dev-client" ios/Podfile.lock 2>/dev/null; then
   echo "Syncing CocoaPods..."
   (cd ios && pod install)
 fi
@@ -138,7 +138,8 @@ derived_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -
 build_args=(-workspace "$workspace" -configuration "$config" -scheme "$scheme" -destination "id=$udid")
 if [[ -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
   echo "Native dependencies changed — clearing DerivedData..."
-  rm -rf ~/Library/Developer/Xcode/DerivedData/${scheme}-*(N)
+  local dd=(~/Library/Developer/Xcode/DerivedData/${scheme}-*(N))
+  [[ -e ${dd[1]-} ]] && rm -rf "${dd[@]}"
   build_args+=(clean)
 fi
 build_args+=(build)
