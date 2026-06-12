@@ -105,83 +105,39 @@ if [[ "$type" == "device" ]]; then
   exit 0
 fi
 
-# ---- Simulator path — local Xcode build ----
-bundle_id=$(node -e "console.log(require('./app.json').expo.ios.bundleIdentifier)")
-
+# ---- Simulator path ----
 echo ""
 echo "Build configuration:"
 echo ""
-echo "  1) Debug   — dev build with Metro (default)"
-echo "  2) Release — production build for screenshots (no dev overlay)"
+echo "  1) Debug   — dev build, live reload (default)"
+echo "  2) Release — standalone build for screenshots (no dev overlay)"
 echo ""
 read "config_choice?Choice [1-2, default 1]: "
 
+echo ""
+echo "Deploying to: $label ($udid)"
+echo ""
+
 if [[ "$config_choice" == "2" ]]; then
-  config="Release"
-else
-  config="Debug"
-fi
-
-echo ""
-echo "Deploying to: $label ($udid) [$config]"
-echo ""
-
-# Remove stale install
-xcrun simctl uninstall "$udid" "$bundle_id" 2>/dev/null || true
-
-# Workspace and scheme
-workspace=$(find ios -name "*.xcworkspace" -maxdepth 1 | head -1)
-scheme=$(basename "$workspace" .xcworkspace)
-
-# Clean build if DerivedData is missing or Podfile.lock changed
-derived_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/${config}-iphonesimulator/*" 2>/dev/null | head -1)
-build_args=(-workspace "$workspace" -configuration "$config" -scheme "$scheme" -destination "id=$udid")
-if [[ -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
-  echo "Native dependencies changed — clearing DerivedData..."
-  rm -rf ~/Library/Developer/Xcode/DerivedData/${scheme}-*(N) 2>/dev/null || true
-  build_args+=(clean)
-fi
-build_args+=(build)
-
-echo "Building..."
-if command -v xcpretty > /dev/null 2>&1; then
-  # xcpretty exits non-zero on warnings even when build succeeds; check xcodebuild's exit via PIPESTATUS
-  RCT_NO_LAUNCH_PACKAGER=true xcodebuild "${build_args[@]}" 2>&1 | xcpretty; xcode_status=${PIPESTATUS[0]}
-  if [[ $xcode_status -ne 0 ]]; then
-    echo "Build failed (xcodebuild exit $xcode_status)"
-    exit $xcode_status
-  fi
-else
-  RCT_NO_LAUNCH_PACKAGER=true xcodebuild "${build_args[@]}" > /tmp/todo-build.log 2>&1 || {
+  # Release: bundle JS at build time, no Metro needed
+  bundle_id=$(node -e "console.log(require('./app.json').expo.ios.bundleIdentifier)")
+  workspace=$(find ios -name "*.xcworkspace" -maxdepth 1 | head -1)
+  scheme=$(basename "$workspace" .xcworkspace)
+  xcrun simctl uninstall "$udid" "$bundle_id" 2>/dev/null || true
+  echo "Building Release..."
+  RCT_NO_LAUNCH_PACKAGER=true xcodebuild \
+    -workspace "$workspace" -scheme "$scheme" \
+    -configuration Release -destination "id=$udid" \
+    clean build > /tmp/todo-build.log 2>&1 || {
     echo "Build failed. Log: /tmp/todo-build.log"
     exit 1
   }
-  echo "Build succeeded"
-fi
-
-# Install built app onto the chosen simulator
-built_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/${config}-iphonesimulator/*" 2>/dev/null | head -1)
-if [[ -z "$built_app" ]]; then
-  echo "No .app found after build."
-  exit 1
-fi
-echo "Installing on $label..."
-xcrun simctl install "$udid" "$built_app"
-
-if [[ "$config" == "Release" ]]; then
+  built_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/Release-iphonesimulator/*" 2>/dev/null | head -1)
+  [[ -z "$built_app" ]] && { echo "No .app found after build."; exit 1; }
+  xcrun simctl install "$udid" "$built_app"
   xcrun simctl launch "$udid" "$bundle_id"
-  echo ""
-  echo "App launched in Release mode. No dev overlay — ready for screenshots."
+  echo "App launched in Release mode — ready for screenshots."
 else
-  # Kill any stale Metro on port 8081
-  lsof -ti tcp:8081 | xargs kill -9 2>/dev/null || true
-
-  (
-    until curl -sf http://localhost:8081/status > /dev/null 2>&1; do sleep 1; done
-    echo "Opening on $label..."
-    xcrun simctl openurl "$udid" "${bundle_id}://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
-  ) &
-
-  # Start Metro in the foreground (Ctrl+C to stop)
-  npx expo start --dev-client
+  # Debug: expo run:ios handles build + Metro + launch in one step
+  npx expo run:ios --udid "$udid"
 fi
