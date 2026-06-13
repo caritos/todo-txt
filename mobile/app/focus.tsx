@@ -99,7 +99,7 @@ export default function FocusScreen() {
               task={item.task}
               dateLabel={dateLabel}
               recurrenceLabel={item.recurrenceLabel || undefined}
-              isOverdue={item.effectiveDate.slice(0, 10) < todayStr}
+              isOverdue={item.isOverdue}
               onPress={() => router.push(`/task/${item.task.line}` as any)}
               onDone={() => handleDone(item.task.line)}
               onDelete={() => handleDelete(item.task.line)}

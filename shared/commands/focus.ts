@@ -308,7 +308,10 @@ export function focusSortKey(task: Task, todayStr: string): string {
     return (startDate > todayStr ? startDate : todayStr) + time;
   }
 
-  if (start) return start.slice(0, 16);
+  if (start) {
+    if (start.slice(0, 10) < todayStr) return todayStr + time;
+    return start.slice(0, 16);
+  }
 
   const due = task.extensions['due'];
   if (due) return due;
@@ -392,6 +395,7 @@ export type FocusItem = {
   effectiveDate: string;
   recurrenceLabel: string;
   streak: number;
+  isOverdue: boolean;
 };
 
 export function applyFocus(tasks: Task[], todayStr: string): FocusItem[] {
@@ -438,11 +442,18 @@ export function applyFocus(tasks: Task[], todayStr: string): FocusItem[] {
 
   return focused.map(t => {
     const et = effToday(t);
+    const start = t.extensions['start'];
+    const frequency = t.extensions['frequency'];
+    const isOverdue = !t.extensions['type'] && !!(
+      (start && !frequency && start.slice(0, 10) < et) ||
+      (start && frequency && overdueOccurrenceDate(t, et) !== null)
+    );
     return {
       task: t,
       effectiveDate: focusSortKey(t, et),
       recurrenceLabel: focusNextRecurrence(t, et),
-      streak: t.extensions['frequency'] ? computeStreak(t, tasks, todayStr) : 0,
+      streak: frequency ? computeStreak(t, tasks, todayStr) : 0,
+      isOverdue,
     };
   });
 }
