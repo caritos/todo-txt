@@ -27,7 +27,7 @@ export default function FocusScreen() {
     const dots = new Set(items.map(fi => fi.effectiveDate.slice(0, 10)));
     const byDate = new Map<string, FocusItem[]>();
     for (const item of items) {
-      const date = item.effectiveDate.slice(0, 10);
+      const date = item.isOverdue ? todayStr : item.effectiveDate.slice(0, 10);
       if (!byDate.has(date)) byDate.set(date, []);
       byDate.get(date)!.push(item);
     }

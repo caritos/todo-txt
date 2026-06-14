@@ -308,10 +308,7 @@ export function focusSortKey(task: Task, todayStr: string): string {
     return (startDate > todayStr ? startDate : todayStr) + time;
   }
 
-  if (start) {
-    if (start.slice(0, 10) < todayStr) return todayStr + time;
-    return start.slice(0, 16);
-  }
+  if (start) return start.slice(0, 16);
 
   const due = task.extensions['due'];
   if (due) return due;
