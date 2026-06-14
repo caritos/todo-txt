@@ -7,6 +7,7 @@ import { AddTaskModal } from './AddTaskModal';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/focus': 'Week',
+  '/timeline': 'Timeline',
   '/year': 'Year',
   '/done': 'Done',
   '/list': 'List',
