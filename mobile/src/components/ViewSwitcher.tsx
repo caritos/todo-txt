@@ -6,8 +6,8 @@ import { useTasks } from '../context/TaskContext';
 type View_ = { label: string; route: string };
 
 const VIEWS: View_[] = [
-  { label: 'Week', route: '/timeline' },
   { label: 'Day', route: '/day' },
+  { label: 'Week', route: '/timeline' },
   { label: 'Year', route: '/year' },
   { label: 'Done', route: '/done' },
   { label: 'Settings', route: '/settings' },

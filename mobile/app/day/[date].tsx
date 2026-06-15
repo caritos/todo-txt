@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useMemo, useRef, useEffect } from 'react';
@@ -7,13 +7,16 @@ import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today } from '../../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
-import { taskOccurrence, applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
+import { applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
+import { applyDone } from '@shared/commands/done';
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
 const END_HOUR = 22;
 const TIMELINE_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 const LABEL_WIDTH = 52;
+const TIMELINE_RIGHT_PAD = 8;
+const TIMELINE_WIDTH = Dimensions.get('window').width - LABEL_WIDTH - TIMELINE_RIGHT_PAD;
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -52,7 +55,7 @@ function formatTime(hours: number, minutes: number): string {
 export default function DayScreen() {
   const router = useRouter();
   const { date, direction } = useLocalSearchParams<{ date: string; direction?: string }>();
-  const { tasks, setSelectedDate } = useTasks();
+  const { tasks, save, setSelectedDate } = useTasks();
   const todayStr = today();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -76,17 +79,14 @@ export default function DayScreen() {
 
   const { allDay, timed } = useMemo(() => {
     const allDay: Task[] = [];
-    const timed: Task[] = [];
-    // Use at least a 14-day window (same as the console) so overdue recurring tasks pass
-    // isInFocusWindow even when their next scheduled occurrence is after dateStr.
-    // Extend further when viewing a date beyond that window.
+    const raw: Array<{ task: Task; time: string }> = [];
     const minWindow = addDays(todayStr, 14);
     const windowEnd = dateStr > minWindow ? dateStr : minWindow;
     const items = applyFocusForWindow(tasks, todayStr, windowEnd);
     for (const item of items) {
       const occ = focusItemOccurrence(item);
       if (occ.date !== dateStr) continue;
-      if (occ.time) timed.push(item.task);
+      if (occ.time) raw.push({ task: item.task, time: occ.time });
       else allDay.push(item.task);
     }
     allDay.sort((a, b) => {
@@ -95,12 +95,20 @@ export default function DayScreen() {
       if (pa !== pb) return pa.localeCompare(pb);
       return a.line - b.line;
     });
-    timed.sort((a, b) => {
-      const ta = taskOccurrence(a, todayStr)!.time!;
-      const tb = taskOccurrence(b, todayStr)!.time!;
-      const [ah, am] = ta.split(':').map(Number);
-      const [bh, bm] = tb.split(':').map(Number);
+    raw.sort((a, b) => {
+      const [ah, am] = a.time.split(':').map(Number);
+      const [bh, bm] = b.time.split(':').map(Number);
       return ah * 60 + am - (bh * 60 + bm);
+    });
+    // Pre-compute column layout for concurrent items (same time slot → side by side)
+    const slotCount = new Map<string, number>();
+    for (const { time } of raw) slotCount.set(time, (slotCount.get(time) ?? 0) + 1);
+    const slotCursor = new Map<string, number>();
+    const timed = raw.map(({ task, time }) => {
+      const total = slotCount.get(time) ?? 1;
+      const col = slotCursor.get(time) ?? 0;
+      slotCursor.set(time, col + 1);
+      return { task, time, col, total };
     });
     return { allDay, timed };
   }, [tasks, dateStr, todayStr]);
@@ -128,6 +136,13 @@ export default function DayScreen() {
         router.replace({ pathname: `/day/${prev}` as any, params: { direction: 'back' } });
       }
     });
+
+  async function handleDone(task: Task) {
+    try {
+      const { tasks: updated } = applyDone([...tasks], [task.line], todayStr);
+      await save(updated);
+    } catch {}
+  }
 
   return (
     <GestureDetector gesture={swipe}>
@@ -175,10 +190,12 @@ export default function DayScreen() {
                   <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
                 </View>
               ) : (
-                <View key={task.line} style={styles.allDayRow}>
-                  <View style={styles.cb} />
+                <TouchableOpacity key={task.line} style={styles.allDayRow} onPress={() => router.push(`/task/${task.line}` as any)} activeOpacity={0.7}>
+                  <TouchableOpacity onPress={() => handleDone(task)} hitSlop={8}>
+                    <View style={styles.cb} />
+                  </TouchableOpacity>
                   <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -207,19 +224,28 @@ export default function DayScreen() {
             </View>
           )}
 
-          {timed.map(task => {
-            const occ = taskOccurrence(task, todayStr);
-            if (!occ?.time) return null;
-            const [hours, minutes] = occ.time.split(':').map(Number);
+          {timed.map(({ task, time, col, total }) => {
+            const [hours, minutes] = time.split(':').map(Number);
             const rawTop = topOffset(hours, minutes);
             if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
+            const colWidth = (TIMELINE_WIDTH - (total - 1) * 2) / total;
+            const left = LABEL_WIDTH + col * (colWidth + 2);
             const top = rawTop + 2;
             const isEvent = !!task.extensions['type'];
             return (
-              <View key={task.line} style={[isEvent ? styles.pillEvent : styles.pillTask, { top, left: LABEL_WIDTH, right: 8 }]}>
-                <Text style={[styles.eventTime, isEvent && styles.eventTimeEvent]}>{formatTime(hours, minutes)}</Text>
-                <Text style={styles.eventTitle} numberOfLines={1}>{cleanTitle(task.text)}</Text>
-              </View>
+              <TouchableOpacity key={task.line} style={[isEvent ? styles.pillEvent : styles.pillTask, { top, left, width: colWidth }]} onPress={() => router.push(`/task/${task.line}` as any)} activeOpacity={0.75}>
+                <View style={styles.pillInner}>
+                  {!isEvent && (
+                    <TouchableOpacity onPress={() => handleDone(task)} hitSlop={8}>
+                      <View style={styles.pillCb} />
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.pillText}>
+                    <Text style={[styles.eventTime, isEvent && styles.eventTimeEvent]}>{formatTime(hours, minutes)}</Text>
+                    <Text style={styles.eventTitle} numberOfLines={1}>{cleanTitle(task.text)}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -281,7 +307,7 @@ const styles = StyleSheet.create({
   },
   hourLabel: {
     width: LABEL_WIDTH, fontSize: 10, color: '#444444',
-    fontFamily: Fonts.mono, paddingLeft: Spacing.md, paddingTop: 4,
+    fontFamily: Fonts.mono, paddingLeft: Spacing.md, paddingTop: 20,
   },
   nowLine: {
     position: 'absolute', left: 0, right: 0,
@@ -294,12 +320,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderLeftWidth: 2, borderLeftColor: Colors.accent,
     paddingVertical: 4, paddingHorizontal: Spacing.sm,
+    overflow: 'hidden',
   },
   pillEvent: {
     position: 'absolute',
     backgroundColor: Colors.accent + '22',
     paddingVertical: 4, paddingHorizontal: Spacing.sm,
+    overflow: 'hidden',
   },
+  pillInner: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  pillCb: { width: 10, height: 10, borderWidth: 1.5, borderColor: Colors.checkboxBorder, flexShrink: 0 },
+  pillText: { flex: 1 },
   eventTime: { fontSize: 9, color: Colors.accent, fontFamily: Fonts.mono, letterSpacing: 0.5 },
   eventTimeEvent: { color: Colors.text, opacity: 0.5 },
   eventTitle: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.text },
