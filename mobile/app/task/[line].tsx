@@ -9,7 +9,7 @@ import { applyEdit } from '@shared/commands/edit';
 import { applyPri, applyDepri } from '@shared/commands/pri';
 import { applySkip } from '@shared/commands/skip';
 import { Colors, Fonts, Spacing } from '../../src/theme';
-import { today } from '../../src/utils';
+import { today, formatDateLabel } from '../../src/utils';
 
 export default function TaskDetail() {
   const { line } = useLocalSearchParams<{ line: string }>();
@@ -134,6 +134,18 @@ export default function TaskDetail() {
         )}
       </View>
 
+      {task.extensions['start'] && (
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>DUE</Text>
+          <Text style={[
+            styles.dueValue,
+            !task.done && task.extensions['start'].slice(0, 10) < todayStr && styles.dueOverdue,
+          ]}>
+            {formatDateLabel(task.extensions['start'].slice(0, 10))}
+          </Text>
+        </View>
+      )}
+
       <Text style={styles.label}>Priority</Text>
       <PriorityPicker value={priority} onChange={handlePriorityChange} />
 
@@ -195,6 +207,10 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingTop: Spacing.lg },
   actionBtn: { borderWidth: 1, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md },
   actionLabel: { fontSize: 15, fontWeight: '500' },
+  metaRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: 4 },
+  metaLabel: { fontSize: 11, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5, width: 40 },
+  dueValue: { fontFamily: Fonts.mono, fontSize: 14, color: Colors.text },
+  dueOverdue: { color: Colors.accent },
   errorText: { color: Colors.textSecondary, padding: Spacing.lg },
   rawText: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.separator, paddingHorizontal: Spacing.md, paddingTop: Spacing.xl },
 });

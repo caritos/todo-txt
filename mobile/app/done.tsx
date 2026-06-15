@@ -44,7 +44,7 @@ export default function TasksScreen() {
   // Completed tasks: last 30 days, most recent first, grouped by date
   const completedSections = useMemo(() => {
     const done = tasks
-      .filter(t => t.done && t.completionDate && t.completionDate >= thirtyDaysAgo)
+      .filter(t => t.done && t.completionDate && t.completionDate >= thirtyDaysAgo && !t.extensions['type'])
       .sort((a, b) => b.completionDate!.localeCompare(a.completionDate!));
     const byDate = new Map<string, Task[]>();
     for (const t of done) {
@@ -62,7 +62,7 @@ export default function TasksScreen() {
   // Incomplete tasks: sorted by start: date asc, no start: at bottom
   const incomplete = useMemo(() => {
     return tasks
-      .filter(t => !t.done)
+      .filter(t => !t.done && !t.extensions['type'])
       .sort((a, b) => {
         const sa = a.extensions['start'] ?? 'zzzz';
         const sb = b.extensions['start'] ?? 'zzzz';
