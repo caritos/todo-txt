@@ -89,7 +89,10 @@ export default function TaskDetail() {
   }
 
   async function handleDelete() {
-    Alert.alert('Delete Task', 'This cannot be undone.', [
+    const msg = isRecurring
+      ? 'This deletes all future occurrences. Use Skip to skip just this one.'
+      : 'This cannot be undone.';
+    Alert.alert('Delete Task', msg, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

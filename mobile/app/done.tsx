@@ -15,6 +15,7 @@ import { today, sectionHeader } from '../src/utils';
 import { addDays } from '@shared/utils';
 import { buildAddRaw } from '@shared/commands/add';
 import { parseLine } from '@shared/parser';
+import { taskOccurrence } from '@shared/commands/focus';
 import type { Task } from '@shared/parser';
 
 function cleanTitle(text: string): string {
@@ -62,7 +63,16 @@ export default function TasksScreen() {
   // Incomplete tasks: sorted by start: date asc, no start: at bottom
   const incomplete = useMemo(() => {
     return tasks
-      .filter(t => !t.done && !t.extensions['type'])
+      .filter(t => {
+        if (t.done || t.extensions['type']) return false;
+        // Hide recurring tasks that were skipped (exdate pushed next occurrence into the future)
+        if (t.extensions['frequency'] && t.extensions['exdate']) {
+          const occ = taskOccurrence(t, todayStr);
+          const startDate = (t.extensions['start'] ?? '').slice(0, 10);
+          if (occ && occ.date > todayStr && startDate <= todayStr) return false;
+        }
+        return true;
+      })
       .sort((a, b) => {
         const sa = a.extensions['start'] ?? 'zzzz';
         const sb = b.extensions['start'] ?? 'zzzz';
