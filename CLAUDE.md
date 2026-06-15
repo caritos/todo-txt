@@ -96,6 +96,8 @@ mobile/                       ← Expo Router iOS app
 
 **iCloud sync**: user points Settings file path to iCloud Drive container; iOS syncs automatically with other devices and with the CLI on Mac.
 
+**Day/week view filtering**: Mobile day (`app/day/[date].tsx`) and week (`app/timeline.tsx`) views use `applyFocusForWindow(tasks, todayStr, windowEnd)` + `focusItemOccurrence(item)` from `@shared/commands/focus` — the same logic as the console's `focus` command. Never duplicate this filtering in the mobile layer. The window must be at least `addDays(todayStr, 14)` so overdue recurring tasks (whose `nextWeeklyDate` lands beyond today but whose `focusSortKey` resolves to today via `overdueOccurrenceDate`) pass `isInFocusWindow`.
+
 ## Key Invariants
 
 - `verbatimModuleSyntax: true` — use `import type` for all type-only imports (all layers).

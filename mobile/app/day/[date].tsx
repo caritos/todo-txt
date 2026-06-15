@@ -1,12 +1,13 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useMemo, useRef, useEffect } from 'react';
 import { useTasks } from '../../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today } from '../../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
-import { taskOccurrence, taskDisplayOccurrence } from '@shared/commands/focus';
+import { taskOccurrence, applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
@@ -14,12 +15,17 @@ const END_HOUR = 22;
 const TIMELINE_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 const LABEL_WIDTH = 52;
 
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-function formatDayHeader(dateStr: string): string {
+function parseDateParts(dateStr: string): { month: string; day: number; year: number; dayName: string } {
   const d = new Date(dateStr + 'T12:00:00');
-  return `${DAY_NAMES[d.getDay()]}  ${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`;
+  return {
+    month: MONTH_NAMES[d.getMonth()],
+    day: d.getDate(),
+    year: d.getFullYear(),
+    dayName: DAY_NAMES[d.getDay()].toUpperCase(),
+  };
 }
 
 function hourLabel(h: number): string {
@@ -45,7 +51,7 @@ function formatTime(hours: number, minutes: number): string {
 
 export default function DayScreen() {
   const router = useRouter();
-  const { date } = useLocalSearchParams<{ date: string }>();
+  const { date, direction } = useLocalSearchParams<{ date: string; direction?: string }>();
   const { tasks, setSelectedDate } = useTasks();
   const todayStr = today();
   const scrollRef = useRef<ScrollView>(null);
@@ -71,11 +77,17 @@ export default function DayScreen() {
   const { allDay, timed } = useMemo(() => {
     const allDay: Task[] = [];
     const timed: Task[] = [];
-    for (const t of tasks) {
-      const occ = taskDisplayOccurrence(t, todayStr);
-      if (!occ || occ.date !== dateStr) continue;
-      if (occ.time) timed.push(t);
-      else allDay.push(t);
+    // Use at least a 14-day window (same as the console) so overdue recurring tasks pass
+    // isInFocusWindow even when their next scheduled occurrence is after dateStr.
+    // Extend further when viewing a date beyond that window.
+    const minWindow = addDays(todayStr, 14);
+    const windowEnd = dateStr > minWindow ? dateStr : minWindow;
+    const items = applyFocusForWindow(tasks, todayStr, windowEnd);
+    for (const item of items) {
+      const occ = focusItemOccurrence(item);
+      if (occ.date !== dateStr) continue;
+      if (occ.time) timed.push(item.task);
+      else allDay.push(item.task);
     }
     allDay.sort((a, b) => {
       const pa = a.priority ?? 'ZZZ';
@@ -99,28 +111,56 @@ export default function DayScreen() {
 
   const isEmpty = allDay.length === 0 && timed.length === 0;
 
+  const { month, day, year, dayName } = parseDateParts(dateStr);
+
+  const swipe = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-10, 10])
+    .runOnJS(true)
+    .onEnd((e) => {
+      if (e.translationX < -50) {
+        const next = addDays(dateStr, 1);
+        setSelectedDate(next);
+        router.replace({ pathname: `/day/${next}` as any, params: { direction: 'forward' } });
+      } else if (e.translationX > 50) {
+        const prev = addDays(dateStr, -1);
+        setSelectedDate(prev);
+        router.replace({ pathname: `/day/${prev}` as any, params: { direction: 'back' } });
+      }
+    });
+
   return (
+    <GestureDetector gesture={swipe}>
     <View style={styles.screen}>
+      <Stack.Screen options={{ animation: direction === 'back' ? 'slide_from_left' : 'slide_from_right' }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.dayTitle}>{formatDayHeader(dateStr)}</Text>
-        <View style={styles.dayNav}>
-          <TouchableOpacity onPress={() => {
-            const prev = addDays(dateStr, -1);
-            setSelectedDate(prev);
-            router.replace(`/day/${prev}` as any);
-          }}>
-            <Text style={styles.navArrow}>‹</Text>
+        <View style={styles.headerNav}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backText}>‹ Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => {
-            const next = addDays(dateStr, 1);
-            setSelectedDate(next);
-            router.replace(`/day/${next}` as any);
-          }}>
-            <Text style={styles.navArrow}>›</Text>
-          </TouchableOpacity>
+          <View style={styles.dayNav}>
+            <TouchableOpacity onPress={() => {
+              const prev = addDays(dateStr, -1);
+              setSelectedDate(prev);
+              router.replace({ pathname: `/day/${prev}` as any, params: { direction: 'back' } });
+            }}>
+              <Text style={styles.navArrow}>‹</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              const next = addDays(dateStr, 1);
+              setSelectedDate(next);
+              router.replace({ pathname: `/day/${next}` as any, params: { direction: 'forward' } });
+            }}>
+              <Text style={styles.navArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.dateDisplay}>
+          <Text style={styles.dateHeadline}>
+            <Text style={styles.dateMonthDay}>{month} {day}, </Text>
+            <Text style={styles.dateYear}>{year}</Text>
+          </Text>
+          <Text style={styles.dateDayName}>{dayName}</Text>
         </View>
       </View>
 
@@ -185,26 +225,34 @@ export default function DayScreen() {
         </View>
       </ScrollView>
     </View>
+    </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   header: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.separator,
+    backgroundColor: Colors.navBar,
+    paddingBottom: Spacing.md,
+  },
+  headerNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.separator,
-    backgroundColor: Colors.navBar,
   },
   backBtn: { minWidth: 60 },
   backText: { fontSize: 13, color: Colors.accent },
-  dayTitle: { fontSize: 15, fontWeight: '600', color: Colors.text, letterSpacing: 1 },
   dayNav: { flexDirection: 'row', gap: Spacing.lg, minWidth: 60, justifyContent: 'flex-end' },
   navArrow: { fontSize: 20, color: Colors.textSecondary },
+  dateDisplay: { paddingHorizontal: Spacing.md, paddingTop: 2 },
+  dateHeadline: { fontSize: 32, fontWeight: '300', letterSpacing: -0.5 },
+  dateMonthDay: { color: Colors.text },
+  dateYear: { color: Colors.accent },
+  dateDayName: { fontSize: 13, color: Colors.textSecondary, letterSpacing: 1.5, marginTop: 2 },
   scroll: { paddingBottom: 120 },
   allDaySection: { borderBottomWidth: 1, borderBottomColor: Colors.separator },
   allDayHdr: {

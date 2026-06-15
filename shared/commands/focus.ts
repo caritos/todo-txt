@@ -333,22 +333,6 @@ export function taskOccurrence(task: Task, todayStr: string): TaskOccurrence | n
   return { date, time };
 }
 
-// taskDisplayOccurrence applies the same pre-filters as applyFocus:
-//   - skip done tasks
-//   - skip past events (type: whose event has ended)
-//   - advance tasks already completed today (last-done: today) to their next occurrence
-// Mobile week/day views use this instead of taskOccurrence directly.
-export function taskDisplayOccurrence(task: Task, todayStr: string): TaskOccurrence | null {
-  if (task.done) return null;
-  if (isPastEvent(task, todayStr)) return null;
-  const lastDone = task.extensions['last-done'];
-  const freq = task.extensions['frequency'];
-  const start = task.extensions['start'];
-  if (lastDone === todayStr && freq && start) {
-    return taskOccurrence(task, addDays(todayStr, 1));
-  }
-  return taskOccurrence(task, todayStr);
-}
 
 // ── Recurrence label builder ─────────────────────────────────────────────────
 
@@ -430,9 +414,7 @@ export type FocusItem = {
   isOverdue: boolean;
 };
 
-export function applyFocus(tasks: Task[], todayStr: string): FocusItem[] {
-  const windowEnd = addDays(todayStr, 14);
-
+export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: string): FocusItem[] {
   const effToday = (t: Task): string => {
     if (t.done) return addDays(t.completionDate ?? todayStr, 1);
     const lastDone = t.extensions['last-done'];
@@ -488,4 +470,16 @@ export function applyFocus(tasks: Task[], todayStr: string): FocusItem[] {
       isOverdue,
     };
   });
+}
+
+export function applyFocus(tasks: Task[], todayStr: string): FocusItem[] {
+  return applyFocusForWindow(tasks, todayStr, addDays(todayStr, 14));
+}
+
+// Extract { date, time } from a FocusItem's effectiveDate for calendar bucketing.
+export function focusItemOccurrence(item: FocusItem): TaskOccurrence {
+  const date = item.effectiveDate.slice(0, 10);
+  const timePart = item.effectiveDate.length > 10 ? item.effectiveDate.slice(11, 16) : null;
+  const time = timePart && /^\d{2}:\d{2}$/.test(timePart) ? timePart : null;
+  return { date, time };
 }

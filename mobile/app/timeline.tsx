@@ -4,7 +4,7 @@ import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
-import { taskOccurrence, taskDisplayOccurrence } from '@shared/commands/focus';
+import { taskOccurrence, applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
 import type { Task } from '@shared/parser';
 
 const HOUR_HEIGHT = 60;
@@ -71,14 +71,17 @@ export default function WeekScreen() {
     const perDay = new Map<string, { allDay: Task[]; timed: Task[] }>();
     const counts = new Map<string, number>();
     for (const d of weekDates) perDay.set(d, { allDay: [], timed: [] });
-    for (const t of tasks) {
-      const occ = taskDisplayOccurrence(t, todayStr);
-      if (!occ) continue;
+    const lastDay = weekDates[weekDates.length - 1];
+    const minWindow = addDays(todayStr, 14);
+    const windowEnd = lastDay > minWindow ? lastDay : minWindow;
+    const items = applyFocusForWindow(tasks, todayStr, windowEnd);
+    for (const item of items) {
+      const occ = focusItemOccurrence(item);
       const bucket = perDay.get(occ.date);
       if (!bucket) continue;
       counts.set(occ.date, (counts.get(occ.date) ?? 0) + 1);
-      if (occ.time) bucket.timed.push(t);
-      else bucket.allDay.push(t);
+      if (occ.time) bucket.timed.push(item.task);
+      else bucket.allDay.push(item.task);
     }
     for (const bucket of perDay.values()) {
       bucket.timed.sort((a, b) => {
