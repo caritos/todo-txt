@@ -10,7 +10,6 @@ const VIEWS: View_[] = [
   { label: 'Year', route: '/year' },
   { label: 'Done', route: '/done' },
   { label: 'Search', route: '/search' },
-  { label: 'Report', route: '/report' },
   { label: 'Settings', route: '/settings' },
 ];
 
