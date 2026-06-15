@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
@@ -39,6 +40,8 @@ export default function MonthScreen() {
   const todayYear = parseInt(todayStr.slice(0, 4), 10);
   const todayMonth = parseInt(todayStr.slice(5, 7), 10) - 1;
 
+  const insets = useSafeAreaInsets();
+
   const [year, setYear] = useState(todayYear);
   const [month, setMonth] = useState(todayMonth);
 
@@ -71,7 +74,7 @@ export default function MonthScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Spacing.sm + insets.top }]}>
         <TouchableOpacity onPress={prevMonth} style={styles.arrow} hitSlop={8}>
           <Text style={styles.arrowText}>‹</Text>
         </TouchableOpacity>
