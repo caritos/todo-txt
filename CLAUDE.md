@@ -61,6 +61,10 @@ mobile/                       ← Expo Router iOS app
 │   ├── search.tsx            ← Search screen
 │   ├── report.tsx            ← Report screen (summary stats)
 │   ├── settings.tsx          ← File path + iCloud toggle
+│   ├── timeline.tsx          ← Week view (7-column timed grid); tap date → Day view
+│   ├── month.tsx             ← Month view (full-screen flex grid); tap cell → Day view
+│   ├── year.tsx              ← Year view (dot-density heatmap by month)
+│   ├── day/[date].tsx        ← Day view (timed + all-day lanes for a single date)
 │   └── task/[line].tsx       ← Task detail formSheet: Done, Edit, Priority, Skip, Delete
 ├── src/
 │   ├── store.ts              ← Expo FileSystem I/O (mirrors console/store.ts interface)
@@ -98,6 +102,10 @@ mobile/                       ← Expo Router iOS app
 
 **Day/week view filtering**: Mobile day (`app/day/[date].tsx`) and week (`app/timeline.tsx`) views use `applyFocusForWindow(tasks, todayStr, windowEnd)` + `focusItemOccurrence(item)` from `@shared/commands/focus` — the same logic as the console's `focus` command. Never duplicate this filtering in the mobile layer. The window must be at least `addDays(todayStr, 14)` so overdue recurring tasks (whose `nextWeeklyDate` lands beyond today but whose `focusSortKey` resolves to today via `overdueOccurrenceDate`) pass `isInFocusWindow`.
 
+**Month view** (`app/month.tsx`): full-screen flex grid — no ScrollView. Cells are grouped into rows of 7, each row has `flex: 1` so all rows distribute vertical space equally. Uses `useSafeAreaInsets` to push the `‹ MONTH YEAR ›` header below the Dynamic Island. Tasks mapped by `start:` date (not next occurrence — recurring tasks show on their `start:` date, not the next scheduled occurrence).
+
+**Calendar navigation pattern**: tapping a day cell in Month view or a date in the Week strip navigates to `/day/[date]` via `router.push`. The ViewSwitcher (bottom-left ≡) and BottomActionBar label together support: Day, Week, Month, Year, Done, Search, Settings.
+
 ## Key Invariants
 
 - `verbatimModuleSyntax: true` — use `import type` for all type-only imports (all layers).
@@ -115,3 +123,4 @@ mobile/                       ← Expo Router iOS app
 - `focus` shows **overdue** tasks: regular tasks whose `start:` date is in the past, and recurring tasks whose most-recent scheduled occurrence hasn't been marked done. `overdueOccurrenceDate()` detects missed occurrences; their sort key is set to today so they sort to the top.
 - **Task line numbers** are 1-based positions in the non-empty task list (blank lines stripped by `readTasks`). They renumber on every read — `task.line` is display position, not a stable ID.
 - `WeekStrip` (mobile) starts from today and shows the next 7 days — not a fixed Sunday-to-Saturday week.
+- `cleanTitle()` strips todo.txt extensions from task text for display. It is defined **inline** in each screen file — it is not exported from a shared module.
