@@ -72,6 +72,10 @@ export default function DayScreen() {
     return () => clearTimeout(timer);
   }, [dateStr, isToday]);
 
+  useEffect(() => {
+    setSelectedDate(dateStr);
+  }, [dateStr]);
+
   const { allDay, timed } = useMemo(() => {
     const dayTasks = tasks.filter(t => {
       const start = t.extensions['start'];
@@ -80,6 +84,7 @@ export default function DayScreen() {
     const allDay: Task[] = [];
     const timed: Task[] = [];
     for (const t of dayTasks) {
+      if (t.done) continue;
       if (taskTime(t)) timed.push(t);
       else allDay.push(t);
     }
@@ -99,7 +104,7 @@ export default function DayScreen() {
 
   const now = new Date();
   const nowTopValue = isToday ? topOffset(now.getHours(), now.getMinutes()) : null;
-  const showNow = nowTopValue !== null && nowTopValue >= 0 && nowTopValue <= TIMELINE_HEIGHT;
+  const showNow = nowTopValue !== null && nowTopValue >= 0 && nowTopValue < TIMELINE_HEIGHT;
 
   const isEmpty = allDay.length === 0 && timed.length === 0;
 
@@ -167,7 +172,7 @@ export default function DayScreen() {
           {timed.map(task => {
             const t = taskTime(task)!;
             const rawTop = topOffset(t.hours, t.minutes);
-            if (rawTop < 0 || rawTop > TIMELINE_HEIGHT) return null;
+            if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
             const top = rawTop + 2;
             return (
               <View key={task.line} style={[styles.eventPill, { top, left: LABEL_WIDTH, right: 8 }]}>
