@@ -52,6 +52,7 @@ export default function MonthScreen() {
     else setMonth(m => m + 1);
   }
 
+  // TODO: recurring tasks appear on start: date, not next occurrence — follow-up to use applyFocusForWindow
   const tasksByDate = useMemo(() => {
     const map = new Map<string, Task[]>();
     for (const t of tasks) {
@@ -172,8 +173,11 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   cellToday: {
+    borderLeftWidth: 1,
+    borderTopWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
     borderColor: Colors.accent,
-    borderWidth: 1,
     backgroundColor: '#1f1410',
   },
   dateNumWrap: {
