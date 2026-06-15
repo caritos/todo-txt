@@ -9,7 +9,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/timeline': 'Week',
   '/month': 'Month',
   '/year': 'Year',
-  '/done': 'Done',
+  '/done': 'Tasks',
   '/search': 'Search',
   '/settings': 'Settings',
 };
