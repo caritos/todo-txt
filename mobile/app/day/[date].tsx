@@ -14,17 +14,17 @@ const TIMELINE_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 const LABEL_WIDTH = 52;
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
 function formatDayHeader(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
-  const m = d.getMonth() + 1;
-  return `${DAY_NAMES[d.getDay()]!.toUpperCase()}  ${m}/${d.getDate()}`;
+  return `${DAY_NAMES[d.getDay()]}  ${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`;
 }
 
 function hourLabel(h: number): string {
   if (h === 0) return '12 AM';
   if (h < 12) return `${h} AM`;
-  if (h === 12) return '12 PM';
+  if (h === 12) return 'noon';
   return `${h - 12} PM`;
 }
 
@@ -54,7 +54,7 @@ function formatTime(hours: number, minutes: number): string {
 export default function DayScreen() {
   const router = useRouter();
   const { date } = useLocalSearchParams<{ date: string }>();
-  const { tasks } = useTasks();
+  const { tasks, setSelectedDate } = useTasks();
   const todayStr = today();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -107,14 +107,22 @@ export default function DayScreen() {
     <View style={styles.screen}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>‹ Year</Text>
+          <Text style={styles.backText}>‹ Back</Text>
         </TouchableOpacity>
         <Text style={styles.dayTitle}>{formatDayHeader(dateStr)}</Text>
         <View style={styles.dayNav}>
-          <TouchableOpacity onPress={() => router.replace(`/day/${addDays(dateStr, -1)}` as any)}>
+          <TouchableOpacity onPress={() => {
+            const prev = addDays(dateStr, -1);
+            setSelectedDate(prev);
+            router.replace(`/day/${prev}` as any);
+          }}>
             <Text style={styles.navArrow}>‹</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.replace(`/day/${addDays(dateStr, 1)}` as any)}>
+          <TouchableOpacity onPress={() => {
+            const next = addDays(dateStr, 1);
+            setSelectedDate(next);
+            router.replace(`/day/${next}` as any);
+          }}>
             <Text style={styles.navArrow}>›</Text>
           </TouchableOpacity>
         </View>
