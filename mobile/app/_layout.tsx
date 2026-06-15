@@ -20,11 +20,10 @@ export default function RootLayout() {
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}
           >
             <Stack.Screen name="index" />
-            <Stack.Screen name="focus" />
             <Stack.Screen name="done" />
             <Stack.Screen name="year" />
             <Stack.Screen name="timeline" />
-<Stack.Screen name="day/[date]" />
+            <Stack.Screen name="day/[date]" />
             <Stack.Screen name="search" />
             <Stack.Screen name="settings" />
             <Stack.Screen

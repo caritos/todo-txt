@@ -1,12 +1,13 @@
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing } from '../theme';
+import { useTasks } from '../context/TaskContext';
 
 type View_ = { label: string; route: string };
 
 const VIEWS: View_[] = [
-  { label: 'Week', route: '/focus' },
-  { label: 'Timeline', route: '/timeline' },
+  { label: 'Week', route: '/timeline' },
+  { label: 'Day', route: '/day' },
   { label: 'Year', route: '/year' },
   { label: 'Done', route: '/done' },
   { label: 'Settings', route: '/settings' },
@@ -16,9 +17,11 @@ type Props = { visible: boolean; onClose: () => void };
 
 export function ViewSwitcher({ visible, onClose }: Props) {
   const router = useRouter();
+  const { selectedDate } = useTasks();
 
   function navigate(route: string) {
-    router.push(route as any);
+    const target = route === '/day' ? `/day/${selectedDate}` : route;
+    router.push(target as any);
     onClose();
   }
 

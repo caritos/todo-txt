@@ -6,10 +6,10 @@ import { ViewSwitcher } from './ViewSwitcher';
 import { AddTaskModal } from './AddTaskModal';
 
 const ROUTE_LABELS: Record<string, string> = {
-  '/focus': 'Week',
-  '/timeline': 'Timeline',
+  '/timeline': 'Week',
   '/year': 'Year',
   '/done': 'Done',
+  '/search': 'Search',
   '/settings': 'Settings',
 };
 
@@ -19,7 +19,7 @@ export function BottomActionBar() {
   const [switcherVisible, setSwitcherVisible] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
 
-  const label = ROUTE_LABELS[pathname] ?? 'Week';
+  const label = pathname.startsWith('/day/') ? 'Day' : (ROUTE_LABELS[pathname] ?? 'Week');
 
   return (
     <>
