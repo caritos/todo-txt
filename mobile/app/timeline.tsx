@@ -84,9 +84,9 @@ export default function WeekScreen() {
       const start = t.extensions['start'];
       if (!start) continue;
       const d = start.slice(0, 10);
-      counts.set(d, (counts.get(d) ?? 0) + 1);
       const bucket = perDay.get(d);
       if (!bucket) continue;
+      counts.set(d, (counts.get(d) ?? 0) + 1);
       if (taskTime(t)) bucket.timed.push(t);
       else bucket.allDay.push(t);
     }
@@ -108,9 +108,9 @@ export default function WeekScreen() {
   const sundayDate = new Date(sundayStr + 'T12:00:00');
   const now = new Date();
   const nowTop = weekContainsToday ? topOffset(now.getHours(), now.getMinutes()) : null;
-  const showNow = nowTop !== null && nowTop >= 0 && nowTop <= TIMELINE_HEIGHT;
+  const showNow = nowTop !== null && nowTop >= 0 && nowTop < TIMELINE_HEIGHT;
   const todayColIndex = weekContainsToday ? weekDates.indexOf(todayStr) : -1;
-  const selectedColIndex = weekDates.includes(selectedDate) ? weekDates.indexOf(selectedDate) : -1;
+  const selectedColIndex = weekDates.findIndex(d => d === selectedDate);
   const showSelectedCol = selectedColIndex >= 0 && selectedDate !== todayStr;
 
   function dotStyle(dateStr: string): { size: number; opacity: number } | null {
@@ -243,7 +243,7 @@ export default function WeekScreen() {
                     {timed.map(task => {
                       const t = taskTime(task)!;
                       const rawTop = topOffset(t.hours, t.minutes);
-                      if (rawTop < 0 || rawTop > TIMELINE_HEIGHT) return null;
+                      if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
                       return (
                         <View key={task.line} style={[styles.pill, { top: rawTop + 1 }]}>
                           <Text style={styles.pillText} numberOfLines={1}>{cleanTitle(task.text)}</Text>
