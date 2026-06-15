@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -72,6 +72,14 @@ export default function MonthScreen() {
 
   const cells = useMemo(() => buildCells(year, month), [year, month]);
 
+  const rows = useMemo(() => {
+    const result: (string | null)[][] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      result.push(cells.slice(i, i + 7));
+    }
+    return result;
+  }, [cells]);
+
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: Spacing.sm + insets.top }]}>
@@ -93,53 +101,51 @@ export default function MonthScreen() {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.grid}>
-          {cells.map((dateStr, i) => {
-            if (dateStr === null) {
-              return <View key={`empty-${i}`} style={styles.cell} />;
-            }
-
-            const isToday = dateStr === todayStr;
-            const isPast = dateStr < todayStr;
-            const dayTasks = tasksByDate.get(dateStr) ?? [];
-            const count = dayTasks.length;
-            const firstTitle = count > 0 ? cleanTitle(dayTasks[0].text) : null;
-            const overflow = count > 1 ? count - 1 : 0;
-            const day = parseInt(dateStr.slice(8, 10), 10);
-
-            return (
-              <TouchableOpacity
-                key={dateStr}
-                style={[styles.cell, isToday && styles.cellToday]}
-                onPress={() => router.push(`/day/${dateStr}` as any)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.dateNumWrap, isToday && styles.dateNumWrapToday]}>
-                  <Text style={[
-                    styles.dateNum,
-                    isPast && !isToday && styles.dateNumPast,
-                    isToday && styles.dateNumToday,
-                  ]}>
-                    {day}
-                  </Text>
-                </View>
-                {firstTitle ? (
-                  <Text style={styles.taskTitle} numberOfLines={1}>{firstTitle}</Text>
-                ) : null}
-                {overflow > 0 ? (
-                  <Text style={styles.overflow}>+{overflow}</Text>
-                ) : null}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
+      <View style={styles.grid}>
+        {rows.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map((dateStr, colIndex) => {
+              if (dateStr === null) {
+                return <View key={`empty-${rowIndex}-${colIndex}`} style={styles.cell} />;
+              }
+              const isToday = dateStr === todayStr;
+              const isPast = dateStr < todayStr;
+              const dayTasks = tasksByDate.get(dateStr) ?? [];
+              const count = dayTasks.length;
+              const firstTitle = count > 0 ? cleanTitle(dayTasks[0].text) : null;
+              const overflow = count > 1 ? count - 1 : 0;
+              const day = parseInt(dateStr.slice(8, 10), 10);
+              return (
+                <TouchableOpacity
+                  key={dateStr}
+                  style={[styles.cell, isToday && styles.cellToday]}
+                  onPress={() => router.push(`/day/${dateStr}` as any)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.dateNumWrap, isToday && styles.dateNumWrapToday]}>
+                    <Text style={[
+                      styles.dateNum,
+                      isPast && !isToday && styles.dateNumPast,
+                      isToday && styles.dateNumToday,
+                    ]}>
+                      {day}
+                    </Text>
+                  </View>
+                  {firstTitle ? (
+                    <Text style={styles.taskTitle} numberOfLines={1}>{firstTitle}</Text>
+                  ) : null}
+                  {overflow > 0 ? (
+                    <Text style={styles.overflow}>+{overflow}</Text>
+                  ) : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
-
-const CELL_MIN_HEIGHT = 64;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
@@ -165,15 +171,18 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.separator,
   },
   dayHdr: { flex: 1, textAlign: 'center', fontSize: 10, color: '#555555', letterSpacing: 0.5 },
-  scroll: { paddingBottom: 120 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  grid: { flex: 1 },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+  },
   cell: {
-    width: `${100 / 7}%` as any,
-    minHeight: CELL_MIN_HEIGHT,
+    flex: 1,
     borderRightWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.separator,
     padding: 4,
+    overflow: 'hidden',
   },
   cellToday: {
     borderLeftWidth: 1,
