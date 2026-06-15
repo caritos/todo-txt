@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
@@ -42,6 +43,7 @@ function cleanTitle(text: string): string {
 
 export default function WeekScreen() {
   const { tasks, selectedDate, setSelectedDate } = useTasks();
+  const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const todayStr = today();
   const [anchorDate, setAnchorDate] = useState(todayStr);
@@ -144,7 +146,7 @@ export default function WeekScreen() {
             <TouchableOpacity
               key={dateStr}
               style={[styles.stripCell, { width: COL_WIDTH }, isSelected && styles.stripCellSelected]}
-              onPress={() => setSelectedDate(dateStr)}
+              onPress={() => router.push(`/day/${dateStr}` as any)}
               activeOpacity={0.7}
             >
               <Text style={[styles.stripDayName, isSelected && styles.stripDayNameSelected]}>
