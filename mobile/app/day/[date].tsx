@@ -6,6 +6,7 @@ import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today } from '../../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
+import { taskOccurrence } from '@shared/commands/focus';
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
@@ -30,15 +31,6 @@ function hourLabel(h: number): string {
 
 function cleanTitle(text: string): string {
   return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
-}
-
-function taskTime(task: Task): { hours: number; minutes: number } | null {
-  const start = task.extensions['start'];
-  if (!start || start.length <= 10) return null;
-  const timePart = start.slice(11, 16);
-  if (!/^\d{2}:\d{2}$/.test(timePart)) return null;
-  const [hStr, mStr] = timePart.split(':');
-  return { hours: parseInt(hStr!, 10), minutes: parseInt(mStr!, 10) };
 }
 
 function topOffset(hours: number, minutes: number): number {
@@ -77,15 +69,13 @@ export default function DayScreen() {
   }, [dateStr]);
 
   const { allDay, timed } = useMemo(() => {
-    const dayTasks = tasks.filter(t => {
-      const start = t.extensions['start'];
-      return start && start.slice(0, 10) === dateStr;
-    });
     const allDay: Task[] = [];
     const timed: Task[] = [];
-    for (const t of dayTasks) {
+    for (const t of tasks) {
       if (t.done) continue;
-      if (taskTime(t)) timed.push(t);
+      const occ = taskOccurrence(t, todayStr);
+      if (!occ || occ.date !== dateStr) continue;
+      if (occ.time) timed.push(t);
       else allDay.push(t);
     }
     allDay.sort((a, b) => {
@@ -95,12 +85,14 @@ export default function DayScreen() {
       return a.line - b.line;
     });
     timed.sort((a, b) => {
-      const ta = taskTime(a)!;
-      const tb = taskTime(b)!;
-      return ta.hours * 60 + ta.minutes - (tb.hours * 60 + tb.minutes);
+      const ta = taskOccurrence(a, todayStr)!.time!;
+      const tb = taskOccurrence(b, todayStr)!.time!;
+      const [ah, am] = ta.split(':').map(Number);
+      const [bh, bm] = tb.split(':').map(Number);
+      return ah * 60 + am - (bh * 60 + bm);
     });
     return { allDay, timed };
-  }, [tasks, dateStr]);
+  }, [tasks, dateStr, todayStr]);
 
   const now = new Date();
   const nowTopValue = isToday ? topOffset(now.getHours(), now.getMinutes()) : null;
@@ -170,13 +162,15 @@ export default function DayScreen() {
           )}
 
           {timed.map(task => {
-            const t = taskTime(task)!;
-            const rawTop = topOffset(t.hours, t.minutes);
+            const occ = taskOccurrence(task, todayStr);
+            if (!occ?.time) return null;
+            const [hours, minutes] = occ.time.split(':').map(Number);
+            const rawTop = topOffset(hours, minutes);
             if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
             const top = rawTop + 2;
             return (
               <View key={task.line} style={[styles.eventPill, { top, left: LABEL_WIDTH, right: 8 }]}>
-                <Text style={styles.eventTime}>{formatTime(t.hours, t.minutes)}</Text>
+                <Text style={styles.eventTime}>{formatTime(hours, minutes)}</Text>
                 <Text style={styles.eventTitle} numberOfLines={1}>{cleanTitle(task.text)}</Text>
               </View>
             );
