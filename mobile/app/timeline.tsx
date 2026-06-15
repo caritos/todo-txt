@@ -9,7 +9,7 @@ import type { Task } from '@shared/parser';
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
 const END_HOUR = 22;
-const TIMELINE_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT; // 960
+const TIMELINE_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 const LABEL_WIDTH = 52;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COL_WIDTH = Math.floor((SCREEN_WIDTH - LABEL_WIDTH) / 7);
@@ -40,7 +40,7 @@ function topOffset(hours: number, minutes: number): number {
 function hourLabel(h: number): string {
   if (h === 0) return '12 AM';
   if (h < 12) return `${h} AM`;
-  if (h === 12) return '12 PM';
+  if (h === 12) return 'noon';
   return `${h - 12} PM`;
 }
 
@@ -48,15 +48,15 @@ function cleanTitle(text: string): string {
   return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
 }
 
-export default function TimelineScreen() {
-  const { tasks } = useTasks();
+export default function WeekScreen() {
+  const { tasks, selectedDate, setSelectedDate } = useTasks();
   const scrollRef = useRef<ScrollView>(null);
   const todayStr = today();
   const [anchorDate, setAnchorDate] = useState(todayStr);
 
   const { sundayStr, weekDates } = useMemo(() => {
     const d = new Date(anchorDate + 'T12:00:00');
-    const dow = d.getDay(); // 0 = Sunday
+    const dow = d.getDay();
     const sun = new Date(d);
     sun.setDate(d.getDate() - dow);
     const s = `${sun.getFullYear()}-${pad(sun.getMonth() + 1)}-${pad(sun.getDate())}`;
@@ -110,6 +110,8 @@ export default function TimelineScreen() {
   const nowTop = weekContainsToday ? topOffset(now.getHours(), now.getMinutes()) : null;
   const showNow = nowTop !== null && nowTop >= 0 && nowTop <= TIMELINE_HEIGHT;
   const todayColIndex = weekContainsToday ? weekDates.indexOf(todayStr) : -1;
+  const selectedColIndex = weekDates.includes(selectedDate) ? weekDates.indexOf(selectedDate) : -1;
+  const showSelectedCol = selectedColIndex >= 0 && selectedDate !== todayStr;
 
   function dotStyle(dateStr: string): { size: number; opacity: number } | null {
     const count = busyCounts.get(dateStr) ?? 0;
@@ -140,10 +142,18 @@ export default function TimelineScreen() {
         <View style={{ width: LABEL_WIDTH }} />
         {weekDates.map((dateStr, i) => {
           const isToday = dateStr === todayStr;
+          const isSelected = dateStr === selectedDate && !isToday;
           const dot = dotStyle(dateStr);
           return (
-            <View key={dateStr} style={[styles.stripCell, { width: COL_WIDTH }]}>
-              <Text style={styles.stripDayName}>{DAY_NAMES[i]}</Text>
+            <TouchableOpacity
+              key={dateStr}
+              style={[styles.stripCell, { width: COL_WIDTH }, isSelected && styles.stripCellSelected]}
+              onPress={() => setSelectedDate(dateStr)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.stripDayName, isSelected && styles.stripDayNameSelected]}>
+                {DAY_NAMES[i]}
+              </Text>
               <View style={[styles.stripDayBox, isToday && styles.stripDayBoxToday]}>
                 <Text style={[styles.stripDayNum, isToday && styles.stripDayNumToday]}>
                   {parseInt(dateStr.slice(8), 10)}
@@ -153,12 +163,12 @@ export default function TimelineScreen() {
                 ? <View style={[styles.stripDot, { width: dot.size, height: dot.size, borderRadius: dot.size / 2, opacity: dot.opacity }]} />
                 : <View style={styles.stripDotPlaceholder} />
               }
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>
 
-      {/* All-day row — only shown when at least one column has all-day tasks */}
+      {/* All-day row */}
       {hasAnyAllDay && (
         <View style={styles.allDayRow}>
           <View style={{ width: LABEL_WIDTH, alignItems: 'center', justifyContent: 'center' }}>
@@ -200,19 +210,24 @@ export default function TimelineScreen() {
               ))}
             </View>
 
-            {/* Grid: hour lines + today highlight + time line + columns */}
+            {/* Grid */}
             <View style={[styles.grid, { left: LABEL_WIDTH }]}>
-              {/* Hour lines spanning all columns */}
+              {/* Hour lines */}
               {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR).map(hour => (
                 <View key={hour} style={[styles.hourLine, { top: (hour - START_HOUR) * HOUR_HEIGHT }]} />
               ))}
+
+              {/* Selected column highlight */}
+              {showSelectedCol && (
+                <View style={[styles.selectedBg, { left: selectedColIndex * COL_WIDTH, width: COL_WIDTH }]} />
+              )}
 
               {/* Today column highlight */}
               {todayColIndex >= 0 && (
                 <View style={[styles.todayBg, { left: todayColIndex * COL_WIDTH, width: COL_WIDTH }]} />
               )}
 
-              {/* Current time line — only when today is in the displayed week */}
+              {/* Current time line */}
               {showNow && nowTop !== null && (
                 <View style={[styles.nowLine, { top: nowTop }]}>
                   <View style={styles.nowDot} />
@@ -220,7 +235,7 @@ export default function TimelineScreen() {
                 </View>
               )}
 
-              {/* Per-column: left separator + event pills */}
+              {/* Columns */}
               {weekDates.map((dateStr, colIndex) => {
                 const timed = tasksPerDay.get(dateStr)?.timed ?? [];
                 return (
@@ -266,8 +281,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.separator,
     paddingVertical: Spacing.sm,
   },
-  stripCell: { alignItems: 'center', gap: 3 },
+  stripCell: { alignItems: 'center', gap: 3, paddingVertical: 3, paddingHorizontal: 2 },
+  stripCellSelected: { backgroundColor: '#2D2D2D', borderRadius: 5 },
   stripDayName: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.5 },
+  stripDayNameSelected: { color: Colors.accent, fontWeight: '600' },
   stripDayBox: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
   stripDayBoxToday: { backgroundColor: Colors.accent },
   stripDayNum: { fontSize: 12, color: Colors.text },
@@ -293,22 +310,18 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: Colors.textSecondary, fontStyle: 'italic', fontFamily: Fonts.mono, fontSize: 13 },
 
-  labelCol: {
-    position: 'absolute', left: 0, top: 0,
-    width: LABEL_WIDTH, height: TIMELINE_HEIGHT,
-  },
-  hourLabelCell: {
-    position: 'absolute', left: 0, width: LABEL_WIDTH,
-    paddingLeft: Spacing.sm, paddingTop: 3,
-  },
+  labelCol: { position: 'absolute', left: 0, top: 0, width: LABEL_WIDTH, height: TIMELINE_HEIGHT },
+  hourLabelCell: { position: 'absolute', left: 0, width: LABEL_WIDTH, paddingLeft: Spacing.sm, paddingTop: 3 },
   hourLabelText: { fontSize: 9, color: '#444444', fontFamily: Fonts.mono },
 
-  grid: {
-    position: 'absolute', top: 0, right: 0, height: TIMELINE_HEIGHT,
-  },
+  grid: { position: 'absolute', top: 0, right: 0, height: TIMELINE_HEIGHT },
   hourLine: {
     position: 'absolute', left: 0, right: 0,
     height: StyleSheet.hairlineWidth, backgroundColor: '#222222',
+  },
+  selectedBg: {
+    position: 'absolute', top: 0, height: TIMELINE_HEIGHT,
+    backgroundColor: '#2D2D2D',
   },
   todayBg: {
     position: 'absolute', top: 0, height: TIMELINE_HEIGHT,
