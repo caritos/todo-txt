@@ -4,6 +4,7 @@ import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
+import { taskOccurrence } from '@shared/commands/focus';
 import type { Task } from '@shared/parser';
 
 const HOUR_HEIGHT = 60;
@@ -22,15 +23,6 @@ const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
-}
-
-function taskTime(task: Task): { hours: number; minutes: number } | null {
-  const start = task.extensions['start'];
-  if (!start || start.length <= 10) return null;
-  const timePart = start.slice(11, 16);
-  if (!/^\d{2}:\d{2}$/.test(timePart)) return null;
-  const [hStr, mStr] = timePart.split(':');
-  return { hours: parseInt(hStr!, 10), minutes: parseInt(mStr!, 10) };
 }
 
 function topOffset(hours: number, minutes: number): number {
@@ -81,23 +73,25 @@ export default function WeekScreen() {
     for (const d of weekDates) perDay.set(d, { allDay: [], timed: [] });
     for (const t of tasks) {
       if (t.done) continue;
-      const start = t.extensions['start'];
-      if (!start) continue;
-      const d = start.slice(0, 10);
-      const bucket = perDay.get(d);
+      const occ = taskOccurrence(t, todayStr);
+      if (!occ) continue;
+      const bucket = perDay.get(occ.date);
       if (!bucket) continue;
-      counts.set(d, (counts.get(d) ?? 0) + 1);
-      if (taskTime(t)) bucket.timed.push(t);
+      counts.set(occ.date, (counts.get(occ.date) ?? 0) + 1);
+      if (occ.time) bucket.timed.push(t);
       else bucket.allDay.push(t);
     }
     for (const bucket of perDay.values()) {
       bucket.timed.sort((a, b) => {
-        const ta = taskTime(a)!, tb = taskTime(b)!;
-        return ta.hours * 60 + ta.minutes - (tb.hours * 60 + tb.minutes);
+        const ta = taskOccurrence(a, todayStr)!.time!;
+        const tb = taskOccurrence(b, todayStr)!.time!;
+        const [ah, am] = ta.split(':').map(Number);
+        const [bh, bm] = tb.split(':').map(Number);
+        return ah * 60 + am - (bh * 60 + bm);
       });
     }
     return { tasksPerDay: perDay, busyCounts: counts };
-  }, [tasks, weekDates]);
+  }, [tasks, weekDates, todayStr]);
 
   const hasAnyAllDay = weekDates.some(d => (tasksPerDay.get(d)?.allDay.length ?? 0) > 0);
   const hasAnyTasks = weekDates.some(d => {
@@ -241,8 +235,10 @@ export default function WeekScreen() {
                 return (
                   <View key={dateStr} style={[styles.column, { left: colIndex * COL_WIDTH, width: COL_WIDTH }]}>
                     {timed.map(task => {
-                      const t = taskTime(task)!;
-                      const rawTop = topOffset(t.hours, t.minutes);
+                      const occ = taskOccurrence(task, todayStr);
+                      if (!occ?.time) return null;
+                      const [hours, minutes] = occ.time.split(':').map(Number);
+                      const rawTop = topOffset(hours, minutes);
                       if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
                       return (
                         <View key={task.line} style={[styles.pill, { top: rawTop + 1 }]}>
