@@ -10,7 +10,6 @@ const ROUTE_LABELS: Record<string, string> = {
   '/timeline': 'Timeline',
   '/year': 'Year',
   '/done': 'Done',
-  '/list': 'List',
   '/search': 'Search',
   '/report': 'Report',
   '/settings': 'Settings',

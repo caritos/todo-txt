@@ -25,7 +25,6 @@ export default function RootLayout() {
             <Stack.Screen name="year" />
             <Stack.Screen name="timeline" />
 <Stack.Screen name="day/[date]" />
-            <Stack.Screen name="list" />
             <Stack.Screen name="search" />
             <Stack.Screen name="report" />
             <Stack.Screen name="settings" />

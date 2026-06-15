@@ -9,7 +9,6 @@ const VIEWS: View_[] = [
   { label: 'Timeline', route: '/timeline' },
   { label: 'Year', route: '/year' },
   { label: 'Done', route: '/done' },
-  { label: 'List', route: '/list' },
   { label: 'Search', route: '/search' },
   { label: 'Report', route: '/report' },
   { label: 'Settings', route: '/settings' },
