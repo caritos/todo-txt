@@ -315,6 +315,24 @@ export function focusSortKey(task: Task, todayStr: string): string {
   return '9999-12-31';
 }
 
+// ── Occurrence helper (used by mobile week/day views) ────────────────────────
+
+export type TaskOccurrence = {
+  date: string;       // YYYY-MM-DD
+  time: string | null; // HH:MM or null
+};
+
+export function taskOccurrence(task: Task, todayStr: string): TaskOccurrence | null {
+  const sortKey = focusSortKey(task, todayStr);
+  if (sortKey === '9999-12-31') return null;
+  const resolved = sortKey.startsWith('today') ? todayStr + sortKey.slice(5) : sortKey;
+  const date = resolved.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const timePart = resolved.length > 10 ? resolved.slice(11, 16) : null;
+  const time = timePart && /^\d{2}:\d{2}$/.test(timePart) ? timePart : null;
+  return { date, time };
+}
+
 // ── Recurrence label builder ─────────────────────────────────────────────────
 
 const REC_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
