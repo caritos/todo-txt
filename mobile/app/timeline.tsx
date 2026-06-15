@@ -4,7 +4,7 @@ import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
-import { taskOccurrence } from '@shared/commands/focus';
+import { taskOccurrence, taskDisplayOccurrence } from '@shared/commands/focus';
 import type { Task } from '@shared/parser';
 
 const HOUR_HEIGHT = 60;
@@ -72,8 +72,7 @@ export default function WeekScreen() {
     const counts = new Map<string, number>();
     for (const d of weekDates) perDay.set(d, { allDay: [], timed: [] });
     for (const t of tasks) {
-      if (t.done) continue;
-      const occ = taskOccurrence(t, todayStr);
+      const occ = taskDisplayOccurrence(t, todayStr);
       if (!occ) continue;
       const bucket = perDay.get(occ.date);
       if (!bucket) continue;

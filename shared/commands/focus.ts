@@ -333,6 +333,23 @@ export function taskOccurrence(task: Task, todayStr: string): TaskOccurrence | n
   return { date, time };
 }
 
+// taskDisplayOccurrence applies the same pre-filters as applyFocus:
+//   - skip done tasks
+//   - skip past events (type: whose event has ended)
+//   - advance tasks already completed today (last-done: today) to their next occurrence
+// Mobile week/day views use this instead of taskOccurrence directly.
+export function taskDisplayOccurrence(task: Task, todayStr: string): TaskOccurrence | null {
+  if (task.done) return null;
+  if (isPastEvent(task, todayStr)) return null;
+  const lastDone = task.extensions['last-done'];
+  const freq = task.extensions['frequency'];
+  const start = task.extensions['start'];
+  if (lastDone === todayStr && freq && start) {
+    return taskOccurrence(task, addDays(todayStr, 1));
+  }
+  return taskOccurrence(task, todayStr);
+}
+
 // ── Recurrence label builder ─────────────────────────────────────────────────
 
 const REC_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

@@ -6,7 +6,7 @@ import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today } from '../../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
-import { taskOccurrence } from '@shared/commands/focus';
+import { taskOccurrence, taskDisplayOccurrence } from '@shared/commands/focus';
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
@@ -72,8 +72,7 @@ export default function DayScreen() {
     const allDay: Task[] = [];
     const timed: Task[] = [];
     for (const t of tasks) {
-      if (t.done) continue;
-      const occ = taskOccurrence(t, todayStr);
+      const occ = taskDisplayOccurrence(t, todayStr);
       if (!occ || occ.date !== dateStr) continue;
       if (occ.time) timed.push(t);
       else allDay.push(t);
