@@ -172,11 +172,14 @@ export default function WeekScreen() {
             const allDay = tasksPerDay.get(dateStr)?.allDay ?? [];
             return (
               <View key={dateStr} style={[styles.allDayCell, { width: COL_WIDTH }]}>
-                {allDay.slice(0, 2).map(t => (
-                  <View key={t.line} style={styles.allDayChip}>
-                    <Text style={styles.allDayChipText} numberOfLines={1}>{cleanTitle(t.text)}</Text>
-                  </View>
-                ))}
+                {allDay.slice(0, 2).map(t => {
+                  const isEvent = !!t.extensions['type'];
+                  return (
+                    <View key={t.line} style={isEvent ? styles.allDayEventChip : styles.allDayChip}>
+                      <Text style={styles.allDayChipText} numberOfLines={1}>{cleanTitle(t.text)}</Text>
+                    </View>
+                  );
+                })}
                 {allDay.length > 2 && <Text style={styles.allDayMore}>+{allDay.length - 2}</Text>}
               </View>
             );
@@ -240,8 +243,9 @@ export default function WeekScreen() {
                       const [hours, minutes] = occ.time.split(':').map(Number);
                       const rawTop = topOffset(hours, minutes);
                       if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
+                      const isEvent = !!task.extensions['type'];
                       return (
-                        <View key={task.line} style={[styles.pill, { top: rawTop + 1 }]}>
+                        <View key={task.line} style={[isEvent ? styles.pillEvent : styles.pill, { top: rawTop + 1 }]}>
                           <Text style={styles.pillText} numberOfLines={1}>{cleanTitle(task.text)}</Text>
                         </View>
                       );
@@ -300,6 +304,10 @@ const styles = StyleSheet.create({
     borderLeftWidth: 2, borderLeftColor: Colors.accent,
     paddingHorizontal: 2, paddingVertical: 1,
   },
+  allDayEventChip: {
+    backgroundColor: Colors.accent + '35',
+    paddingHorizontal: 2, paddingVertical: 1,
+  },
   allDayChipText: { fontSize: 7, color: Colors.text, fontFamily: Fonts.mono },
   allDayMore: { fontSize: 7, color: Colors.textSecondary },
 
@@ -337,6 +345,12 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 2, right: 2,
     backgroundColor: Colors.surface,
     borderLeftWidth: 2, borderLeftColor: Colors.accent,
+    paddingVertical: 2, paddingHorizontal: 2,
+    minHeight: 18,
+  },
+  pillEvent: {
+    position: 'absolute', left: 2, right: 2,
+    backgroundColor: Colors.accent + '30',
     paddingVertical: 2, paddingHorizontal: 2,
     minHeight: 18,
   },

@@ -129,12 +129,19 @@ export default function DayScreen() {
         {allDay.length > 0 && (
           <View style={styles.allDaySection}>
             <Text style={styles.allDayHdr}>ALL DAY</Text>
-            {allDay.map(task => (
-              <View key={task.line} style={styles.allDayRow}>
-                <View style={styles.cb} />
-                <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
-              </View>
-            ))}
+            {allDay.map(task => {
+              const isEvent = !!task.extensions['type'];
+              return isEvent ? (
+                <View key={task.line} style={styles.allDayEventRow}>
+                  <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
+                </View>
+              ) : (
+                <View key={task.line} style={styles.allDayRow}>
+                  <View style={styles.cb} />
+                  <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -168,9 +175,10 @@ export default function DayScreen() {
             const rawTop = topOffset(hours, minutes);
             if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
             const top = rawTop + 2;
+            const isEvent = !!task.extensions['type'];
             return (
-              <View key={task.line} style={[styles.eventPill, { top, left: LABEL_WIDTH, right: 8 }]}>
-                <Text style={styles.eventTime}>{formatTime(hours, minutes)}</Text>
+              <View key={task.line} style={[isEvent ? styles.pillEvent : styles.pillTask, { top, left: LABEL_WIDTH, right: 8 }]}>
+                <Text style={[styles.eventTime, isEvent && styles.eventTimeEvent]}>{formatTime(hours, minutes)}</Text>
                 <Text style={styles.eventTitle} numberOfLines={1}>{cleanTitle(task.text)}</Text>
               </View>
             );
@@ -210,6 +218,12 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#222222',
   },
+  allDayEventRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: Spacing.md, paddingVertical: 8,
+    backgroundColor: Colors.accent + '18',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#222222',
+  },
   cb: { width: 14, height: 14, borderWidth: 1.5, borderColor: Colors.checkboxBorder, flexShrink: 0 },
   allDayTitle: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.text, flex: 1 },
   empty: { padding: Spacing.xl, alignItems: 'center' },
@@ -228,12 +242,18 @@ const styles = StyleSheet.create({
   },
   nowDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.accent, marginLeft: 10 },
   nowBar: { flex: 1, height: 1, backgroundColor: Colors.accent },
-  eventPill: {
+  pillTask: {
     position: 'absolute',
     backgroundColor: Colors.surface,
     borderLeftWidth: 2, borderLeftColor: Colors.accent,
     paddingVertical: 4, paddingHorizontal: Spacing.sm,
   },
+  pillEvent: {
+    position: 'absolute',
+    backgroundColor: Colors.accent + '22',
+    paddingVertical: 4, paddingHorizontal: Spacing.sm,
+  },
   eventTime: { fontSize: 9, color: Colors.accent, fontFamily: Fonts.mono, letterSpacing: 0.5 },
+  eventTimeEvent: { color: Colors.text, opacity: 0.5 },
   eventTitle: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.text },
 });
