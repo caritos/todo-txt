@@ -9,6 +9,7 @@ import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
 import { taskOccurrence, applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
 import type { Task } from '@shared/parser';
+import { pad, hourLabel, cleanTitle } from '../src/uiUtils';
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
@@ -24,23 +25,8 @@ const MONTHS = [
 ];
 const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
 function topOffset(hours: number, minutes: number): number {
   return (hours - START_HOUR + minutes / 60) * HOUR_HEIGHT;
-}
-
-function hourLabel(h: number): string {
-  if (h === 0) return '12 AM';
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return 'noon';
-  return `${h - 12} PM`;
-}
-
-function cleanTitle(text: string): string {
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
 }
 
 export default function WeekScreen() {

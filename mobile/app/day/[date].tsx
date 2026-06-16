@@ -9,6 +9,7 @@ import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
 import { applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
 import { usePendingDone } from '../../src/hooks/usePendingDone';
+import { parseDateParts, hourLabel, cleanTitle, formatTime } from '../../src/uiUtils';
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
@@ -18,38 +19,8 @@ const LABEL_WIDTH = 52;
 const TIMELINE_RIGHT_PAD = 8;
 const TIMELINE_WIDTH = Dimensions.get('window').width - LABEL_WIDTH - TIMELINE_RIGHT_PAD;
 
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-function parseDateParts(dateStr: string): { month: string; day: number; year: number; dayName: string } {
-  const d = new Date(dateStr + 'T12:00:00');
-  return {
-    month: MONTH_NAMES[d.getMonth()],
-    day: d.getDate(),
-    year: d.getFullYear(),
-    dayName: DAY_NAMES[d.getDay()].toUpperCase(),
-  };
-}
-
-function hourLabel(h: number): string {
-  if (h === 0) return '12 AM';
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return 'noon';
-  return `${h - 12} PM`;
-}
-
-function cleanTitle(text: string): string {
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
-}
-
 function topOffset(hours: number, minutes: number): number {
   return (hours - START_HOUR + minutes / 60) * HOUR_HEIGHT;
-}
-
-function formatTime(hours: number, minutes: number): string {
-  const h = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-  const ampm = hours < 12 ? 'AM' : 'PM';
-  return `${h}:${String(minutes).padStart(2, '0')} ${ampm}`;
 }
 
 export default function DayScreen() {

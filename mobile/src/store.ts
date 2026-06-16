@@ -43,5 +43,7 @@ export async function readTasks(filePath: string): Promise<Task[]> {
 
 export async function writeTasks(filePath: string, tasks: Task[]): Promise<void> {
   const content = tasks.map(t => t.raw).join('\n') + '\n';
-  await FileSystem.writeAsStringAsync(filePath, content, { encoding: 'utf8' });
+  const tmp = filePath + '.tmp';
+  await FileSystem.writeAsStringAsync(tmp, content, { encoding: 'utf8' });
+  await FileSystem.moveAsync({ from: tmp, to: filePath });
 }

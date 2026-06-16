@@ -10,30 +10,13 @@ import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
 import { nextYearlyDate, nextMonthlyDate, nextWeeklyDate, applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
 
+import { pad, buildCells, cleanTitle } from '../src/uiUtils';
+
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-function buildCells(year: number, month: number): (string | null)[] {
-  const firstDow = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (string | null)[] = Array(firstDow).fill(null);
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push(`${year}-${pad(month + 1)}-${pad(d)}`);
-  }
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
-}
-
-function cleanTitle(text: string): string {
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
-}
 
 function generateOccurrences(
   task: Task,

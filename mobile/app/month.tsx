@@ -7,31 +7,14 @@ import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import type { Task } from '@shared/parser';
 
+import { cleanTitle, buildCells } from '../src/uiUtils';
+
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-function cleanTitle(text: string): string {
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-function buildCells(year: number, month: number): (string | null)[] {
-  const firstDow = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (string | null)[] = Array(firstDow).fill(null);
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push(`${year}-${pad(month + 1)}-${pad(d)}`);
-  }
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
-}
 
 export default function MonthScreen() {
   const { tasks } = useTasks();
