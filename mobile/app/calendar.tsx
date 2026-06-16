@@ -289,6 +289,7 @@ export default function CalendarScreen() {
               ]}
               onPress={() => router.push(`/task/${item.task.line}` as any)}
               activeOpacity={0.7}
+              hitSlop={8}
             >
               <Text style={[
                 styles.agendaIcon,
@@ -385,8 +386,8 @@ const styles = StyleSheet.create({
   },
   agendaIcon: { fontSize: 11, color: Colors.textSecondary, width: 14, textAlign: 'center' },
   agendaIconEvent: { color: Colors.accent },
-  agendaIconDone: { color: '#444' },
+  agendaIconDone: { color: Colors.textSecondary },
   agendaTitle: { flex: 1, fontSize: 13, color: Colors.text, fontFamily: Fonts.mono },
-  agendaTitleDone: { color: '#444', textDecorationLine: 'line-through' },
+  agendaTitleDone: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
   agendaTime: { fontSize: 11, color: Colors.textSecondary, fontFamily: Fonts.mono },
 });
