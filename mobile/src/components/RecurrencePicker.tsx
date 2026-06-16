@@ -59,6 +59,9 @@ export function recurrenceLabel(value: RecurrenceValue, custom?: CustomConfig): 
         };
         return `Monthly · ${ords[custom.positionOrdinal]} ${days[custom.positionWeekday]}`;
       }
+      if (custom.n === 1 && !custom.monthDayType) {
+        return 'Every Month';
+      }
     }
     const [sing, plur] = unitParts[custom.unit];
     return `Every ${custom.n} ${custom.n === 1 ? sing : plur}`;
