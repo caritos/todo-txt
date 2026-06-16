@@ -197,15 +197,18 @@ export default function CalendarScreen() {
   const hasScrolledToToday = useRef(false);
 
   function scrollToDate(dateStr: string) {
-    // finds the section on or after dateStr; if exact date has no items, jumps to next date with items
-    const sectionIndex = sections.findIndex(s => s.dateStr >= dateStr);
+    const sectionIndex = sections.findIndex(s => s.dateStr === dateStr);
     if (sectionIndex < 0) return;
-    sectionListRef.current?.scrollToLocation({
-      sectionIndex,
-      itemIndex: 0,
-      animated: true,
-      viewOffset: 0,
-    });
+    try {
+      sectionListRef.current?.scrollToLocation({
+        sectionIndex,
+        itemIndex: 0,
+        animated: true,
+        viewOffset: 0,
+      });
+    } catch {
+      // scrollToLocation throws when the target section hasn't been rendered yet
+    }
   }
 
   useEffect(() => {
