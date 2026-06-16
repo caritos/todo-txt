@@ -183,7 +183,7 @@ export default function WeekScreen() {
             const allDay = tasksPerDay.get(dateStr)?.allDay ?? [];
             return (
               <View key={dateStr} style={[styles.allDayCell, { width: COL_WIDTH }]}>
-                {allDay.slice(0, 2).map(t => {
+                {allDay.slice(0, 4).map(t => {
                   const isEvent = !!t.extensions['type'];
                   return (
                     <View key={t.line} style={isEvent ? styles.allDayEventChip : styles.allDayChip}>
@@ -191,7 +191,7 @@ export default function WeekScreen() {
                     </View>
                   );
                 })}
-                {allDay.length > 2 && <Text style={styles.allDayMore}>+{allDay.length - 2}</Text>}
+                {allDay.length > 4 && <Text style={styles.allDayMore}>+{allDay.length - 4}</Text>}
               </View>
             );
           })}

@@ -174,10 +174,10 @@ export default function DayScreen() {
         </View>
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll}>
-        {allDay.length > 0 && (
-          <View style={styles.allDaySection}>
-            <Text style={styles.allDayHdr}>ALL DAY</Text>
+      {allDay.length > 0 && (
+        <View style={styles.allDaySection}>
+          <Text style={styles.allDayHdr}>ALL DAY</Text>
+          <ScrollView style={styles.allDayScroll} alwaysBounceVertical={false}>
             {allDay.map(task => {
               const isEvent = !!task.extensions['type'];
               return isEvent ? (
@@ -199,9 +199,11 @@ export default function DayScreen() {
                 </TouchableOpacity>
               );
             })}
-          </View>
-        )}
+          </ScrollView>
+        </View>
+      )}
 
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll}>
         {isEmpty && (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>nothing scheduled.</Text>
@@ -288,6 +290,7 @@ const styles = StyleSheet.create({
   dateDayName: { fontSize: 13, color: Colors.textSecondary, letterSpacing: 1.5, marginTop: 2 },
   scroll: { paddingBottom: 120 },
   allDaySection: { borderBottomWidth: 1, borderBottomColor: Colors.separator },
+  allDayScroll: { maxHeight: 132 },
   allDayHdr: {
     fontSize: 9, color: '#555555', letterSpacing: 1.5,
     paddingHorizontal: Spacing.md, paddingTop: 6, paddingBottom: 4,
@@ -328,7 +331,7 @@ const styles = StyleSheet.create({
   },
   hourLabel: {
     width: LABEL_WIDTH, fontSize: 10, color: '#444444',
-    fontFamily: Fonts.mono, paddingLeft: Spacing.md, paddingTop: 20,
+    fontFamily: Fonts.mono, paddingLeft: Spacing.md, paddingTop: 3,
   },
   nowLine: {
     position: 'absolute', left: 0, right: 0,
