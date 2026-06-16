@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Switch,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -69,6 +70,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
   const [showRepeat, setShowRepeat] = useState(false);
   const [priority, setPriority] = useState<Priority>('none');
   const [error, setError] = useState('');
+  const [showMore, setShowMore] = useState(false);
+  const [hasDate, setHasDate] = useState(false);
 
   const tagPrefix = getTagPrefix(title);
   const suggestions: string[] = tagPrefix ? collectTags(tasks, tagPrefix.type, tagPrefix.partial) : [];
@@ -76,6 +79,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
   function reset() {
     setAddType('task');
     setTitle('');
+    setShowMore(false);
+    setHasDate(false);
     setDate(new Date());
     setHasTime(false);
     setTime(new Date());
@@ -319,9 +324,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: Colors.separator,
-    borderRightWidth: 0,
   },
-  typeBtnRight: { borderRightWidth: 1 },
+  typeBtnRight: { borderLeftWidth: 0 },
   typeBtnActive: { borderColor: Colors.accent },
   typeBtnText: { fontSize: 11, fontWeight: '600', letterSpacing: 1, color: '#555555' },
   typeBtnTextActive: { color: Colors.accent },
