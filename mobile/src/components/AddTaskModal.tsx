@@ -18,7 +18,8 @@ import { parseLine } from '@shared/parser';
 import type { Task } from '@shared/parser';
 import { buildAddRaw } from '@shared/commands/add';
 import { RecurrencePicker, recurrenceExtensions, recurrenceLabel } from './RecurrencePicker';
-import type { RecurrenceValue } from './RecurrencePicker';
+import type { RecurrenceValue, CustomConfig } from './RecurrencePicker';
+import { CustomRecurrencePicker, customRecurrenceExtensions } from './CustomRecurrencePicker';
 import { Colors, Fonts, Spacing } from '../theme';
 import { today } from '../utils';
 
@@ -71,6 +72,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
   const [priority, setPriority] = useState<Priority>('none');
   const [error, setError] = useState('');
   const [showMore, setShowMore] = useState(false);
+  const [customConfig, setCustomConfig] = useState<CustomConfig>({ n: 1, unit: 'month' });
   const [hasDate, setHasDate] = useState(false);
 
   const tagPrefix = getTagPrefix(title);
@@ -86,6 +88,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
     setTime(new Date());
     setRepeat('none');
     setShowRepeat(false);
+    setCustomConfig({ n: 1, unit: 'month' });
     setPriority('none');
     setError('');
   }
@@ -117,7 +120,9 @@ export function AddTaskModal({ visible, onClose }: Props) {
         ? `start:${dateStr}T${pad(time.getHours())}:${pad(time.getMinutes())}`
         : `start:${dateStr}`;
       parts.push(startExt);
-      const freqExt = recurrenceExtensions(repeat);
+      const freqExt = repeat === 'custom'
+        ? customRecurrenceExtensions(customConfig)
+        : recurrenceExtensions(repeat);
       if (freqExt) parts.push(freqExt);
     }
 
@@ -306,17 +311,25 @@ export function AddTaskModal({ visible, onClose }: Props) {
                     >
                       <Text style={styles.flabel}>Repeat</Text>
                       <Text style={repeat === 'none' ? styles.fnone : styles.fval}>
-                        {recurrenceLabel(repeat)}
+                        {recurrenceLabel(repeat, repeat === 'custom' ? customConfig : undefined)}
                       </Text>
                     </TouchableOpacity>
                     {showRepeat && (
-                      <RecurrencePicker
-                        value={repeat}
-                        onChange={r => {
-                          setRepeat(r);
-                          setShowRepeat(false);
-                        }}
-                      />
+                      repeat === 'custom' ? (
+                        <CustomRecurrencePicker
+                          config={customConfig}
+                          onChange={setCustomConfig}
+                          onBack={() => setRepeat('none')}
+                        />
+                      ) : (
+                        <RecurrencePicker
+                          value={repeat}
+                          onChange={r => {
+                            setRepeat(r);
+                            if (r !== 'custom') setShowRepeat(false);
+                          }}
+                        />
+                      )
                     )}
                   </>
                 )}
