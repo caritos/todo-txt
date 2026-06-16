@@ -46,15 +46,15 @@ export function usePendingDone(
         setPendingLines(prev => new Set([...prev, line]));
         const timer = setTimeout(async () => {
           timers.current.delete(line);
+          try {
+            const { tasks: updated } = applyDone([...tasksRef.current], [line], todayStr);
+            await save(updated);
+          } catch {}
           setPendingLines(prev => {
             const next = new Set(prev);
             next.delete(line);
             return next;
           });
-          try {
-            const { tasks: updated } = applyDone([...tasksRef.current], [line], todayStr);
-            await save(updated);
-          } catch {}
         }, delayMs);
         timers.current.set(line, timer);
       }
