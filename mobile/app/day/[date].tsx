@@ -8,7 +8,7 @@ import { today } from '../../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
 import { applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
-import { applyDone } from '@shared/commands/done';
+import { usePendingDone } from '../../src/hooks/usePendingDone';
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 6;
@@ -137,12 +137,7 @@ export default function DayScreen() {
       }
     });
 
-  async function handleDone(task: Task) {
-    try {
-      const { tasks: updated } = applyDone([...tasks], [task.line], todayStr);
-      await save(updated);
-    } catch {}
-  }
+  const { isPending, tapCheckbox } = usePendingDone(tasks, todayStr, save);
 
   return (
     <GestureDetector gesture={swipe}>
@@ -191,8 +186,14 @@ export default function DayScreen() {
                 </View>
               ) : (
                 <TouchableOpacity key={task.line} style={styles.allDayRow} onPress={() => router.push(`/task/${task.line}` as any)} activeOpacity={0.7}>
-                  <TouchableOpacity onPress={() => handleDone(task)} hitSlop={8}>
-                    <View style={styles.cb} />
+                  <TouchableOpacity onPress={() => tapCheckbox(task)} hitSlop={8}>
+                    {isPending(task.line) ? (
+                      <View style={styles.cbPending}>
+                        <Text style={styles.cbCheck}>✓</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.cb} />
+                    )}
                   </TouchableOpacity>
                   <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
                 </TouchableOpacity>
@@ -236,8 +237,14 @@ export default function DayScreen() {
               <TouchableOpacity key={task.line} style={[isEvent ? styles.pillEvent : styles.pillTask, { top, left, width: colWidth }]} onPress={() => router.push(`/task/${task.line}` as any)} activeOpacity={0.75}>
                 <View style={styles.pillInner}>
                   {!isEvent && (
-                    <TouchableOpacity onPress={() => handleDone(task)} hitSlop={8}>
-                      <View style={styles.pillCb} />
+                    <TouchableOpacity onPress={() => tapCheckbox(task)} hitSlop={8}>
+                      {isPending(task.line) ? (
+                        <View style={styles.pillCbPending}>
+                          <Text style={styles.pillCbCheck}>✓</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.pillCb} />
+                      )}
                     </TouchableOpacity>
                   )}
                   <View style={styles.pillText}>
@@ -298,6 +305,20 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#222222',
   },
   cb: { width: 14, height: 14, borderWidth: 1.5, borderColor: Colors.checkboxBorder, flexShrink: 0 },
+  cbPending: {
+    width: 14,
+    height: 14,
+    backgroundColor: Colors.accent,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cbCheck: {
+    fontSize: 9,
+    color: '#ffffff',
+    lineHeight: 11,
+    fontWeight: '700',
+  },
   allDayTitle: { fontFamily: Fonts.mono, fontSize: 12, color: Colors.text, flex: 1 },
   empty: { padding: Spacing.xl, alignItems: 'center' },
   emptyText: { color: Colors.textSecondary, fontStyle: 'italic', fontFamily: Fonts.mono, fontSize: 13 },
@@ -330,6 +351,20 @@ const styles = StyleSheet.create({
   },
   pillInner: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   pillCb: { width: 10, height: 10, borderWidth: 1.5, borderColor: Colors.checkboxBorder, flexShrink: 0 },
+  pillCbPending: {
+    width: 10,
+    height: 10,
+    backgroundColor: Colors.accent,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillCbCheck: {
+    fontSize: 7,
+    color: '#ffffff',
+    lineHeight: 8,
+    fontWeight: '700',
+  },
   pillText: { flex: 1 },
   eventTime: { fontSize: 9, color: Colors.accent, fontFamily: Fonts.mono, letterSpacing: 0.5 },
   eventTimeEvent: { color: Colors.text, opacity: 0.5 },
