@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, SectionList, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTasks } from '../src/context/TaskContext';
@@ -192,6 +192,32 @@ export default function CalendarScreen() {
     return { sections: sectionList, datesWithItems: dotSet };
   }, [tasks, todayStr]);
 
+  function scrollToDate(dateStr: string) {
+    const sectionIndex = sections.findIndex(s => s.dateStr >= dateStr);
+    if (sectionIndex < 0) return;
+    sectionListRef.current?.scrollToLocation({
+      sectionIndex,
+      itemIndex: 0,
+      animated: true,
+      viewOffset: 0,
+    });
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => scrollToDate(todayStr), 200);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const monthPrefix = `${calYear}-${pad(calMonth + 1)}`;
+    const target = sections.find(s => s.dateStr.startsWith(monthPrefix))
+      ?? sections.find(s => s.dateStr >= `${calYear}-${pad(calMonth + 1)}-01`);
+    if (!target) return;
+    const timer = setTimeout(() => scrollToDate(target.dateStr), 50);
+    return () => clearTimeout(timer);
+  }, [calYear, calMonth, sections]);
+
   const swipe = Gesture.Pan()
     .runOnJS(true)
     .minDistance(40)
@@ -236,7 +262,10 @@ export default function CalendarScreen() {
                   <TouchableOpacity
                     key={dateStr}
                     style={styles.calCell}
-                    onPress={() => setSelectedDate(dateStr)}
+                    onPress={() => {
+                      setSelectedDate(dateStr);
+                      scrollToDate(dateStr);
+                    }}
                     activeOpacity={0.7}
                   >
                     <View style={[
