@@ -65,13 +65,16 @@ function generateOccurrences(
 
   while (cursor <= cutoffStr) {
     results.push({ date: cursor, task });
+    let next: string;
     if (freq === 'yearly') {
-      cursor = nextYearlyDate(startDate, addDays(cursor, 1), exdates, freqMonthDay, every);
+      next = nextYearlyDate(startDate, addDays(cursor, 1), exdates, freqMonthDay, every);
     } else if (freq === 'monthly') {
-      cursor = nextMonthlyDate(startVal, addDays(cursor, 1), exdates, freqMonthDay, every);
+      next = nextMonthlyDate(startVal, addDays(cursor, 1), exdates, freqMonthDay, every);
     } else {
-      cursor = nextWeeklyDate(startVal, addDays(cursor, 1), every, exdates, freqDay);
+      next = nextWeeklyDate(startVal, addDays(cursor, 1), every, exdates, freqDay);
     }
+    if (next <= cursor) break;
+    cursor = next;
   }
 
   return results;
@@ -108,7 +111,7 @@ export default function EventsScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView>
         {sections.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>no upcoming events.</Text>
@@ -141,7 +144,6 @@ export default function EventsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
-  scroll: {},
   sectionHeader: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.md,
