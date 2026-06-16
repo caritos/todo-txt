@@ -33,4 +33,12 @@ describe('applyDone', () => {
     // Original two-call pattern: currentOcc=2026-05-29, nextOcc=2026-06-05
     expect(updated[0]!.extensions['start']).toBe('2026-06-05T09:00');
   });
+
+  test('applyDone on daily every:5 task advances start by 5 days', () => {
+    // Occurrences: Jan 1, Jan 6, Jan 11, Jan 16...
+    // Marking done on Jan 11: currentOcc=Jan 11, nextOcc=Jan 16
+    const tasks = [makeTask('water plants start:2026-01-01 frequency:daily every:5')];
+    const { tasks: updated } = applyDone(tasks, [1], '2026-01-11');
+    expect(updated[0]!.extensions['start']).toBe('2026-01-16');
+  });
 });

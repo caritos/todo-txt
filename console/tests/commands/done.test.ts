@@ -186,15 +186,16 @@ describe('done command - recurring tasks', () => {
     expect(original).toContain(`last-done:${today}`);
   });
 
-  test('daily recurring task does not advance start on completion', () => {
+  test('daily recurring task advances start by 1 day on completion', () => {
     const today = todayStr();
     const yesterday = daysAgo(1);
+    const tomorrow = daysAgo(-1);
     writeFileSync(todoFile, `stoicism start:${yesterday}T06:00 frequency:daily\n`, 'utf8');
     run(['--file', todoFile, 'done', '1']);
     const content = readFileSync(todoFile, 'utf8');
     const original = content.split('\n').find(l => l.includes('frequency:daily'));
     expect(original).toBeDefined();
-    expect(original).toContain(`start:${yesterday}T06:00`);
+    expect(original).toContain(`start:${tomorrow}T06:00`);
     expect(original).toContain(`last-done:${today}`);
   });
 
