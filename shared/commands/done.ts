@@ -1,7 +1,7 @@
 import { serializeTask, baseText } from '../parser';
 import type { Task } from '../parser';
 import { addDays } from '../utils';
-import { nextWeeklyDate, nextMonthlyDate, nextYearlyDate } from './focus';
+import { nextWeeklyDate, nextMonthlyDate, nextYearlyDate, overdueOccurrenceDate } from './focus';
 
 export interface SkippedTask {
   num: number;
@@ -51,6 +51,11 @@ export function applyDone(
         task.priority = undefined;
       }
 
+      const startVal = task.extensions['start'];
+      const freq = task.extensions['frequency'];
+      // Capture overdue occurrence BEFORE mutating last-done (overdueOccurrenceDate checks last-done)
+      const overdueOcc = (freq === 'weekly' || freq === 'monthly') ? overdueOccurrenceDate(task, todayStr) : null;
+
       const hasLastDone = /(?:^|\s)last-done:[^/\s]\S*/.test(task.text);
       if (hasLastDone) {
         task.text = task.text.replace(/\blast-done:[^/\s]\S*/g, `last-done:${todayStr}`);
@@ -59,8 +64,6 @@ export function applyDone(
       }
       task.extensions['last-done'] = todayStr;
 
-      const startVal = task.extensions['start'];
-      const freq = task.extensions['frequency'];
       if (startVal && (freq === 'weekly' || freq === 'monthly' || freq === 'yearly' || freq === 'daily')) {
         const every = parseInt(task.extensions['every'] ?? '1');
         const exdates = new Set<string>((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
@@ -69,10 +72,10 @@ export function applyDone(
         let currentOcc: string;
         let nextOcc: string;
         if (freq === 'weekly') {
-          currentOcc = nextWeeklyDate(startVal, todayStr, every, exdates, freqDay);
+          currentOcc = overdueOcc ?? nextWeeklyDate(startVal, todayStr, every, exdates, freqDay);
           nextOcc = nextWeeklyDate(startVal, addDays(currentOcc, 1), every, exdates, freqDay);
         } else if (freq === 'monthly') {
-          currentOcc = nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay, every);
+          currentOcc = overdueOcc ?? nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay, every);
           nextOcc = nextMonthlyDate(startVal, addDays(currentOcc, 1), exdates, freqMonthDay, every);
         } else if (freq === 'daily') {
           const startDate = startVal.slice(0, 10);
