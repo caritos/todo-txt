@@ -65,6 +65,7 @@ function generateOccurrences(
   } else if (freq === 'weekly') {
     cursor = nextWeeklyDate(startVal, fromStr, every, exdates, freqDay);
   } else {
+    // daily and other frequencies not supported — same as events.tsx
     return results;
   }
 
@@ -141,6 +142,8 @@ export default function CalendarScreen() {
     }
 
     // 2. Incomplete tasks grouped by start: date
+    // Incomplete tasks: show on their start: date regardless of recurrence state —
+    // calendar view shows scheduled dates, not a focus/overdue filter.
     for (const t of tasks) {
       if (t.done || !!t.extensions['type']) continue;
       const startVal = t.extensions['start'];
