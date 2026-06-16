@@ -141,7 +141,7 @@ export default function EventsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingBottom: 120 },
+  scroll: {},
   sectionHeader: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.md,
