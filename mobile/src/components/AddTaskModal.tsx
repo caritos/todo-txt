@@ -301,7 +301,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
                     )}
 
                     <TouchableOpacity
-                      style={[styles.frow, styles.frowLast, showRepeat && styles.frowNoBottom]}
+                      style={[styles.frow, styles.frowLast]}
                       onPress={() => setShowRepeat(r => !r)}
                     >
                       <Text style={styles.flabel}>Repeat</Text>
