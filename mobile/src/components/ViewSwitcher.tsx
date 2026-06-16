@@ -3,15 +3,16 @@ import { useRouter } from 'expo-router';
 import { Colors, Spacing } from '../theme';
 import { useTasks } from '../context/TaskContext';
 
-type View_ = { label: string; route: string };
+type NavItem = { label: string; route: string } | { separator: true };
 
-const VIEWS: View_[] = [
+const VIEWS: NavItem[] = [
+  { label: 'Calendar', route: '/calendar' },
+  { separator: true },
   { label: 'Day', route: '/day' },
   { label: 'Week', route: '/timeline' },
   { label: 'Month', route: '/month' },
   { label: 'Year', route: '/year' },
-  { label: 'Calendar', route: '/calendar' },
-  { label: 'Search', route: '/search' },
+  { separator: true },
   { label: 'Settings', route: '/settings' },
 ];
 
@@ -32,11 +33,16 @@ export function ViewSwitcher({ visible, onClose }: Props) {
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet}>
           <View style={styles.handle} />
-          {VIEWS.map(v => (
-            <TouchableOpacity key={v.route} style={styles.item} onPress={() => navigate(v.route)}>
-              <Text style={styles.itemText}>{v.label}</Text>
-            </TouchableOpacity>
-          ))}
+          {VIEWS.map((v, i) => {
+            if ('separator' in v) {
+              return <View key={`sep-${i}`} style={styles.separator} />;
+            }
+            return (
+              <TouchableOpacity key={v.route} style={styles.item} onPress={() => navigate(v.route)}>
+                <Text style={styles.itemText}>{v.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </Pressable>
       </Pressable>
     </Modal>
@@ -62,4 +68,9 @@ const styles = StyleSheet.create({
   },
   item: { paddingVertical: 16, paddingHorizontal: Spacing.lg, borderBottomWidth: 1, borderBottomColor: Colors.separator },
   itemText: { fontSize: 17, color: Colors.text },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.separator,
+    marginVertical: Spacing.xs,
+  },
 });
