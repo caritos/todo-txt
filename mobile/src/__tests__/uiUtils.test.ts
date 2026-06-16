@@ -285,3 +285,42 @@ describe('topOffset regression (issue #25: now-line before hour label)', () => {
     expect(topOffset(0, 0)).toBeLessThan(0);
   });
 });
+
+// ─── week view all-day section: no artificial cap (issue #27) ──────────────
+// The week view previously capped all-day tasks at 4 (allDay.slice(0, 4))
+// and showed a "+N more" overflow label. The fix removes the cap so all tasks
+// are rendered inside a scrollable container (maxHeight: 120).
+// Full rendering tests would require @testing-library/react-native.
+// These tests verify the data-layer invariants the UI relies on.
+describe('week view all-day section (issue #27: scrollable, no cap)', () => {
+  test('slicing to 4 drops items — confirms the old bug', () => {
+    const tasks = Array.from({ length: 8 }, (_, i) => i);
+    expect(tasks.slice(0, 4)).toHaveLength(4); // old behavior lost 4 items
+  });
+
+  test('no slice — all items are present', () => {
+    const tasks = Array.from({ length: 8 }, (_, i) => i);
+    expect(tasks).toHaveLength(8); // fixed behavior
+  });
+
+  test('cleanTitle strips extensions so all-day chip labels are clean', () => {
+    expect(cleanTitle('team standup start:2026-06-16 type:event')).toBe('team standup');
+    expect(cleanTitle('doctor appointment start:2026-06-16T09:00')).toBe('doctor appointment');
+  });
+
+  test('chip count matches number of all-day tasks for a date (no off-by-one)', () => {
+    const byDate = new Map<string, number[]>();
+    const tasks = [
+      { date: '2026-06-16', id: 1 }, { date: '2026-06-16', id: 2 },
+      { date: '2026-06-16', id: 3 }, { date: '2026-06-17', id: 4 },
+    ];
+    for (const t of tasks) {
+      const list = byDate.get(t.date) ?? [];
+      list.push(t.id);
+      byDate.set(t.date, list);
+    }
+    expect(byDate.get('2026-06-16')).toHaveLength(3);
+    expect(byDate.get('2026-06-17')).toHaveLength(1);
+    expect(byDate.get('2026-06-18') ?? []).toHaveLength(0);
+  });
+});

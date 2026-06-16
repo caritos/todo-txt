@@ -162,25 +162,28 @@ export default function WeekScreen() {
       {/* All-day row */}
       {hasAnyAllDay && (
         <View style={styles.allDayRow}>
-          <View style={{ width: LABEL_WIDTH, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={styles.allDayLabelCol}>
             <Text style={styles.allDayLabel}>ALL{'\n'}DAY</Text>
           </View>
-          {weekDates.map(dateStr => {
-            const allDay = tasksPerDay.get(dateStr)?.allDay ?? [];
-            return (
-              <View key={dateStr} style={[styles.allDayCell, { width: COL_WIDTH }]}>
-                {allDay.slice(0, 4).map(t => {
-                  const isEvent = !!t.extensions['type'];
-                  return (
-                    <View key={t.line} style={isEvent ? styles.allDayEventChip : styles.allDayChip}>
-                      <Text style={styles.allDayChipText} numberOfLines={1}>{cleanTitle(t.text)}</Text>
-                    </View>
-                  );
-                })}
-                {allDay.length > 4 && <Text style={styles.allDayMore}>+{allDay.length - 4}</Text>}
-              </View>
-            );
-          })}
+          <ScrollView style={styles.allDayScroll} alwaysBounceVertical={false}>
+            <View style={styles.allDayCols}>
+              {weekDates.map(dateStr => {
+                const allDay = tasksPerDay.get(dateStr)?.allDay ?? [];
+                return (
+                  <View key={dateStr} style={[styles.allDayCell, { width: COL_WIDTH }]}>
+                    {allDay.map(t => {
+                      const isEvent = !!t.extensions['type'];
+                      return (
+                        <View key={t.line} style={isEvent ? styles.allDayEventChip : styles.allDayChip}>
+                          <Text style={styles.allDayChipText} numberOfLines={1}>{cleanTitle(t.text)}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              })}
+            </View>
+          </ScrollView>
         </View>
       )}
 
@@ -289,10 +292,13 @@ const styles = StyleSheet.create({
   stripDotPlaceholder: { height: 8 },
 
   allDayRow: {
-    flexDirection: 'row', minHeight: 24,
+    flexDirection: 'row',
+    maxHeight: 120,
     borderBottomWidth: 1, borderBottomColor: Colors.separator,
-    paddingVertical: 3,
   },
+  allDayLabelCol: { width: LABEL_WIDTH, alignItems: 'center', justifyContent: 'center', paddingVertical: 3 },
+  allDayScroll: { flex: 1 },
+  allDayCols: { flexDirection: 'row', paddingVertical: 3 },
   allDayLabel: { fontSize: 7, color: '#555555', letterSpacing: 0.5, textAlign: 'center' },
   allDayCell: { paddingHorizontal: 1, gap: 1 },
   allDayChip: {
@@ -304,7 +310,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2, paddingVertical: 1,
   },
   allDayChipText: { fontSize: 7, color: Colors.text, fontFamily: Fonts.mono },
-  allDayMore: { fontSize: 7, color: Colors.textSecondary },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: Colors.textSecondary, fontStyle: 'italic', fontFamily: Fonts.mono, fontSize: 13 },
