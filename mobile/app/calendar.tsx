@@ -192,7 +192,10 @@ export default function CalendarScreen() {
     return { sections: sectionList, datesWithItems: dotSet };
   }, [tasks, todayStr]);
 
+  const hasScrolledToToday = useRef(false);
+
   function scrollToDate(dateStr: string) {
+    // finds the section on or after dateStr; if exact date has no items, jumps to next date with items
     const sectionIndex = sections.findIndex(s => s.dateStr >= dateStr);
     if (sectionIndex < 0) return;
     sectionListRef.current?.scrollToLocation({
@@ -204,10 +207,11 @@ export default function CalendarScreen() {
   }
 
   useEffect(() => {
+    if (sections.length === 0 || hasScrolledToToday.current) return;
+    hasScrolledToToday.current = true;
     const timer = setTimeout(() => scrollToDate(todayStr), 200);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sections]);
 
   useEffect(() => {
     const monthPrefix = `${calYear}-${pad(calMonth + 1)}`;
@@ -216,7 +220,8 @@ export default function CalendarScreen() {
     if (!target) return;
     const timer = setTimeout(() => scrollToDate(target.dateStr), 50);
     return () => clearTimeout(timer);
-  }, [calYear, calMonth, sections]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calYear, calMonth]);
 
   const swipe = Gesture.Pan()
     .runOnJS(true)
