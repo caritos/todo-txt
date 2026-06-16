@@ -91,6 +91,7 @@ type AgendaItem = {
   task: Task;
   kind: 'completed' | 'incomplete' | 'event';
   time?: string;
+  isOverdue?: boolean;
 };
 
 type AgendaSection = {
@@ -158,6 +159,7 @@ export default function CalendarScreen() {
         task: t,
         kind: 'incomplete',
         time: startVal.length > 10 ? startVal.slice(11, 16) : undefined,
+        isOverdue: date < todayStr,
       });
     }
 
@@ -239,8 +241,8 @@ export default function CalendarScreen() {
     });
 
   return (
-    <GestureDetector gesture={swipe}>
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <GestureDetector gesture={swipe}>
         {/* Month calendar */}
         <View style={styles.calendarWrapper}>
           {/* Header */}
@@ -296,57 +298,59 @@ export default function CalendarScreen() {
             </View>
           ))}
         </View>
+      </GestureDetector>
 
-        <SectionList<AgendaItem, AgendaSection>
-          ref={sectionListRef}
-          sections={sections}
-          keyExtractor={item => item.key}
-          stickySectionHeadersEnabled={false}
-          renderSectionHeader={({ section }) => (
-            <View style={[
-              styles.sectionHeader,
-              section.dateStr === todayStr && styles.sectionHeaderToday,
+      <SectionList<AgendaItem, AgendaSection>
+        ref={sectionListRef}
+        sections={sections}
+        keyExtractor={item => item.key}
+        stickySectionHeadersEnabled={false}
+        renderSectionHeader={({ section }) => (
+          <View style={[
+            styles.sectionHeader,
+            section.dateStr === todayStr && styles.sectionHeaderToday,
+          ]}>
+            <Text style={[
+              styles.sectionTitle,
+              section.dateStr === todayStr && styles.sectionTitleToday,
             ]}>
-              <Text style={[
-                styles.sectionTitle,
-                section.dateStr === todayStr && styles.sectionTitleToday,
-              ]}>
-                {section.title}
-              </Text>
-            </View>
-          )}
-          renderItem={({ item, section }) => (
-            <TouchableOpacity
-              style={[
-                styles.agendaRow,
-                section.dateStr === todayStr && styles.agendaRowToday,
-              ]}
-              onPress={() => router.push(`/task/${item.task.line}` as any)}
-              activeOpacity={0.7}
-              hitSlop={8}
+              {section.title}
+            </Text>
+          </View>
+        )}
+        renderItem={({ item, section }) => (
+          <TouchableOpacity
+            style={[
+              styles.agendaRow,
+              section.dateStr === todayStr && styles.agendaRowToday,
+            ]}
+            onPress={() => router.push(`/task/${item.task.line}` as any)}
+            activeOpacity={0.7}
+            hitSlop={8}
+          >
+            <Text style={[
+              styles.agendaIcon,
+              item.kind === 'event' && styles.agendaIconEvent,
+              item.kind === 'completed' && styles.agendaIconDone,
+              item.kind === 'incomplete' && item.isOverdue && styles.agendaIconOverdue,
+            ]}>
+              {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '○'}
+            </Text>
+            <Text
+              style={[styles.agendaTitle, item.kind === 'completed' && styles.agendaTitleDone]}
+              numberOfLines={1}
             >
-              <Text style={[
-                styles.agendaIcon,
-                item.kind === 'event' && styles.agendaIconEvent,
-                item.kind === 'completed' && styles.agendaIconDone,
-              ]}>
-                {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '○'}
-              </Text>
-              <Text
-                style={[styles.agendaTitle, item.kind === 'completed' && styles.agendaTitleDone]}
-                numberOfLines={1}
-              >
-                {cleanTitle(item.task.text)}
-              </Text>
-              {item.time ? (
-                <Text style={styles.agendaTime}>{item.time}</Text>
-              ) : null}
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{ paddingBottom: 120 }}
-        />
-      </View>
-    </GestureDetector>
+              {cleanTitle(item.task.text)}
+            </Text>
+            {item.time ? (
+              <Text style={styles.agendaTime}>{item.time}</Text>
+            ) : null}
+          </TouchableOpacity>
+        )}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        onScrollToIndexFailed={() => {}}
+      />
+    </View>
   );
 }
 
@@ -421,6 +425,7 @@ const styles = StyleSheet.create({
   agendaIcon: { fontSize: 11, color: Colors.textSecondary, width: 14, textAlign: 'center' },
   agendaIconEvent: { color: Colors.accent },
   agendaIconDone: { color: Colors.textSecondary },
+  agendaIconOverdue: { color: Colors.accent },
   agendaTitle: { flex: 1, fontSize: 13, color: Colors.text, fontFamily: Fonts.mono },
   agendaTitleDone: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
   agendaTime: { fontSize: 11, color: Colors.textSecondary, fontFamily: Fonts.mono },
