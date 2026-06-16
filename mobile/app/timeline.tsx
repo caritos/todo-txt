@@ -1,6 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRef, useState, useMemo, useEffect } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
@@ -44,6 +46,7 @@ function cleanTitle(text: string): string {
 export default function WeekScreen() {
   const { tasks, selectedDate, setSelectedDate } = useTasks();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const todayStr = today();
   const [anchorDate, setAnchorDate] = useState(todayStr);
@@ -119,10 +122,20 @@ export default function WeekScreen() {
     return { size: 8, opacity: 1.0 };
   }
 
+  const swipe = Gesture.Pan()
+    .runOnJS(true)
+    .minDistance(40)
+    .onEnd((e) => {
+      if (Math.abs(e.translationX) > Math.abs(e.translationY)) {
+        setAnchorDate(prev => addDays(prev, e.translationX < 0 ? 7 : -7));
+      }
+    });
+
   return (
+    <GestureDetector gesture={swipe}>
     <View style={styles.screen}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Spacing.sm + insets.top }]}>
         <TouchableOpacity onPress={() => setAnchorDate(addDays(anchorDate, -7))} style={styles.navBtn}>
           <Text style={styles.navArrow}>‹</Text>
         </TouchableOpacity>
@@ -262,6 +275,7 @@ export default function WeekScreen() {
         </ScrollView>
       )}
     </View>
+    </GestureDetector>
   );
 }
 

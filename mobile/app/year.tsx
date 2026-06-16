@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo, useRef } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTasks } from '../src/context/TaskContext';
 import { Colors, Spacing } from '../src/theme';
 import { today } from '../src/utils';
@@ -25,6 +26,7 @@ function pad(n: number): string {
 export default function YearScreen() {
   const { tasks } = useTasks();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const todayStr = today();
   const todayYear = parseInt(todayStr.slice(0, 4), 10);
   const [year, setYear] = useState(todayYear);
@@ -47,7 +49,7 @@ export default function YearScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Spacing.sm + insets.top }]}>
         <TouchableOpacity onPress={() => setYear(y => y - 1)} style={styles.arrow}>
           <Text style={styles.arrowText}>‹</Text>
         </TouchableOpacity>
