@@ -65,7 +65,8 @@ mobile/                       ← Expo Router iOS app
 │   ├── month.tsx             ← Month view (full-screen flex grid); tap cell → Day view
 │   ├── year.tsx              ← Year view (dot-density heatmap by month)
 │   ├── day/[date].tsx        ← Day view (timed + all-day lanes for a single date)
-│   └── task/[line].tsx       ← Task detail formSheet: Done, Edit, Priority, Skip, Delete
+│   ├── done.tsx              ← Tasks view: completed (above) + add-task anchor + incomplete (below)
+│   └── task/[line].tsx       ← Task detail formSheet: Done, Edit, Priority, Skip, Delete; shows DUE date
 ├── src/
 │   ├── store.ts              ← Expo FileSystem I/O (mirrors console/store.ts interface)
 │   ├── theme.ts              ← Colors, Fonts, Spacing design tokens
@@ -104,7 +105,11 @@ mobile/                       ← Expo Router iOS app
 
 **Month view** (`app/month.tsx`): full-screen flex grid — no ScrollView. Cells are grouped into rows of 7, each row has `flex: 1` so all rows distribute vertical space equally. Uses `useSafeAreaInsets` to push the `‹ MONTH YEAR ›` header below the Dynamic Island. Tasks mapped by `start:` date (not next occurrence — recurring tasks show on their `start:` date, not the next scheduled occurrence).
 
-**Calendar navigation pattern**: tapping a day cell in Month view or a date in the Week strip navigates to `/day/[date]` via `router.push`. The ViewSwitcher (bottom-left ≡) and BottomActionBar label together support: Day, Week, Month, Year, Done, Search, Settings.
+**Calendar navigation pattern**: tapping a day cell in Month view or a date in the Week strip navigates to `/day/[date]` via `router.push`. The ViewSwitcher (bottom-left ≡) and BottomActionBar label together support: Day, Week, Month, Year, Tasks, Search, Settings.
+
+**Tasks view** (`app/done.tsx`): single `ScrollView` with three zones — (1) completed tasks from the last 30 days grouped by completion date, most-recent first, with strikethrough styling; (2) an inline `+ add task…` `TextInput` anchor that the view scrolls to on mount via `onLayout` + `scrollTo`; (3) incomplete tasks sorted by `start:` date ascending, no `start:` sorts to bottom. Both zones exclude events (`task.extensions['type']` set). Skipped recurring tasks are hidden: if `frequency:` + `exdate:` are both present and `taskOccurrence(task, todayStr).date > todayStr` while `start:` ≤ today, the task is filtered out until its next occurrence arrives. Add task uses `buildAddRaw` + `parseLine` + `save`.
+
+**Task detail** (`app/task/[line].tsx`): shows a **DUE** row when `task.extensions['start']` is set, using `formatDateLabel(start.slice(0, 10))`. The date is tinted accent-red when overdue (`start < todayStr` and task not done). Delete alert message differs for recurring tasks: non-recurring says "This cannot be undone"; recurring says "This deletes all future occurrences. Use Skip to skip just this one." — because `applyRm` removes the single todo.txt line that defines all occurrences.
 
 ## Key Invariants
 
