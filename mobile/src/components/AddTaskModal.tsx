@@ -185,7 +185,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
         </View>
 
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
-          {/* Title input */}
+          {/* Title input — always visible */}
           <View style={styles.titleBlock}>
             <TextInput
               ref={inputRef}
@@ -199,7 +199,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
             />
           </View>
 
-          {/* Tag suggestions */}
+          {/* Tag suggestions — always visible when typing a tag */}
           {suggestions.length > 0 && (
             <ScrollView
               horizontal
@@ -220,85 +220,135 @@ export function AddTaskModal({ visible, onClose }: Props) {
             </ScrollView>
           )}
 
-          {/* Group 1: Date + Time */}
-          <View style={styles.group}>
-            <View style={styles.frow}>
-              <Text style={styles.flabel}>Date</Text>
-              <DateTimePicker
-                mode="date"
-                display="compact"
-                value={date}
-                onChange={onDateChange}
-                accentColor={Colors.accent}
-                style={styles.compactPicker}
-              />
-            </View>
-            <View style={[styles.frow, styles.frowLast]}>
-              <Text style={styles.flabel}>Time</Text>
-              {hasTime ? (
-                <View style={styles.timeSet}>
-                  <DateTimePicker
-                    mode="time"
-                    display="compact"
-                    value={time}
-                    onChange={onTimeChange}
-                    accentColor={Colors.accent}
-                    style={styles.compactPicker}
-                  />
-                  <TouchableOpacity onPress={() => setHasTime(false)} style={styles.timeClear}>
-                    <Text style={styles.timeClearText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity onPress={() => setHasTime(true)}>
-                  <Text style={styles.fnone}>None</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-
-          {/* Group 2: Repeat + Priority */}
-          <View style={styles.group}>
+          {/* SHOW MORE — collapsed state */}
+          {!showMore && (
             <TouchableOpacity
-              style={[styles.frow, addType === 'event' && !showRepeat && styles.frowLast]}
-              onPress={() => setShowRepeat(r => !r)}
+              style={styles.showMoreRow}
+              onPress={() => setShowMore(true)}
             >
-              <Text style={styles.flabel}>Repeat</Text>
-              <Text style={repeat === 'none' ? styles.fnone : styles.fval}>
-                {recurrenceLabel(repeat)}
-              </Text>
+              <Text style={styles.showMoreText}>SHOW MORE</Text>
             </TouchableOpacity>
-            {showRepeat && (
-              <RecurrencePicker
-                value={repeat}
-                onChange={r => {
-                  setRepeat(r);
-                  setShowRepeat(false);
-                }}
-              />
-            )}
+          )}
 
-            {addType === 'task' && (
-              <View style={[styles.frow, styles.frowLast]}>
-                <Text style={styles.flabel}>Priority</Text>
-                <View style={styles.pchips}>
-                  {(['A', 'B', 'C', 'none'] as const).map(p => (
+          {/* Expanded groups */}
+          {showMore && (
+            <>
+              {/* Group 1: Start date */}
+              <View style={styles.group}>
+                <View style={[styles.frow, !hasDate && styles.frowLast]}>
+                  <Text style={styles.flabel}>Start date</Text>
+                  <Switch
+                    value={hasDate}
+                    onValueChange={v => {
+                      setHasDate(v);
+                      if (!v) {
+                        setHasTime(false);
+                        setRepeat('none');
+                        setShowRepeat(false);
+                      }
+                    }}
+                    trackColor={{ false: Colors.separator, true: Colors.accent }}
+                    thumbColor={Colors.text}
+                    ios_backgroundColor={Colors.separator}
+                  />
+                </View>
+
+                {hasDate && (
+                  <>
+                    <View style={styles.frow}>
+                      <Text style={styles.flabel}>Date</Text>
+                      <DateTimePicker
+                        mode="date"
+                        display="compact"
+                        value={date}
+                        onChange={onDateChange}
+                        accentColor={Colors.accent}
+                        style={styles.compactPicker}
+                      />
+                    </View>
+
+                    <View style={styles.frow}>
+                      <Text style={styles.flabel}>Time</Text>
+                      <Switch
+                        value={hasTime}
+                        onValueChange={setHasTime}
+                        trackColor={{ false: Colors.separator, true: Colors.accent }}
+                        thumbColor={Colors.text}
+                        ios_backgroundColor={Colors.separator}
+                      />
+                    </View>
+
+                    {hasTime && (
+                      <View style={styles.frow}>
+                        <Text style={styles.flabel} />
+                        <View style={styles.timeSet}>
+                          <DateTimePicker
+                            mode="time"
+                            display="compact"
+                            value={time}
+                            onChange={onTimeChange}
+                            accentColor={Colors.accent}
+                            style={styles.compactPicker}
+                          />
+                          <TouchableOpacity
+                            onPress={() => setHasTime(false)}
+                            style={styles.timeClear}
+                          >
+                            <Text style={styles.timeClearText}>✕</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+
                     <TouchableOpacity
-                      key={p}
-                      style={[styles.pchip, priority === p && styles.pchipActive]}
-                      onPress={() => setPriority(p)}
+                      style={[styles.frow, styles.frowLast, showRepeat && styles.frowNoBottom]}
+                      onPress={() => setShowRepeat(r => !r)}
                     >
-                      <Text style={[styles.pchipText, priority === p && styles.pchipTextActive]}>
-                        {p === 'none' ? '—' : p}
+                      <Text style={styles.flabel}>Repeat</Text>
+                      <Text style={repeat === 'none' ? styles.fnone : styles.fval}>
+                        {recurrenceLabel(repeat)}
                       </Text>
                     </TouchableOpacity>
-                  ))}
-                </View>
+                    {showRepeat && (
+                      <RecurrencePicker
+                        value={repeat}
+                        onChange={r => {
+                          setRepeat(r);
+                          setShowRepeat(false);
+                        }}
+                      />
+                    )}
+                  </>
+                )}
               </View>
-            )}
-          </View>
+
+              {/* Group 2: Priority — task type only */}
+              {addType === 'task' && (
+                <View style={styles.group}>
+                  <View style={[styles.frow, styles.frowLast]}>
+                    <Text style={styles.flabel}>Priority</Text>
+                    <View style={styles.pchips}>
+                      {(['A', 'B', 'C', 'none'] as const).map(p => (
+                        <TouchableOpacity
+                          key={p}
+                          style={[styles.pchip, priority === p && styles.pchipActive]}
+                          onPress={() => setPriority(p)}
+                        >
+                          <Text style={[styles.pchipText, priority === p && styles.pchipTextActive]}>
+                            {p === 'none' ? '—' : p}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              )}
+            </>
+          )}
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -406,4 +456,18 @@ const styles = StyleSheet.create({
   pchipTextActive: { color: Colors.accent },
 
   errorText: { color: Colors.accent, fontSize: 13, margin: Spacing.md, textAlign: 'center' },
+
+  showMoreRow: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.separator,
+  },
+  showMoreText: {
+    fontSize: 11,
+    color: Colors.accent,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+  },
+  frowNoBottom: { borderBottomWidth: 0 },
 });
