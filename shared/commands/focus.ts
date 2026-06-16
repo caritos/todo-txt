@@ -122,13 +122,34 @@ export function nextWeeklyDate(startStr: string, todayStr: string, every: number
   return result;
 }
 
-export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set<string> = new Set(), frequencyMonthDay?: string): string {
+export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set<string> = new Set(), frequencyMonthDay?: string, every: number = 1): string {
   const t = new Date(todayStr + 'T12:00:00');
 
   function dayForMonth(year: number, month: number): number {
     const fmd = frequencyMonthDay ?? startStr.slice(8, 10);
     if (isNaN(Number(fmd))) return resolvePositionalDay(year, month, fmd);
     return parseInt(fmd);
+  }
+
+  if (every > 1) {
+    const startDate = new Date(startStr.slice(0, 10) + 'T12:00:00');
+    const startYear = startDate.getFullYear();
+    const startMonth = startDate.getMonth();
+    const monthsSinceStart = (t.getFullYear() - startYear) * 12 + (t.getMonth() - startMonth);
+    const cycleIndex = Math.max(0, Math.ceil(monthsSinceStart / every));
+    const absMonth = startMonth + cycleIndex * every;
+    const tYear = startYear + Math.floor(absMonth / 12);
+    const tMonth = absMonth % 12;
+    let candidate = new Date(tYear, tMonth, dayForMonth(tYear, tMonth), 12, 0, 0);
+    if (candidate < t) {
+      const nextAbs = absMonth + every;
+      const nYear = startYear + Math.floor(nextAbs / 12);
+      const nMonth = nextAbs % 12;
+      candidate = new Date(nYear, nMonth, dayForMonth(nYear, nMonth), 12, 0, 0);
+    }
+    const result = isoDate(candidate);
+    if (exdates.has(result)) return nextMonthlyDate(startStr, addDays(result, 1), exdates, frequencyMonthDay, every);
+    return result;
   }
 
   let year = t.getFullYear();
@@ -223,7 +244,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
     if (frequency === 'monthly') {
       const startDate = start.slice(0, 10);
       if (startDate < addDays(todayStr, -730)) return false;
-      return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) <= windowEnd;
+      return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) <= windowEnd;
     }
     if (frequency) {
       const startDate = start.slice(0, 10);
@@ -240,7 +261,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
     if (startDate < addDays(todayStr, -730)) return false;
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) <= windowEnd;
     if (frequency === 'monthly') {
-      const next = nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']);
+      const next = nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));
       return next <= windowEnd || overdueOccurrenceDate(task, todayStr) !== null;
     }
     if (frequency === 'yearly') {
@@ -269,7 +290,7 @@ export function focusSortKey(task: Task, todayStr: string): string {
   if (type && start) {
     if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']);
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) + time;
-    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) + time;
+    if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) + time;
     if (frequency) return todayStr + time;
     // Ongoing multi-day event: sort/display as today instead of its past start
     if (start.slice(0, 10) < todayStr) {
@@ -295,7 +316,7 @@ export function focusSortKey(task: Task, todayStr: string): string {
     }
     if (frequency === 'monthly') {
       if (overdueOccurrenceDate(task, todayStr)) return todayStr + time;
-      return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day']) + time;
+      return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) + time;
     }
     if (frequency === 'daily') {
       let d = startDate > todayStr ? startDate : todayStr;
@@ -351,7 +372,7 @@ export function focusNextRecurrence(task: Task, todayStr: string): string {
 
   let nextDate: string;
   if (frequency === 'weekly') nextDate = nextWeeklyDate(start, afterCurrent, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']);
-  else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent, exdates, task.extensions['frequency-month-day']);
+  else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));
   else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent, exdates, task.extensions['frequency-month-day']);
   else if (frequency === 'daily') nextDate = afterCurrent;
   else return '';
@@ -425,7 +446,7 @@ export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: 
       if (start && freq) {
         const exdates = taskExdates(t);
         if (freq === 'weekly') return addDays(nextWeeklyDate(start, todayStr, parseInt(every), exdates, t.extensions['frequency-day']), 1);
-        if (freq === 'monthly') return addDays(nextMonthlyDate(start, todayStr, exdates, t.extensions['frequency-month-day']), 1);
+        if (freq === 'monthly') return addDays(nextMonthlyDate(start, todayStr, exdates, t.extensions['frequency-month-day'], parseInt(t.extensions['every'] ?? '1')), 1);
         if (freq === 'yearly') return addDays(nextYearlyDate(start.slice(0, 10), todayStr, exdates, t.extensions['frequency-month-day']), 1);
       }
       return addDays(todayStr, 1);

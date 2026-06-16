@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { taskOccurrence } from '../../commands/focus';
+import { taskOccurrence, nextMonthlyDate } from '../../commands/focus';
 import { parseLine } from '../../parser';
 
 function task(raw: string) { return parseLine(raw, 1); }
@@ -46,5 +46,21 @@ describe('taskOccurrence', () => {
   test('future task returns its future date', () => {
     const t = task('dentist start:2026-07-01');
     expect(taskOccurrence(t, TODAY)).toEqual({ date: '2026-07-01', time: null });
+  });
+});
+
+describe('nextMonthlyDate with every', () => {
+  test('every:3 — quarterly starting Jan 1, today is Apr 2', () => {
+    // Jan 1 → Apr 1 → Jul 1 → Oct 1
+    expect(nextMonthlyDate('2026-01-01', '2026-04-02', new Set(), undefined, 3)).toBe('2026-07-01');
+  });
+
+  test('every:3 — quarterly starting Jan 1, today is Apr 1 exactly', () => {
+    expect(nextMonthlyDate('2026-01-01', '2026-04-01', new Set(), undefined, 3)).toBe('2026-04-01');
+  });
+
+  test('every:3 — quarterly starting Jan 15, today is Jan 10', () => {
+    // Not yet reached first occurrence
+    expect(nextMonthlyDate('2026-01-15', '2026-01-10', new Set(), undefined, 3)).toBe('2026-01-15');
   });
 });
