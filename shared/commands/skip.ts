@@ -1,6 +1,6 @@
 import { serializeTask } from '../parser';
 import type { Task } from '../parser';
-import { focusSortKey } from './focus';
+import { focusSortKey, overdueOccurrenceDate } from './focus';
 
 export type SkipResult =
   | { tasks: Task[]; removed: true }
@@ -17,7 +17,7 @@ export function applySkip(
     return { tasks: tasks.filter(t => t.line !== lineNum), removed: true };
   }
 
-  const skipDate = focusSortKey(task, todayStr).slice(0, 10);
+  const skipDate = overdueOccurrenceDate(task, todayStr) ?? focusSortKey(task, todayStr).slice(0, 10);
 
   const existing = task.extensions['exdate'] ?? '';
   const exdateList = existing.split(',').filter(Boolean);

@@ -1,7 +1,7 @@
 import { serializeTask, baseText } from '../parser';
 import type { Task } from '../parser';
 import { addDays } from '../utils';
-import { nextWeeklyDate, nextMonthlyDate } from './focus';
+import { nextWeeklyDate, nextMonthlyDate, nextYearlyDate } from './focus';
 
 export interface SkippedTask {
   num: number;
@@ -61,17 +61,23 @@ export function applyDone(
 
       const startVal = task.extensions['start'];
       const freq = task.extensions['frequency'];
-      if (startVal && (freq === 'weekly' || freq === 'monthly')) {
+      if (startVal && (freq === 'weekly' || freq === 'monthly' || freq === 'yearly')) {
         const every = parseInt(task.extensions['every'] ?? '1');
         const exdates = new Set<string>((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
         const freqDay = task.extensions['frequency-day'];
         const freqMonthDay = task.extensions['frequency-month-day'];
-        const currentOcc = freq === 'weekly'
-          ? nextWeeklyDate(startVal, todayStr, every, exdates, freqDay)
-          : nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay);
-        const nextOcc = freq === 'weekly'
-          ? nextWeeklyDate(startVal, addDays(currentOcc, 1), every, exdates, freqDay)
-          : nextMonthlyDate(startVal, addDays(currentOcc, 1), exdates, freqMonthDay);
+        let currentOcc: string;
+        let nextOcc: string;
+        if (freq === 'weekly') {
+          currentOcc = nextWeeklyDate(startVal, todayStr, every, exdates, freqDay);
+          nextOcc = nextWeeklyDate(startVal, addDays(currentOcc, 1), every, exdates, freqDay);
+        } else if (freq === 'monthly') {
+          currentOcc = nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay);
+          nextOcc = nextMonthlyDate(startVal, addDays(currentOcc, 1), exdates, freqMonthDay);
+        } else {
+          currentOcc = nextYearlyDate(startVal.slice(0, 10), todayStr, exdates, freqMonthDay);
+          nextOcc = nextYearlyDate(startVal.slice(0, 10), addDays(currentOcc, 1), exdates, freqMonthDay);
+        }
         const timePart = startVal.slice(10);
         const newStart = nextOcc + timePart;
         task.text = task.text.replace(/\bstart:\S+/g, `start:${newStart}`);

@@ -22,13 +22,19 @@ function cleanTitle(text: string): string {
   return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
 }
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 function startLabel(task: Task, todayStr: string): string | null {
   const s = task.extensions['start'];
   if (!s) return null;
   const yesterday = addDays(todayStr, -1);
   if (s === todayStr) return 'today';
   if (s === yesterday) return 'yesterday';
-  const d = new Date(s + 'T12:00:00');
+  const d = new Date(s.slice(0, 10) + 'T12:00:00');
+  if (s < yesterday) {
+    const yearSuffix = s.slice(0, 4) !== todayStr.slice(0, 4) ? ` ${d.getFullYear()}` : '';
+    return `${MONTHS[d.getMonth()]} ${d.getDate()}${yearSuffix}`;
+  }
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]!;
 }
 
@@ -46,7 +52,7 @@ export default function TasksScreen() {
   const completedSections = useMemo(() => {
     const done = tasks
       .filter(t => t.done && t.completionDate && t.completionDate >= thirtyDaysAgo && !t.extensions['type'])
-      .sort((a, b) => b.completionDate!.localeCompare(a.completionDate!));
+      .sort((a, b) => a.completionDate!.localeCompare(b.completionDate!));
     const byDate = new Map<string, Task[]>();
     for (const t of done) {
       const d = t.completionDate!;
@@ -65,6 +71,12 @@ export default function TasksScreen() {
     return tasks
       .filter(t => {
         if (t.done || t.extensions['type']) return false;
+        // Hide recurring tasks completed today (last-done tracks this; start not yet advanced)
+        if (t.extensions['frequency'] && t.extensions['last-done'] === todayStr) return false;
+        // Hide recurring tasks whose next occurrence is in the future (start was advanced after done)
+        if (t.extensions['frequency'] && t.extensions['start']) {
+          if (t.extensions['start'].slice(0, 10) > todayStr) return false;
+        }
         // Hide recurring tasks that were skipped (exdate pushed next occurrence into the future)
         if (t.extensions['frequency'] && t.extensions['exdate']) {
           const occ = taskOccurrence(t, todayStr);

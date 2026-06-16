@@ -149,7 +149,7 @@ export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set
 // Returns the most recent scheduled occurrence date that is strictly before todayStr,
 // if that occurrence was not completed (no matching last-done). Returns null otherwise.
 // Only applies to non-type, non-done weekly/monthly tasks without frequency-day.
-function overdueOccurrenceDate(task: Task, todayStr: string): string | null {
+export function overdueOccurrenceDate(task: Task, todayStr: string): string | null {
   if (task.done || task.extensions['type']) return null;
   const start = task.extensions['start'];
   const frequency = task.extensions['frequency'];
