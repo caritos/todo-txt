@@ -11,6 +11,7 @@ const VIEWS: View_[] = [
   { label: 'Month', route: '/month' },
   { label: 'Year', route: '/year' },
   { label: 'Tasks', route: '/done' },
+  { label: 'Events', route: '/events' },
   { label: 'Settings', route: '/settings' },
 ];
 
