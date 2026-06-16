@@ -8,7 +8,7 @@ import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
-import { nextYearlyDate, nextMonthlyDate, nextWeeklyDate } from '@shared/commands/focus';
+import { nextYearlyDate, nextMonthlyDate, nextWeeklyDate, applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -122,7 +122,7 @@ export default function CalendarScreen() {
   }, [cells]);
 
   const { sections, datesWithItems } = useMemo(() => {
-    const pastCutoff = addDays(todayStr, -90);
+    const pastCutoff = addDays(todayStr, -30);
     const futureCutoff = addDays(todayStr, 730);
     const byDate = new Map<string, AgendaItem[]>();
 
@@ -144,22 +144,22 @@ export default function CalendarScreen() {
       });
     }
 
-    // 2. Incomplete tasks grouped by start: date
-    // Incomplete tasks: show on their start: date regardless of recurrence state —
-    // calendar view shows scheduled dates, not a focus/overdue filter.
-    for (const t of tasks) {
-      if (t.done || !!t.extensions['type']) continue;
-      const startVal = t.extensions['start'];
-      if (!startVal) continue;
-      const date = startVal.slice(0, 10);
-      if (date < pastCutoff || date > futureCutoff) continue;
+    // 2. Incomplete tasks: use focus logic so overdue tasks appear on today,
+    // same as day/week views — otherwise tasks with past start: dates are invisible on today.
+    const focusItems = applyFocusForWindow(tasks, todayStr, futureCutoff);
+    for (const item of focusItems) {
+      if (item.task.done || !!item.task.extensions['type']) continue;
+      const occ = focusItemOccurrence(item);
+      const date = occ.date;
+      if (date > futureCutoff) continue;
       ensure(date);
+      const startStr = item.task.extensions['start'] ?? '';
       byDate.get(date)!.push({
-        key: `task-${t.line}-${date}`,
-        task: t,
+        key: `task-${item.task.line}-${date}`,
+        task: item.task,
         kind: 'incomplete',
-        time: startVal.length > 10 ? startVal.slice(11, 16) : undefined,
-        isOverdue: date < todayStr,
+        time: occ.time ?? (startStr.length > 10 ? startStr.slice(11, 16) : undefined),
+        isOverdue: startStr.slice(0, 10) < todayStr,
       });
     }
 

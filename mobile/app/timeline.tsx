@@ -136,16 +136,10 @@ export default function WeekScreen() {
     <View style={styles.screen}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: Spacing.sm + insets.top }]}>
-        <TouchableOpacity onPress={() => setAnchorDate(addDays(anchorDate, -7))} style={styles.navBtn}>
-          <Text style={styles.navArrow}>‹</Text>
-        </TouchableOpacity>
         <Text>
           <Text style={styles.monthText}>{MONTHS[sundayDate.getMonth()]} </Text>
           <Text style={styles.yearText}>{sundayDate.getFullYear()}</Text>
         </Text>
-        <TouchableOpacity onPress={() => setAnchorDate(addDays(anchorDate, 7))} style={styles.navBtn}>
-          <Text style={styles.navArrow}>›</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Week strip */}
@@ -283,13 +277,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
     backgroundColor: Colors.navBar,
     borderBottomWidth: 1, borderBottomColor: Colors.separator,
   },
-  navBtn: { padding: Spacing.sm },
-  navArrow: { fontSize: 22, color: Colors.textSecondary },
   monthText: { fontSize: 20, color: Colors.textSecondary, fontWeight: '300' },
   yearText: { fontSize: 20, color: Colors.accent, fontWeight: '300' },
 
@@ -319,11 +311,10 @@ const styles = StyleSheet.create({
   allDayCell: { paddingHorizontal: 1, gap: 1 },
   allDayChip: {
     backgroundColor: Colors.accent + '22',
-    borderLeftWidth: 2, borderLeftColor: Colors.accent,
     paddingHorizontal: 2, paddingVertical: 1,
   },
   allDayEventChip: {
-    backgroundColor: Colors.accent + '35',
+    backgroundColor: Colors.accent + '40',
     paddingHorizontal: 2, paddingVertical: 1,
   },
   allDayChipText: { fontSize: 7, color: Colors.text, fontFamily: Fonts.mono },
@@ -361,14 +352,13 @@ const styles = StyleSheet.create({
   },
   pill: {
     position: 'absolute', left: 2, right: 2,
-    backgroundColor: Colors.surface,
-    borderLeftWidth: 2, borderLeftColor: Colors.accent,
+    backgroundColor: Colors.accent + '22',
     paddingVertical: 2, paddingHorizontal: 2,
     minHeight: 18,
   },
   pillEvent: {
     position: 'absolute', left: 2, right: 2,
-    backgroundColor: Colors.accent + '30',
+    backgroundColor: Colors.accent + '40',
     paddingVertical: 2, paddingHorizontal: 2,
     minHeight: 18,
   },
