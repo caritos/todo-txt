@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo-google-fonts/jetbrains-mono": "*",
     "@react-native-community/datetimepicker": "8.2.0",
+    "@react-native-picker/picker": "2.9.0",
     "chrono-node": "*",
     "expo": "~52.0.0",
     "expo-asset": "~11.0.5",
