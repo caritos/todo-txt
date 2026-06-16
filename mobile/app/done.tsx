@@ -16,6 +16,8 @@ import { addDays } from '@shared/utils';
 import { buildAddRaw } from '@shared/commands/add';
 import { parseLine } from '@shared/parser';
 import { taskOccurrence } from '@shared/commands/focus';
+import { applyDone } from '@shared/commands/done';
+import { usePendingDone } from '../src/hooks/usePendingDone';
 import type { Task } from '@shared/parser';
 
 function cleanTitle(text: string): string {
@@ -47,6 +49,7 @@ export default function TasksScreen() {
   const [draft, setDraft] = useState('');
   const todayStr = today();
   const thirtyDaysAgo = addDays(todayStr, -29);
+  const { isPending, tapCheckbox } = usePendingDone(tasks, todayStr, save);
 
   // Completed tasks: last 30 days, most recent first, grouped by date
   const completedSections = useMemo(() => {
@@ -176,7 +179,15 @@ export default function TasksScreen() {
                 onPress={() => router.push(`/task/${task.line}` as any)}
                 activeOpacity={0.7}
               >
-                <View style={styles.cb} />
+                <TouchableOpacity onPress={() => tapCheckbox(task)} hitSlop={8}>
+                  {isPending(task.line) ? (
+                    <View style={styles.cbPending}>
+                      <Text style={styles.cbCheck}>✓</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.cb} />
+                  )}
+                </TouchableOpacity>
                 <View style={styles.content}>
                   <Text style={styles.taskTitle}>{cleanTitle(task.text)}</Text>
                   {label ? <Text style={styles.meta}>{label}</Text> : null}
@@ -255,6 +266,21 @@ const styles = StyleSheet.create({
     borderColor: Colors.textSecondary,
     flexShrink: 0,
     marginTop: 2,
+  },
+  cbPending: {
+    width: 17,
+    height: 17,
+    backgroundColor: Colors.accent,
+    flexShrink: 0,
+    marginTop: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cbCheck: {
+    fontSize: 11,
+    color: '#ffffff',
+    lineHeight: 13,
+    fontWeight: '700',
   },
   taskTitle: {
     fontFamily: Fonts.mono,
