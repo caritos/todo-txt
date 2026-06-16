@@ -8,6 +8,7 @@ import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
+import { nextYearlyDate, nextMonthlyDate, nextWeeklyDate } from '@shared/commands/focus';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -34,6 +35,69 @@ function cleanTitle(text: string): string {
   return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
 }
 
+function generateOccurrences(
+  task: Task,
+  fromStr: string,
+  cutoffStr: string,
+): Array<{ date: string; task: Task }> {
+  const startVal = task.extensions['start'];
+  if (!startVal) return [];
+  const startDate = startVal.slice(0, 10);
+  const freq = task.extensions['frequency'];
+  const every = parseInt(task.extensions['every'] ?? '1', 10);
+  const exdates = new Set((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
+  const freqDay = task.extensions['frequency-day'];
+  const freqMonthDay = task.extensions['frequency-month-day'];
+  const results: Array<{ date: string; task: Task }> = [];
+
+  if (!freq) {
+    if (startDate >= fromStr && startDate <= cutoffStr) {
+      results.push({ date: startDate, task });
+    }
+    return results;
+  }
+
+  let cursor: string;
+  if (freq === 'yearly') {
+    cursor = nextYearlyDate(startDate, fromStr, exdates, freqMonthDay, every);
+  } else if (freq === 'monthly') {
+    cursor = nextMonthlyDate(startVal, fromStr, exdates, freqMonthDay, every);
+  } else if (freq === 'weekly') {
+    cursor = nextWeeklyDate(startVal, fromStr, every, exdates, freqDay);
+  } else {
+    return results;
+  }
+
+  while (cursor <= cutoffStr) {
+    results.push({ date: cursor, task });
+    let next: string;
+    if (freq === 'yearly') {
+      next = nextYearlyDate(startDate, addDays(cursor, 1), exdates, freqMonthDay, every);
+    } else if (freq === 'monthly') {
+      next = nextMonthlyDate(startVal, addDays(cursor, 1), exdates, freqMonthDay, every);
+    } else {
+      next = nextWeeklyDate(startVal, addDays(cursor, 1), every, exdates, freqDay);
+    }
+    if (next <= cursor) break;
+    cursor = next;
+  }
+
+  return results;
+}
+
+type AgendaItem = {
+  key: string;
+  task: Task;
+  kind: 'completed' | 'incomplete' | 'event';
+  time?: string;
+};
+
+type AgendaSection = {
+  dateStr: string;
+  title: string;
+  data: AgendaItem[];
+};
+
 export default function CalendarScreen() {
   const { tasks } = useTasks();
   const router = useRouter();
@@ -53,8 +117,75 @@ export default function CalendarScreen() {
     return result;
   }, [cells]);
 
-  // Placeholder dot set — will be replaced in Task 3
-  const datesWithItems = useMemo(() => new Set<string>(), []);
+  const { sections, datesWithItems } = useMemo(() => {
+    const pastCutoff = addDays(todayStr, -90);
+    const futureCutoff = addDays(todayStr, 730);
+    const byDate = new Map<string, AgendaItem[]>();
+
+    function ensure(date: string) {
+      if (!byDate.has(date)) byDate.set(date, []);
+    }
+
+    // 1. Past completed tasks (last 90 days), grouped by completion date
+    for (const t of tasks) {
+      if (!t.done || !t.completionDate) continue;
+      const date = t.completionDate.slice(0, 10);
+      if (date < pastCutoff || date > todayStr) continue;
+      ensure(date);
+      byDate.get(date)!.push({
+        key: `done-${t.line}-${date}`,
+        task: t,
+        kind: 'completed',
+        time: t.extensions['start']?.slice(11, 16) || undefined,
+      });
+    }
+
+    // 2. Incomplete tasks grouped by start: date
+    for (const t of tasks) {
+      if (t.done || !!t.extensions['type']) continue;
+      const startVal = t.extensions['start'];
+      if (!startVal) continue;
+      const date = startVal.slice(0, 10);
+      if (date < pastCutoff || date > futureCutoff) continue;
+      ensure(date);
+      byDate.get(date)!.push({
+        key: `task-${t.line}-${date}`,
+        task: t,
+        kind: 'incomplete',
+        time: startVal.length > 10 ? startVal.slice(11, 16) : undefined,
+      });
+    }
+
+    // 3. Event occurrences: past 90 days + future 2 years
+    for (const t of tasks) {
+      if (!t.extensions['type']) continue;
+      const occurrences = generateOccurrences(t, pastCutoff, futureCutoff);
+      for (const occ of occurrences) {
+        ensure(occ.date);
+        byDate.get(occ.date)!.push({
+          key: `event-${t.line}-${occ.date}`,
+          task: t,
+          kind: 'event',
+          time: t.extensions['start']?.slice(11, 16) || undefined,
+        });
+      }
+    }
+
+    // Sort by date and build sections
+    const sortedDates = [...byDate.keys()].sort();
+    const dotSet = new Set(sortedDates);
+    const sectionList: AgendaSection[] = sortedDates.map(dateStr => {
+      const d = new Date(dateStr + 'T12:00:00');
+      const dow = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()];
+      const mon = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][d.getMonth()];
+      const day = d.getDate();
+      const suffix = dateStr === todayStr ? ' — TODAY' : '';
+      const title = `${dow} ${mon} ${day}${suffix}`;
+      return { dateStr, title, data: byDate.get(dateStr)! };
+    });
+
+    return { sections: sectionList, datesWithItems: dotSet };
+  }, [tasks, todayStr]);
 
   const swipe = Gesture.Pan()
     .runOnJS(true)
