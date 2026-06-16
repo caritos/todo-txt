@@ -43,7 +43,7 @@ export function recurrenceLabel(value: RecurrenceValue, custom?: CustomConfig): 
       year: ['Yr', 'Yrs'],
     };
     if (custom.unit === 'month') {
-      if (custom.monthDayType === 'date' && custom.monthDate) {
+      if (custom.monthDayType === 'date' && custom.monthDate != null) {
         const d = custom.monthDate;
         if (d === 32) return 'Monthly · Last';
         const suffix = d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th';

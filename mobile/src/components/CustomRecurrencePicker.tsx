@@ -11,7 +11,7 @@ export function customRecurrenceExtensions(c: CustomConfig): string {
   const parts: string[] = [`frequency:${freqMap[c.unit]}`];
   if (c.n > 1) parts.push(`every:${c.n}`);
   if (c.unit === 'month') {
-    if (c.monthDayType === 'date' && c.monthDate) {
+    if (c.monthDayType === 'date' && c.monthDate != null) {
       parts.push(`frequency-month-day:${c.monthDate === 32 ? 'last-day' : c.monthDate}`);
     } else if (c.monthDayType === 'positional' && c.positionOrdinal && c.positionWeekday) {
       parts.push(`frequency-month-day:${c.positionOrdinal}-${c.positionWeekday}`);
@@ -58,6 +58,7 @@ export function CustomRecurrencePicker({ config, onChange, onBack }: Props) {
   }
 
   function toggleOnDays() {
+    // Mutual exclusion: opening one collapses the other (invariant: only one open at a time).
     if (!showOnDays) setShowOnWeek(false);
     setShowOnDays(v => !v);
   }
@@ -129,7 +130,7 @@ export function CustomRecurrencePicker({ config, onChange, onBack }: Props) {
 
           {showOnDays && (
             <View style={styles.dayGrid}>
-              {([...Array.from({ length: 31 }, (_, i) => i + 1), 32] as number[]).map(d => {
+              {Array.from({ length: 32 }, (_, i) => i + 1).map(d => {
                 const isSelected = config.monthDayType === 'date' && config.monthDate === d;
                 return (
                   <TouchableOpacity
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 13,
     color: Colors.accent,
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   drumRow: {
     flexDirection: 'row',
