@@ -111,6 +111,8 @@ export default function CalendarScreen() {
   const [calMonth, setCalMonth] = useState(todayMonth);
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
+  const sectionListRef = useRef<SectionList<AgendaItem, AgendaSection>>(null);
+
   const cells = useMemo(() => buildCells(calYear, calMonth), [calYear, calMonth]);
   const rows = useMemo(() => {
     const result: (string | null)[][] = [];
@@ -261,12 +263,53 @@ export default function CalendarScreen() {
           ))}
         </View>
 
-        {/* Agenda placeholder */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: Colors.textSecondary, fontFamily: Fonts.mono, fontSize: 12 }}>
-            agenda coming in next task
-          </Text>
-        </View>
+        <SectionList<AgendaItem, AgendaSection>
+          ref={sectionListRef}
+          sections={sections}
+          keyExtractor={item => item.key}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <View style={[
+              styles.sectionHeader,
+              section.dateStr === todayStr && styles.sectionHeaderToday,
+            ]}>
+              <Text style={[
+                styles.sectionTitle,
+                section.dateStr === todayStr && styles.sectionTitleToday,
+              ]}>
+                {section.title}
+              </Text>
+            </View>
+          )}
+          renderItem={({ item, section }) => (
+            <TouchableOpacity
+              style={[
+                styles.agendaRow,
+                section.dateStr === todayStr && styles.agendaRowToday,
+              ]}
+              onPress={() => router.push(`/task/${item.task.line}` as any)}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.agendaIcon,
+                item.kind === 'event' && styles.agendaIconEvent,
+                item.kind === 'completed' && styles.agendaIconDone,
+              ]}>
+                {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '○'}
+              </Text>
+              <Text
+                style={[styles.agendaTitle, item.kind === 'completed' && styles.agendaTitleDone]}
+                numberOfLines={1}
+              >
+                {cleanTitle(item.task.text)}
+              </Text>
+              {item.time ? (
+                <Text style={styles.agendaTime}>{item.time}</Text>
+              ) : null}
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 120 }}
+        />
       </View>
     </GestureDetector>
   );
@@ -307,4 +350,43 @@ const styles = StyleSheet.create({
   dayNumSelected: { color: Colors.text },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.accent, marginTop: 1 },
   dotPlaceholder: { width: 4, height: 4, marginTop: 1 },
+
+  sectionHeader: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: 4,
+    backgroundColor: Colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.separator,
+  },
+  sectionHeaderToday: {
+    backgroundColor: Colors.accent + '11',
+  },
+  sectionTitle: {
+    fontSize: 9,
+    color: Colors.textSecondary,
+    letterSpacing: 1.5,
+  },
+  sectionTitleToday: {
+    color: Colors.accent,
+    fontWeight: '700',
+  },
+  agendaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.separator,
+    gap: Spacing.sm,
+  },
+  agendaRowToday: {
+    backgroundColor: Colors.accent + '08',
+  },
+  agendaIcon: { fontSize: 11, color: Colors.textSecondary, width: 14, textAlign: 'center' },
+  agendaIconEvent: { color: Colors.accent },
+  agendaIconDone: { color: '#444' },
+  agendaTitle: { flex: 1, fontSize: 13, color: Colors.text, fontFamily: Fonts.mono },
+  agendaTitleDone: { color: '#444', textDecorationLine: 'line-through' },
+  agendaTime: { fontSize: 11, color: Colors.textSecondary, fontFamily: Fonts.mono },
 });
