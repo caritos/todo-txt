@@ -161,7 +161,7 @@ export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set
     candidate = new Date(year, month, dayForMonth(year, month));
   }
   const result = `${candidate.getFullYear()}-${String(candidate.getMonth() + 1).padStart(2, '0')}-${String(candidate.getDate()).padStart(2, '0')}`;
-  if (exdates.has(result)) return nextMonthlyDate(startStr, addDays(result, 1), exdates, frequencyMonthDay);
+  if (exdates.has(result)) return nextMonthlyDate(startStr, addDays(result, 1), exdates, frequencyMonthDay, every);
   return result;
 }
 
