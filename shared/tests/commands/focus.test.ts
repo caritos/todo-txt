@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { taskOccurrence, nextMonthlyDate } from '../../commands/focus';
+import { taskOccurrence, nextMonthlyDate, nextYearlyDate } from '../../commands/focus';
 import { parseLine } from '../../parser';
 
 function task(raw: string) { return parseLine(raw, 1); }
@@ -46,6 +46,22 @@ describe('taskOccurrence', () => {
   test('future task returns its future date', () => {
     const t = task('dentist start:2026-07-01');
     expect(taskOccurrence(t, TODAY)).toEqual({ date: '2026-07-01', time: null });
+  });
+});
+
+describe('nextYearlyDate with every', () => {
+  test('every:2 — biannual starting Jan 1 2024, today is Jan 2 2026', () => {
+    // Occurrences: 2024-01-01, 2026-01-01, 2028-01-01 — next after Jan 2 2026 is 2028
+    expect(nextYearlyDate('2024-01-01', '2026-01-02', new Set(), undefined, 2)).toBe('2028-01-01');
+  });
+
+  test('every:2 — biannual starting Jan 1 2024, today is Jan 1 2026 exactly', () => {
+    expect(nextYearlyDate('2024-01-01', '2026-01-01', new Set(), undefined, 2)).toBe('2026-01-01');
+  });
+
+  test('every:2 — biannual starting Jan 1 2024, today is Jan 1 2025', () => {
+    // Between occurrences — next is 2026
+    expect(nextYearlyDate('2024-01-01', '2025-01-01', new Set(), undefined, 2)).toBe('2026-01-01');
   });
 });
 

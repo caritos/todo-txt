@@ -48,8 +48,9 @@ function taskExdates(task: Task): Set<string> {
 
 // ── Exported date helpers (used by done.ts, skip.ts) ────────────────────────
 
-export function nextYearlyDate(start: string, todayStr: string, exdates: Set<string> = new Set(), frequencyMonthDay?: string): string {
+export function nextYearlyDate(start: string, todayStr: string, exdates: Set<string> = new Set(), frequencyMonthDay?: string, every: number = 1): string {
   const month0 = parseInt(start.slice(5, 7)) - 1;
+  const startYear = parseInt(start.slice(0, 4));
   const thisYear = parseInt(todayStr.slice(0, 4));
 
   function occurrenceForYear(year: number): string {
@@ -58,6 +59,19 @@ export function nextYearlyDate(start: string, todayStr: string, exdates: Set<str
       return `${year}-${String(month0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
     return `${year}-${start.slice(5, 10)}`;
+  }
+
+  if (every > 1) {
+    const yearsSinceStart = thisYear - startYear;
+    const cycleIndex = Math.max(0, Math.ceil(yearsSinceStart / every));
+    let targetYear = startYear + cycleIndex * every;
+    let occ = occurrenceForYear(targetYear);
+    if (occ < todayStr) {
+      targetYear += every;
+      occ = occurrenceForYear(targetYear);
+    }
+    if (exdates.has(occ)) return nextYearlyDate(start, addDays(occ, 1), exdates, frequencyMonthDay, every);
+    return occ;
   }
 
   const thisOccurrence = occurrenceForYear(thisYear);
@@ -238,7 +252,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
   if (type) {
     if (!start) return false;
     if (frequency === 'yearly') {
-      const next = nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']);
+      const next = nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));
       return next >= todayStr && next <= windowEnd;
     }
     if (frequency === 'monthly') {
@@ -265,7 +279,7 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
       return next <= windowEnd || overdueOccurrenceDate(task, todayStr) !== null;
     }
     if (frequency === 'yearly') {
-      return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']) <= windowEnd;
+      return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) <= windowEnd;
     }
     return startDate <= windowEnd;
   }
@@ -288,7 +302,7 @@ export function focusSortKey(task: Task, todayStr: string): string {
   const exdates = taskExdates(task);
 
   if (type && start) {
-    if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']);
+    if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) + time;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) + time;
     if (frequency) return todayStr + time;
@@ -324,7 +338,7 @@ export function focusSortKey(task: Task, todayStr: string): string {
       return d + time;
     }
     if (frequency === 'yearly') {
-      return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day']) + time;
+      return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) + time;
     }
     return (startDate > todayStr ? startDate : todayStr) + time;
   }
@@ -373,7 +387,7 @@ export function focusNextRecurrence(task: Task, todayStr: string): string {
   let nextDate: string;
   if (frequency === 'weekly') nextDate = nextWeeklyDate(start, afterCurrent, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']);
   else if (frequency === 'monthly') nextDate = nextMonthlyDate(start, afterCurrent, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));
-  else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent, exdates, task.extensions['frequency-month-day']);
+  else if (frequency === 'yearly') nextDate = nextYearlyDate(start.slice(0, 10), afterCurrent, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));
   else if (frequency === 'daily') nextDate = afterCurrent;
   else return '';
 
@@ -447,7 +461,7 @@ export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: 
         const exdates = taskExdates(t);
         if (freq === 'weekly') return addDays(nextWeeklyDate(start, todayStr, parseInt(every), exdates, t.extensions['frequency-day']), 1);
         if (freq === 'monthly') return addDays(nextMonthlyDate(start, todayStr, exdates, t.extensions['frequency-month-day'], parseInt(t.extensions['every'] ?? '1')), 1);
-        if (freq === 'yearly') return addDays(nextYearlyDate(start.slice(0, 10), todayStr, exdates, t.extensions['frequency-month-day']), 1);
+        if (freq === 'yearly') return addDays(nextYearlyDate(start.slice(0, 10), todayStr, exdates, t.extensions['frequency-month-day'], parseInt(t.extensions['every'] ?? '1')), 1);
       }
       return addDays(todayStr, 1);
     }
