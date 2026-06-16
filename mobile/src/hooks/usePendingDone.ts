@@ -17,6 +17,8 @@ export function usePendingDone(
   // avoiding stale-closure bugs when tasks change before the timer fires.
   const tasksRef = useRef(tasks);
   useEffect(() => { tasksRef.current = tasks; }, [tasks]);
+  const todayStrRef = useRef(todayStr);
+  useEffect(() => { todayStrRef.current = todayStr; }, [todayStr]);
 
   useEffect(() => {
     return () => {
@@ -47,7 +49,7 @@ export function usePendingDone(
         const timer = setTimeout(async () => {
           timers.current.delete(line);
           try {
-            const { tasks: updated } = applyDone([...tasksRef.current], [line], todayStr);
+            const { tasks: updated } = applyDone([...tasksRef.current], [line], todayStrRef.current);
             await save(updated);
           } catch {}
           setPendingLines(prev => {
@@ -59,7 +61,7 @@ export function usePendingDone(
         timers.current.set(line, timer);
       }
     },
-    [todayStr, save, delayMs],
+    [save, delayMs],
   );
 
   return { isPending, tapCheckbox };
