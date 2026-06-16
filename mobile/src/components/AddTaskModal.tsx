@@ -109,14 +109,18 @@ export function AddTaskModal({ visible, onClose }: Props) {
       return;
     }
     const todayStr = today();
-    const dateStr = dateToISO(date);
-    const startExt = hasTime
-      ? `start:${dateStr}T${pad(time.getHours())}:${pad(time.getMinutes())}`
-      : `start:${dateStr}`;
+    const parts: string[] = [title.trim()];
 
-    const freqExt = recurrenceExtensions(repeat);
-    const parts: string[] = [title.trim(), startExt];
-    if (freqExt) parts.push(freqExt);
+    if (hasDate) {
+      const dateStr = dateToISO(date);
+      const startExt = hasTime
+        ? `start:${dateStr}T${pad(time.getHours())}:${pad(time.getMinutes())}`
+        : `start:${dateStr}`;
+      parts.push(startExt);
+      const freqExt = recurrenceExtensions(repeat);
+      if (freqExt) parts.push(freqExt);
+    }
+
     if (addType === 'event') parts.push('type:event');
 
     const text =
