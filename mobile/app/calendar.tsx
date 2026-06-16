@@ -46,16 +46,6 @@ export default function CalendarScreen() {
   const [calMonth, setCalMonth] = useState(todayMonth);
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
-  function prevMonth() {
-    if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
-    else setCalMonth(m => m - 1);
-  }
-
-  function nextMonth() {
-    if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0); }
-    else setCalMonth(m => m + 1);
-  }
-
   const cells = useMemo(() => buildCells(calYear, calMonth), [calYear, calMonth]);
   const rows = useMemo(() => {
     const result: (string | null)[][] = [];
@@ -71,8 +61,13 @@ export default function CalendarScreen() {
     .minDistance(40)
     .onEnd((e) => {
       if (Math.abs(e.translationX) > Math.abs(e.translationY)) {
-        if (e.translationX < 0) nextMonth();
-        else prevMonth();
+        const dir = e.translationX < 0 ? 1 : -1;
+        setCalMonth(m => {
+          const next = m + dir;
+          if (next > 11) { setCalYear(y => y + 1); return 0; }
+          if (next < 0)  { setCalYear(y => y - 1); return 11; }
+          return next;
+        });
       }
     });
 
@@ -162,7 +157,7 @@ const styles = StyleSheet.create({
   yearText: { fontSize: 17, color: Colors.accent, fontWeight: '300' },
 
   dayLabelRow: { flexDirection: 'row', paddingBottom: 2 },
-  dayLabel: { flex: 1, textAlign: 'center', fontSize: 9, color: '#555', letterSpacing: 0.5 },
+  dayLabel: { flex: 1, textAlign: 'center', fontSize: 9, color: Colors.checkboxBorder, letterSpacing: 0.5 },
 
   calRow: { flexDirection: 'row' },
   calCell: { flex: 1, alignItems: 'center', paddingVertical: 3 },
