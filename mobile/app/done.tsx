@@ -16,7 +16,6 @@ import { addDays } from '@shared/utils';
 import { buildAddRaw } from '@shared/commands/add';
 import { parseLine } from '@shared/parser';
 import { taskOccurrence } from '@shared/commands/focus';
-import { applyDone } from '@shared/commands/done';
 import { usePendingDone } from '../src/hooks/usePendingDone';
 import type { Task } from '@shared/parser';
 
