@@ -76,7 +76,7 @@ export function nextYearlyDate(start: string, todayStr: string, exdates: Set<str
 
   const thisOccurrence = occurrenceForYear(thisYear);
   const result = thisOccurrence >= todayStr ? thisOccurrence : occurrenceForYear(thisYear + 1);
-  if (exdates.has(result)) return nextYearlyDate(start, addDays(result, 1), exdates, frequencyMonthDay);
+  if (exdates.has(result)) return nextYearlyDate(start, addDays(result, 1), exdates, frequencyMonthDay, every);
   return result;
 }
 
