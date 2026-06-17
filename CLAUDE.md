@@ -97,7 +97,7 @@ mobile/                       ← Expo Router iOS app
 
 **Tech stack**: Expo SDK 52, Expo Router v3, React Native (iOS only), expo-file-system, react-native-reanimated, react-native-gesture-handler, @expo-google-fonts/jetbrains-mono, chrono-node.
 
-**Design tokens**: background `#1A1A1A`, accent `#E8461A`, text `#F0F0F0`, secondary `#888888`, separator `#333333`. Task text in JetBrains Mono. One accent color only — Braun/Bauhaus.
+**Design tokens**: background `#1A1A1A`, accent `#E8461A`, text `#F0F0F0`, secondary `#888888`, separator `#333333`, checkboxBorder `#555555`. Task text in JetBrains Mono. One accent color only — Braun/Bauhaus. Never use hardcoded hex colors — always reference `Colors.*` from `mobile/src/theme.ts`. Never use hardcoded font families — always use `Fonts.mono`.
 
 **iCloud sync**: user points Settings file path to iCloud Drive container; iOS syncs automatically with other devices and with the CLI on Mac. On first launch (no saved config), the app defaults to the iCloud Drive path computed by `ICLOUD_PATH` in `mobile/src/store.ts` (exported and re-used by `settings.tsx`). `writeTasks()` calls `makeDirectoryAsync({ intermediates: true })` before writing the `.tmp` file, so the parent directory is always created on demand — required for iCloud paths that may not exist yet.
 
@@ -113,7 +113,11 @@ mobile/                       ← Expo Router iOS app
 
 **Month view today cell** (`app/month.tsx`): the accent-color border (`cellToday`) uses `zIndex: 1` on both the cell and the row containing today so all four border sides render on top of neighbouring cells' backgrounds and borders.
 
+**Safe area handling**: `_layout.tsx` sets `headerShown: false` globally, so every screen is responsible for its own safe-area padding. Use `useSafeAreaInsets()` from `react-native-safe-area-context` and apply `paddingTop: insets.top` to the top-most View or ScrollView in every screen. Screens that already do this: `done.tsx`, `search.tsx`, `settings.tsx`, `day/[date].tsx` (on the header), `month.tsx`, `events.tsx`.
+
 **Search screen** (`app/search.tsx`): uses `useSafeAreaInsets` with `paddingTop: insets.top` on the input row so the status bar / Dynamic Island does not overlap the text field.
+
+**Section headers** across all screens use `fontSize: 11`, `letterSpacing: 2`, `fontFamily: Fonts.mono`. Color differs by context: `Colors.textSecondary` for date-grouped completed tasks (`done.tsx`), `Colors.accent` for event category headers (`events.tsx`).
 
 **Tasks view** (`app/done.tsx`): single `ScrollView` with three zones — (1) completed tasks from the last 30 days grouped by completion date, **oldest-first** so the most-recent completions sit closest to the add-task anchor, with strikethrough styling; (2) an inline `+ add task…` `TextInput` anchor that the view scrolls to on mount via `onLayout` + `scrollTo`; (3) incomplete tasks sorted by `start:` date ascending, no `start:` sorts to bottom. Both zones exclude events (`task.extensions['type']` set). Incomplete task start-date labels show `today`/`yesterday` for those days, the actual date (`Jun 6`, with year when different) for overdue tasks, and weekday (`Mon`) for future tasks. Recurring tasks are hidden from the incomplete list when: `frequency:` + `last-done === todayStr` (completed today, waiting for next occurrence), `frequency:` + `start > todayStr` (next occurrence is in the future after being advanced by `applyDone`), or `frequency:` + `exdate:` + `taskOccurrence(task, todayStr).date > todayStr` while `start:` ≤ today (skipped). Add task uses `buildAddRaw` + `parseLine` + `save`.
 
