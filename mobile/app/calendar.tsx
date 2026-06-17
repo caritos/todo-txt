@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, SectionList, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,16 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Fixed row heights — must match StyleSheet values below for getItemLayout accuracy
+const HEADER_H = 34;
+const ROW_H = 44;
+
+function overdueSinceLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  return `due ${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
 
 function generateOccurrences(
   task: Task,
@@ -48,7 +58,6 @@ function generateOccurrences(
   } else if (freq === 'weekly') {
     cursor = nextWeeklyDate(startVal, fromStr, every, exdates, freqDay);
   } else {
-    // daily and other frequencies not supported — same as events.tsx
     return results;
   }
 
@@ -69,13 +78,6 @@ function generateOccurrences(
   return results;
 }
 
-const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function overdueSinceLabel(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00');
-  return `due ${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
-}
-
 type AgendaItem = {
   key: string;
   task: Task;
@@ -91,6 +93,10 @@ type AgendaSection = {
   data: AgendaItem[];
 };
 
+type FlatRow =
+  | { type: 'header'; rowKey: string; dateStr: string; title: string }
+  | { type: 'item'; rowKey: string; item: AgendaItem; dateStr: string };
+
 export default function CalendarScreen() {
   const { tasks } = useTasks();
   const router = useRouter();
@@ -103,7 +109,7 @@ export default function CalendarScreen() {
   const [calMonth, setCalMonth] = useState(todayMonth);
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
-  const sectionListRef = useRef<SectionList<AgendaItem, AgendaSection>>(null);
+  const flatListRef = useRef<FlatList<FlatRow>>(null);
 
   const cells = useMemo(() => buildCells(calYear, calMonth), [calYear, calMonth]);
   const rows = useMemo(() => {
@@ -121,7 +127,7 @@ export default function CalendarScreen() {
       if (!byDate.has(date)) byDate.set(date, []);
     }
 
-    // 1. Past completed tasks (last 90 days), grouped by completion date
+    // 1. Past completed tasks (last 30 days), grouped by completion date
     for (const t of tasks) {
       if (!t.done || !t.completionDate) continue;
       const date = t.completionDate.slice(0, 10);
@@ -158,7 +164,7 @@ export default function CalendarScreen() {
       });
     }
 
-    // 3. Event occurrences: past 90 days + future 2 years
+    // 3. Event occurrences: past 30 days + future 2 years
     for (const t of tasks) {
       if (!t.extensions['type']) continue;
       const occurrences = generateOccurrences(t, pastCutoff, futureCutoff);
@@ -173,7 +179,6 @@ export default function CalendarScreen() {
       }
     }
 
-    // Sort by date and build sections
     const sortedDates = [...byDate.keys()].sort();
     const dotSet = new Set(sortedDates);
     const sectionList: AgendaSection[] = sortedDates.map(dateStr => {
@@ -189,29 +194,40 @@ export default function CalendarScreen() {
     return { sections: sectionList, datesWithItems: dotSet };
   }, [tasks, todayStr]);
 
+  // Flatten sections into a single array for FlatList so getItemLayout can provide accurate offsets
+  const { flatData, offsets, indexByDate } = useMemo(() => {
+    const flatData: FlatRow[] = [];
+    const offsets: number[] = [];
+    const indexByDate = new Map<string, number>();
+    let offset = 0;
+    for (const section of sections) {
+      indexByDate.set(section.dateStr, flatData.length);
+      offsets.push(offset);
+      flatData.push({ type: 'header', rowKey: `hdr-${section.dateStr}`, dateStr: section.dateStr, title: section.title });
+      offset += HEADER_H;
+      for (const item of section.data) {
+        offsets.push(offset);
+        flatData.push({ type: 'item', rowKey: item.key, item, dateStr: section.dateStr });
+        offset += ROW_H;
+      }
+    }
+    return { flatData, offsets, indexByDate };
+  }, [sections]);
+
   const hasScrolledToToday = useRef(false);
 
   function scrollToDate(dateStr: string) {
-    const sectionIndex = sections.findIndex(s => s.dateStr === dateStr);
-    if (sectionIndex < 0) return;
-    try {
-      sectionListRef.current?.scrollToLocation({
-        sectionIndex,
-        itemIndex: 0,
-        animated: true,
-        viewOffset: 0,
-      });
-    } catch {
-      // scrollToLocation throws when the target section hasn't been rendered yet
-    }
+    const idx = indexByDate.get(dateStr);
+    if (idx === undefined) return;
+    flatListRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0 });
   }
 
   useEffect(() => {
-    if (sections.length === 0 || hasScrolledToToday.current) return;
+    if (flatData.length === 0 || hasScrolledToToday.current) return;
     hasScrolledToToday.current = true;
     const timer = setTimeout(() => scrollToDate(todayStr), 200);
     return () => clearTimeout(timer);
-  }, [sections]);
+  }, [flatData]);
 
   useEffect(() => {
     const monthPrefix = `${calYear}-${pad(calMonth + 1)}`;
@@ -303,57 +319,69 @@ export default function CalendarScreen() {
         </View>
       </GestureDetector>
 
-      <SectionList<AgendaItem, AgendaSection>
-        ref={sectionListRef}
-        sections={sections}
-        keyExtractor={item => item.key}
-        stickySectionHeadersEnabled={false}
-        renderSectionHeader={({ section }) => (
-          <View style={[
-            styles.sectionHeader,
-            section.dateStr === todayStr && styles.sectionHeaderToday,
-          ]}>
-            <Text style={[
-              styles.sectionTitle,
-              section.dateStr === todayStr && styles.sectionTitleToday,
-            ]}>
-              {section.title}
-            </Text>
-          </View>
-        )}
-        renderItem={({ item, section }) => (
-          <TouchableOpacity
-            style={[
-              styles.agendaRow,
-              section.dateStr === todayStr && styles.agendaRowToday,
-            ]}
-            onPress={() => router.push(`/task/${item.task.line}` as any)}
-            activeOpacity={0.7}
-            hitSlop={8}
-          >
-            <Text style={[
-              styles.agendaIcon,
-              item.kind === 'event' && styles.agendaIconEvent,
-              item.kind === 'completed' && styles.agendaIconDone,
-              item.kind === 'incomplete' && item.isOverdue && styles.agendaIconOverdue,
-            ]}>
-              {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '○'}
-            </Text>
-            <Text
-              style={[styles.agendaTitle, item.kind === 'completed' && styles.agendaTitleDone]}
-              numberOfLines={1}
+      <FlatList<FlatRow>
+        ref={flatListRef}
+        data={flatData}
+        keyExtractor={row => row.rowKey}
+        getItemLayout={(_, index) => ({
+          length: flatData[index]?.type === 'header' ? HEADER_H : ROW_H,
+          offset: offsets[index] ?? 0,
+          index,
+        })}
+        renderItem={({ item: row }) => {
+          if (row.type === 'header') {
+            return (
+              <View style={[
+                styles.sectionHeader,
+                row.dateStr === todayStr && styles.sectionHeaderToday,
+              ]}>
+                <Text style={[
+                  styles.sectionTitle,
+                  row.dateStr === todayStr && styles.sectionTitleToday,
+                ]}>
+                  {row.title}
+                </Text>
+              </View>
+            );
+          }
+          const { item, dateStr } = row;
+          return (
+            <TouchableOpacity
+              style={[
+                styles.agendaRow,
+                dateStr === todayStr && styles.agendaRowToday,
+              ]}
+              onPress={() => router.push(`/task/${item.task.line}` as any)}
+              activeOpacity={0.7}
+              hitSlop={8}
             >
-              {cleanTitle(item.task.text)}
-            </Text>
-            {item.overdueDate ? (
-              <Text style={styles.agendaOverdue}>{overdueSinceLabel(item.overdueDate)}</Text>
-            ) : item.time ? (
-              <Text style={styles.agendaTime}>{item.time}</Text>
-            ) : null}
-          </TouchableOpacity>
-        )}
+              <Text style={[
+                styles.agendaIcon,
+                item.kind === 'event' && styles.agendaIconEvent,
+                item.kind === 'completed' && styles.agendaIconDone,
+                item.kind === 'incomplete' && item.isOverdue && styles.agendaIconOverdue,
+              ]}>
+                {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '○'}
+              </Text>
+              <Text
+                style={[styles.agendaTitle, item.kind === 'completed' && styles.agendaTitleDone]}
+                numberOfLines={1}
+              >
+                {cleanTitle(item.task.text)}
+              </Text>
+              {item.overdueDate ? (
+                <Text style={styles.agendaOverdue}>{overdueSinceLabel(item.overdueDate)}</Text>
+              ) : item.time ? (
+                <Text style={styles.agendaTime}>{item.time}</Text>
+              ) : null}
+            </TouchableOpacity>
+          );
+        }}
+        onScrollToIndexFailed={({ index }) => {
+          // Fallback: jump to computed offset directly (getItemLayout should prevent this)
+          flatListRef.current?.scrollToOffset({ offset: offsets[index] ?? 0, animated: false });
+        }}
         contentContainerStyle={{ paddingBottom: 120 }}
-        onScrollToIndexFailed={() => {}}
       />
     </View>
   );
@@ -392,15 +420,16 @@ const styles = StyleSheet.create({
   dayNumWrapToday: { backgroundColor: Colors.accent },
   dayNumWrapSelected: { backgroundColor: '#2D2D2D' },
   dayNum: { fontSize: 12, color: Colors.textSecondary },
-  dayNumToday: { color: '#fff', fontWeight: '700' },
+  dayNumToday: { color: Colors.text, fontWeight: '700' },
   dayNumSelected: { color: Colors.text },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.accent, marginTop: 1 },
   dotPlaceholder: { width: 4, height: 4, marginTop: 1 },
 
+  // Section header — height must match HEADER_H constant
   sectionHeader: {
+    height: HEADER_H,
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.sm,
-    paddingBottom: 4,
+    justifyContent: 'center',
     backgroundColor: Colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
@@ -412,16 +441,18 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: Colors.textSecondary,
     letterSpacing: 1.5,
+    fontFamily: Fonts.mono,
   },
   sectionTitleToday: {
     color: Colors.accent,
     fontWeight: '700',
   },
+  // Agenda row — height must match ROW_H constant
   agendaRow: {
+    height: ROW_H,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
     gap: Spacing.sm,
