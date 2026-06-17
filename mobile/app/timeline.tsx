@@ -109,8 +109,9 @@ export default function WeekScreen() {
   }
 
   const swipe = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-10, 10])
     .runOnJS(true)
-    .minDistance(40)
     .onEnd((e) => {
       if (Math.abs(e.translationX) > Math.abs(e.translationY)) {
         setAnchorDate(prev => addDays(prev, e.translationX < 0 ? 7 : -7));
