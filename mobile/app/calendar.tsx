@@ -129,6 +129,7 @@ export default function CalendarScreen() {
       }
     }
 
+    const KIND_ORDER: Record<AgendaItem['kind'], number> = { incomplete: 0, event: 1, completed: 2 };
     const sortedDates = [...byDate.keys()].sort();
     const dotSet = new Set(sortedDates);
     const sectionList: AgendaSection[] = sortedDates.map(dateStr => {
@@ -138,7 +139,8 @@ export default function CalendarScreen() {
       const day = d.getDate();
       const suffix = dateStr === todayStr ? ' — TODAY' : '';
       const title = `${dow} ${mon} ${day}${suffix}`;
-      return { dateStr, title, data: byDate.get(dateStr)! };
+      const data = byDate.get(dateStr)!.sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
+      return { dateStr, title, data };
     });
 
     return { sections: sectionList, datesWithItems: dotSet };
@@ -273,6 +275,7 @@ export default function CalendarScreen() {
         ref={flatListRef}
         data={flatData}
         keyExtractor={row => row.rowKey}
+        initialScrollIndex={indexByDate.get(todayStr)}
         getItemLayout={(_, index) => ({
           length: flatData[index]?.type === 'header' ? HEADER_H : ROW_H,
           offset: offsets[index] ?? 0,

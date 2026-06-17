@@ -20,7 +20,7 @@ export function BottomActionBar() {
   const [switcherVisible, setSwitcherVisible] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
 
-  const label = pathname.startsWith('/day/') ? 'Day' : (ROUTE_LABELS[pathname] ?? 'Week');
+  const label = pathname.startsWith('/day/') ? 'Day' : (ROUTE_LABELS[pathname] ?? 'Calendar');
 
   return (
     <>
