@@ -518,3 +518,58 @@ export function focusItemOccurrence(item: FocusItem): TaskOccurrence {
   const time = timePart && /^\d{2}:\d{2}$/.test(timePart) ? timePart : null;
   return { date, time };
 }
+
+// Generate every occurrence of a (possibly recurring) event task between fromStr and cutoffStr.
+// Respects recur-until, exdate, frequency-day, frequency-month-day, every.
+// Returns only event-type tasks; callers are responsible for filtering.
+export function generateTaskOccurrences(
+  task: Task,
+  fromStr: string,
+  cutoffStr: string,
+): Array<{ date: string; task: Task }> {
+  const startVal = task.extensions['start'];
+  if (!startVal) return [];
+  const startDate = startVal.slice(0, 10);
+  const freq = task.extensions['frequency'];
+  const every = parseInt(task.extensions['every'] ?? '1', 10);
+  const exdates = new Set((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
+  const freqDay = task.extensions['frequency-day'];
+  const freqMonthDay = task.extensions['frequency-month-day'];
+  const recurUntil = task.extensions['recur-until'];
+  const effectiveCutoff = recurUntil && recurUntil < cutoffStr ? recurUntil : cutoffStr;
+  const results: Array<{ date: string; task: Task }> = [];
+
+  if (!freq) {
+    if (startDate >= fromStr && startDate <= effectiveCutoff) {
+      results.push({ date: startDate, task });
+    }
+    return results;
+  }
+
+  let cursor: string;
+  if (freq === 'yearly') {
+    cursor = nextYearlyDate(startDate, fromStr, exdates, freqMonthDay, every);
+  } else if (freq === 'monthly') {
+    cursor = nextMonthlyDate(startVal, fromStr, exdates, freqMonthDay, every);
+  } else if (freq === 'weekly') {
+    cursor = nextWeeklyDate(startVal, fromStr, every, exdates, freqDay);
+  } else {
+    return results;
+  }
+
+  while (cursor <= effectiveCutoff) {
+    results.push({ date: cursor, task });
+    let next: string;
+    if (freq === 'yearly') {
+      next = nextYearlyDate(startDate, addDays(cursor, 1), exdates, freqMonthDay, every);
+    } else if (freq === 'monthly') {
+      next = nextMonthlyDate(startVal, addDays(cursor, 1), exdates, freqMonthDay, every);
+    } else {
+      next = nextWeeklyDate(startVal, addDays(cursor, 1), every, exdates, freqDay);
+    }
+    if (next <= cursor) break;
+    cursor = next;
+  }
+
+  return results;
+}

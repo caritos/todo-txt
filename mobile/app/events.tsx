@@ -6,7 +6,7 @@ import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
-import { nextYearlyDate, nextMonthlyDate, nextWeeklyDate } from '@shared/commands/focus';
+import { generateTaskOccurrences } from '@shared/commands/focus';
 import type { Task } from '@shared/parser';
 
 const MONTH_NAMES = [
@@ -30,57 +30,6 @@ function dayLabel(dateStr: string): string {
   return `${DAY_NAMES[d.getDay()]} ${d.getDate()}`;
 }
 
-function generateOccurrences(
-  task: Task,
-  todayStr: string,
-  cutoffStr: string,
-): Array<{ date: string; task: Task }> {
-  const startVal = task.extensions['start'];
-  if (!startVal) return [];
-  const startDate = startVal.slice(0, 10);
-  const freq = task.extensions['frequency'];
-  const every = parseInt(task.extensions['every'] ?? '1', 10);
-  const exdates = new Set((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
-  const freqDay = task.extensions['frequency-day'];
-  const freqMonthDay = task.extensions['frequency-month-day'];
-  const recurUntil = task.extensions['recur-until'];
-  const effectiveCutoff = recurUntil && recurUntil < cutoffStr ? recurUntil : cutoffStr;
-  const results: Array<{ date: string; task: Task }> = [];
-
-  if (!freq) {
-    if (startDate >= todayStr && startDate <= effectiveCutoff) {
-      results.push({ date: startDate, task });
-    }
-    return results;
-  }
-
-  let cursor: string;
-  if (freq === 'yearly') {
-    cursor = nextYearlyDate(startDate, todayStr, exdates, freqMonthDay, every);
-  } else if (freq === 'monthly') {
-    cursor = nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay, every);
-  } else if (freq === 'weekly') {
-    cursor = nextWeeklyDate(startVal, todayStr, every, exdates, freqDay);
-  } else {
-    return results;
-  }
-
-  while (cursor <= effectiveCutoff) {
-    results.push({ date: cursor, task });
-    let next: string;
-    if (freq === 'yearly') {
-      next = nextYearlyDate(startDate, addDays(cursor, 1), exdates, freqMonthDay, every);
-    } else if (freq === 'monthly') {
-      next = nextMonthlyDate(startVal, addDays(cursor, 1), exdates, freqMonthDay, every);
-    } else {
-      next = nextWeeklyDate(startVal, addDays(cursor, 1), every, exdates, freqDay);
-    }
-    if (next <= cursor) break;
-    cursor = next;
-  }
-
-  return results;
-}
 
 export default function EventsScreen() {
   const { tasks } = useTasks();
@@ -93,7 +42,7 @@ export default function EventsScreen() {
     const events = tasks.filter(t => !t.done && !!t.extensions['type']);
     const all: Array<{ date: string; task: Task }> = [];
     for (const event of events) {
-      all.push(...generateOccurrences(event, todayStr, cutoffStr));
+      all.push(...generateTaskOccurrences(event, todayStr, cutoffStr));
     }
     all.sort((a, b) => a.date.localeCompare(b.date));
 
