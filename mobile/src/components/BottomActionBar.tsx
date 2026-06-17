@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useState } from 'react';
-import { Colors, Spacing } from '../theme';
+import { Colors, Fonts, Spacing } from '../theme';
 import { ViewSwitcher } from './ViewSwitcher';
 import { AddTaskModal } from './AddTaskModal';
 
@@ -55,9 +55,9 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
     paddingBottom: 32,
   },
-  iconBtn: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs },
+  iconBtn: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm },
   labelBtn: { flex: 1, alignItems: 'center' },
   icon: { fontSize: 24, color: Colors.text, lineHeight: 30 },
   addIcon: { color: Colors.accent, fontWeight: '300', fontSize: 28 },
-  label: { fontSize: 16, color: Colors.text, letterSpacing: 0.3 },
+  label: { fontSize: 16, color: Colors.text, letterSpacing: 0.3, fontFamily: Fonts.mono },
 });

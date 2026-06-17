@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useMemo, useRef, useEffect } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTasks } from '../../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today } from '../../src/utils';
@@ -109,25 +110,26 @@ export default function DayScreen() {
     });
 
   const { isPending, tapCheckbox } = usePendingDone(tasks, todayStr, save);
+  const insets = useSafeAreaInsets();
 
   return (
     <GestureDetector gesture={swipe}>
     <View style={styles.screen}>
       <Stack.Screen options={{ animation: direction === 'back' ? 'slide_from_left' : 'slide_from_right' }} />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.headerNav}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Text style={styles.backText}>‹ Back</Text>
           </TouchableOpacity>
           <View style={styles.dayNav}>
-            <TouchableOpacity onPress={() => {
+            <TouchableOpacity hitSlop={12} onPress={() => {
               const prev = addDays(dateStr, -1);
               setSelectedDate(prev);
               router.replace({ pathname: `/day/${prev}` as any, params: { direction: 'back' } });
             }}>
               <Text style={styles.navArrow}>‹</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => {
+            <TouchableOpacity hitSlop={12} onPress={() => {
               const next = addDays(dateStr, 1);
               setSelectedDate(next);
               router.replace({ pathname: `/day/${next}` as any, params: { direction: 'forward' } });
@@ -263,20 +265,20 @@ const styles = StyleSheet.create({
   allDaySection: { borderBottomWidth: 1, borderBottomColor: Colors.separator },
   allDayScroll: { maxHeight: 132 },
   allDayHdr: {
-    fontSize: 9, color: '#555555', letterSpacing: 1.5,
+    fontSize: 9, color: Colors.checkboxBorder, letterSpacing: 1.5,
     paddingHorizontal: Spacing.md, paddingTop: 6, paddingBottom: 4,
   },
   allDayRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: Spacing.md, paddingVertical: 8,
     gap: Spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#222222',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.separator,
   },
   allDayEventRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: Spacing.md, paddingVertical: 8,
     backgroundColor: Colors.accent + '18',
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#222222',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.separator,
   },
   cb: { width: 14, height: 14, borderWidth: 1.5, borderColor: Colors.checkboxBorder, flexShrink: 0 },
   cbPending: {
@@ -289,7 +291,7 @@ const styles = StyleSheet.create({
   },
   cbCheck: {
     fontSize: 9,
-    color: '#ffffff',
+    color: Colors.text,
     lineHeight: 11,
     fontWeight: '700',
   },
@@ -298,10 +300,10 @@ const styles = StyleSheet.create({
   emptyText: { color: Colors.textSecondary, fontStyle: 'italic', fontFamily: Fonts.mono, fontSize: 13 },
   hourLine: {
     position: 'absolute', left: 0, right: 0, height: HOUR_HEIGHT,
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#222222',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.separator,
   },
   hourLabel: {
-    width: LABEL_WIDTH, fontSize: 10, color: '#444444',
+    width: LABEL_WIDTH, fontSize: 10, color: Colors.textSecondary,
     fontFamily: Fonts.mono, paddingLeft: Spacing.md, paddingTop: 3,
   },
   nowLine: {
@@ -335,7 +337,7 @@ const styles = StyleSheet.create({
   },
   pillCbCheck: {
     fontSize: 7,
-    color: '#ffffff',
+    color: Colors.text,
     lineHeight: 8,
     fontWeight: '700',
   },

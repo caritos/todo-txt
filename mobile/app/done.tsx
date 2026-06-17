@@ -214,14 +214,15 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   sectionTitle: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.textSecondary,
     letterSpacing: 2,
     fontWeight: '600',
+    fontFamily: Fonts.mono,
   },
   sectionCount: {
-    fontSize: 10,
-    color: '#444444',
+    fontSize: 11,
+    color: Colors.textSecondary,
     fontFamily: Fonts.mono,
   },
   // Shared row
@@ -235,27 +236,27 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   content: { flex: 1, gap: 3 },
-  meta: { fontSize: 11, color: '#444444', letterSpacing: 0.2 },
+  meta: { fontSize: 11, color: Colors.textSecondary, letterSpacing: 0.2 },
   // Completed task row
   cbDone: {
     width: 17,
     height: 17,
-    backgroundColor: '#333333',
+    backgroundColor: Colors.separator,
     borderWidth: 1.5,
-    borderColor: '#444444',
+    borderColor: Colors.checkboxBorder,
     flexShrink: 0,
     marginTop: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cbX: { fontSize: 9, color: '#555555', lineHeight: 11 },
+  cbX: { fontSize: 9, color: Colors.checkboxBorder, lineHeight: 11 },
   doneTitle: {
     fontFamily: Fonts.mono,
     fontSize: 13,
-    color: '#555555',
+    color: Colors.checkboxBorder,
     lineHeight: 19,
     textDecorationLine: 'line-through',
-    textDecorationColor: '#444444',
+    textDecorationColor: Colors.separator,
   },
   // Incomplete task row
   cb: {
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
   },
   cbCheck: {
     fontSize: 11,
-    color: '#ffffff',
+    color: Colors.text,
     lineHeight: 13,
     fontWeight: '700',
   },

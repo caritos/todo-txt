@@ -1,11 +1,13 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTasks } from '../src/context/TaskContext';
 import { setFilePath, ICLOUD_PATH } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 
 export default function SettingsScreen() {
   const { filePath, reload } = useTasks();
+  const insets = useSafeAreaInsets();
   const [pathInput, setPathInput] = useState(filePath);
   const [saved, setSaved] = useState(false);
 
@@ -33,7 +35,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 120 }}>
+    <ScrollView style={[styles.screen, { paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: 120 }}>
       <Text style={styles.sectionTitle}>Todo File</Text>
       <View style={styles.card}>
         <Text style={styles.fieldLabel}>File path</Text>

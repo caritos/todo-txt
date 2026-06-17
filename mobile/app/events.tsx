@@ -156,6 +156,7 @@ const styles = StyleSheet.create({
     color: Colors.accent,
     letterSpacing: 2,
     fontWeight: '700',
+    fontFamily: Fonts.mono,
   },
   row: {
     flexDirection: 'row',
