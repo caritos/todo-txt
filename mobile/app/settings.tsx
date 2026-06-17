@@ -2,7 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTasks } from '../src/context/TaskContext';
-import { setFilePath, ICLOUD_PATH } from '../src/store';
+import { setFilePath } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 
 export default function SettingsScreen() {
@@ -22,17 +22,6 @@ export default function SettingsScreen() {
     }
   }
 
-  async function handleUseICloud() {
-    if (!ICLOUD_PATH) {
-      Alert.alert('Error', 'iCloud path is not available on this device.');
-      return;
-    }
-    setPathInput(ICLOUD_PATH);
-    await setFilePath(ICLOUD_PATH);
-    await reload();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
 
   return (
     <ScrollView style={[styles.screen, { paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: 120 }}>
@@ -50,22 +39,6 @@ export default function SettingsScreen() {
         />
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
           <Text style={styles.saveBtnText}>{saved ? 'Saved ✓' : 'Save'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.sectionTitle}>iCloud Sync</Text>
-      <View style={styles.card}>
-        <Text style={styles.description}>
-          Point the file path to your iCloud Drive to sync todo.txt across devices and with the Mac CLI.
-        </Text>
-        <TouchableOpacity
-          style={[styles.iCloudBtn, !ICLOUD_PATH && styles.iCloudBtnDisabled]}
-          onPress={handleUseICloud}
-          disabled={!ICLOUD_PATH}
-        >
-          <Text style={[styles.iCloudBtnText, !ICLOUD_PATH && styles.iCloudBtnTextDisabled]}>
-            Use iCloud Drive path
-          </Text>
         </TouchableOpacity>
       </View>
 
@@ -109,10 +82,5 @@ const styles = StyleSheet.create({
   },
   saveBtn: { alignSelf: 'flex-start', paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.accent, marginTop: Spacing.sm },
   saveBtnText: { color: Colors.accent, fontSize: 14, fontWeight: '500' },
-  description: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
-  iCloudBtn: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.textSecondary, alignSelf: 'flex-start' },
-  iCloudBtnDisabled: { opacity: 0.5 },
-  iCloudBtnText: { color: Colors.text, fontSize: 14 },
-  iCloudBtnTextDisabled: { color: Colors.textSecondary },
   currentPath: { fontFamily: Fonts.mono, fontSize: 11, color: Colors.textSecondary, lineHeight: 18 },
 });
