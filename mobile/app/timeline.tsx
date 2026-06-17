@@ -202,7 +202,7 @@ export default function WeekScreen() {
                       const isEvent = !!t.extensions['type'];
                       return (
                         <View key={t.line} style={isEvent ? styles.allDayEventChip : styles.allDayChip}>
-                          <Text style={styles.allDayChipText} numberOfLines={1}>{cleanTitle(t.text)}</Text>
+                          <Text style={styles.allDayChipText}>{cleanTitle(t.text)}</Text>
                         </View>
                       );
                     })}
