@@ -14,9 +14,8 @@ import { useState, useRef } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTasks } from '../context/TaskContext';
-import { parseLine } from '@shared/parser';
 import type { Task } from '@shared/parser';
-import { buildAddRaw } from '@shared/commands/add';
+import { applyAdd } from '@shared/commands/add';
 import { RecurrencePicker, recurrenceExtensions, recurrenceLabel } from './RecurrencePicker';
 import type { RecurrenceValue, CustomConfig } from './RecurrencePicker';
 import { CustomRecurrencePicker, customRecurrenceExtensions } from './CustomRecurrencePicker';
@@ -132,9 +131,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
       priority !== 'none' ? `(${priority}) ${parts.join(' ')}` : parts.join(' ');
 
     try {
-      const raw = buildAddRaw(text, todayStr);
-      const newTask = parseLine(raw, tasks.length + 1);
-      await save([...tasks, newTask]);
+      const { tasks: updated } = applyAdd([...tasks], text, todayStr);
+      await save(updated);
       handleClose();
     } catch (e) {
       setError((e as Error).message);
@@ -196,7 +194,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
               ref={inputRef}
               style={styles.titleInput}
               placeholder={addType === 'task' ? 'What needs to be done?' : 'Event name'}
-              placeholderTextColor="#444444"
+              placeholderTextColor={Colors.textDim}
               value={title}
               onChangeText={setTitle}
               returnKeyType="done"
@@ -383,7 +381,7 @@ const styles = StyleSheet.create({
   },
   dismiss: { fontSize: 20, color: Colors.textSecondary, fontWeight: '300', lineHeight: 26 },
   addBtn: { fontSize: 15, fontWeight: '600', color: Colors.accent },
-  addBtnDim: { color: '#444444' },
+  addBtnDim: { color: Colors.textDim },
 
   typeToggle: { flexDirection: 'row' },
   typeBtn: {
@@ -393,8 +391,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.separator,
   },
   typeBtnRight: { borderLeftWidth: 0 },
-  typeBtnActive: { borderColor: Colors.accent },
-  typeBtnText: { fontSize: 11, fontWeight: '600', letterSpacing: 1, color: '#555555' },
+  typeBtnActive: { borderColor: Colors.accent, borderLeftWidth: 1 },
+  typeBtnText: { fontSize: 11, fontWeight: '600', letterSpacing: 1, color: Colors.checkboxBorder },
   typeBtnTextActive: { color: Colors.accent },
 
   scroll: { flexGrow: 1 },
@@ -403,7 +401,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#222222',
+    borderBottomColor: Colors.divider,
   },
   titleInput: {
     fontFamily: Fonts.mono,
@@ -414,8 +412,8 @@ const styles = StyleSheet.create({
 
   suggestionsRow: {
     borderBottomWidth: 1,
-    borderBottomColor: '#222222',
-    backgroundColor: '#141414',
+    borderBottomColor: Colors.divider,
+    backgroundColor: Colors.inputBg,
   },
   suggestionsContent: {
     paddingHorizontal: Spacing.md,
@@ -443,7 +441,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#222222',
+    borderBottomColor: Colors.divider,
   },
   frowLast: { borderBottomWidth: 0 },
   flabel: { fontSize: 14, color: Colors.textSecondary, flex: 1 },
@@ -465,7 +463,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pchipActive: { borderColor: Colors.accent },
-  pchipText: { fontSize: 12, color: '#555555', fontFamily: Fonts.mono },
+  pchipText: { fontSize: 12, color: Colors.checkboxBorder, fontFamily: Fonts.mono },
   pchipTextActive: { color: Colors.accent },
 
   errorText: { color: Colors.accent, fontSize: 13, margin: Spacing.md, textAlign: 'center' },

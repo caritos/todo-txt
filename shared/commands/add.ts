@@ -1,3 +1,6 @@
+import { parseLine } from '../parser';
+import type { Task } from '../parser';
+
 const VALID_FREQUENCY = new Set(['daily', 'weekly', 'monthly', 'yearly']);
 const VALID_FREQ_DAY = new Set(['M', 'T', 'W', 'Th', 'F', 'Sat', 'Sun']);
 const VALID_FREQ_MONTH = new Set(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']);
@@ -72,4 +75,10 @@ export function buildAddRaw(text: string, todayStr: string): string {
     return `(${priorityMatch[1]}) ${todayStr} ${rest}`;
   }
   return `${todayStr} ${body}`;
+}
+
+export function applyAdd(tasks: Task[], text: string, todayStr: string): { tasks: Task[] } {
+  const raw = buildAddRaw(text, todayStr);
+  const newTask = parseLine(raw, tasks.length + 1);
+  return { tasks: [...tasks, newTask] };
 }

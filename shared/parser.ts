@@ -63,3 +63,7 @@ export function serializeTask(task: Task): string {
 export function baseText(text: string): string {
   return text.replace(/(?:^|\s)\w[\w-]*:[^/\s]\S*/g, ' ').replace(/\s+/g, ' ').trim();
 }
+
+export function serializeTasks(tasks: Task[]): string {
+  return tasks.map(t => t.raw).join('\n') + '\n';
+}

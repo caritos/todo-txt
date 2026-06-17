@@ -1,7 +1,7 @@
-import { appendFileSync } from 'fs';
 import { readTasks, writeTasks } from '../store';
 import { today, formatTask } from '../output';
 import { applyDone } from '../../shared/commands/done';
+import { parseLine } from '../../shared/parser';
 
 export function doneCommand(filePath: string, nStrs: string[]): void {
   if (nStrs.length === 0) {
@@ -13,7 +13,10 @@ export function doneCommand(filePath: string, nStrs: string[]): void {
   if (isNaN(parseInt(nStrs[0]!, 10))) {
     const text = nStrs.join(' ');
     const todayStr = today();
-    appendFileSync(filePath, `x ${todayStr} ${todayStr} ${text}\n`, 'utf8');
+    const tasks = readTasks(filePath);
+    const raw = `x ${todayStr} ${todayStr} ${text}`;
+    const newTask = parseLine(raw, tasks.length + 1);
+    writeTasks(filePath, [...tasks, newTask]);
     console.log(`Done: ${text}`);
     return;
   }

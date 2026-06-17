@@ -92,10 +92,10 @@ const styles = StyleSheet.create({
   },
   titleOverdue: { color: Colors.accent },
   meta: { fontSize: 11, color: Colors.textSecondary, letterSpacing: 0.2 },
-  metaStrike: { fontSize: 11, color: '#555555', textDecorationLine: 'line-through', letterSpacing: 0.2 },
+  metaStrike: { fontSize: 11, color: Colors.checkboxBorder, textDecorationLine: 'line-through', letterSpacing: 0.2 },
   metaOverdue: { fontSize: 11, color: Colors.accent, letterSpacing: 0.2 },
   priority: { fontSize: 11, color: Colors.accent, fontWeight: '700', marginTop: 2, flexShrink: 0 },
   actions: { flexDirection: 'row' },
   actionBtn: { justifyContent: 'center', paddingHorizontal: Spacing.md, minWidth: 72 },
-  actionText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  actionText: { color: Colors.textOnAccent, fontWeight: '600', fontSize: 14 },
 });

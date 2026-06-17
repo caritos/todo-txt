@@ -4,7 +4,7 @@ jest.mock('expo-file-system', () => ({
   documentDirectory: 'file:///mock-doc-dir/',
   readAsStringAsync: jest.fn(),
   writeAsStringAsync: jest.fn(),
-  moveAsync: jest.fn(),
+  makeDirectoryAsync: jest.fn(),
 }));
 
 jest.mock('@shared/parser', () => ({
@@ -17,6 +17,9 @@ jest.mock('@shared/parser', () => ({
     contexts: [],
     extensions: {},
   })),
+  serializeTasks: jest.fn((tasks: Array<{ raw: string }>) =>
+    tasks.map(t => t.raw).join('\n') + '\n'
+  ),
 }));
 
 import * as FileSystem from 'expo-file-system';
@@ -27,10 +30,11 @@ const mockFs = FileSystem as jest.Mocked<typeof FileSystem>;
 beforeEach(() => jest.clearAllMocks());
 
 describe('resolveFile', () => {
-  test('returns default path when config does not exist', async () => {
+  test('returns iCloud path when config does not exist', async () => {
     mockFs.readAsStringAsync.mockRejectedValueOnce(new Error('not found'));
     const path = await resolveFile();
-    expect(path).toBe('file:///mock-doc-dir/todo.txt');
+    // Default is ICLOUD_PATH; on a non-simulator mock env this is the relative iCloud path
+    expect(path).toBe('file:///mock-doc-dir/../Library/Mobile Documents/iCloud~com~apple~CloudDocs/todo.txt');
   });
 
   test('returns stored path from config', async () => {
@@ -57,9 +61,9 @@ describe('readTasks', () => {
 });
 
 describe('writeTasks', () => {
-  test('writes tasks as newline-joined raw strings via tmp+rename', async () => {
+  test('writes tasks directly to file path without tmp', async () => {
+    mockFs.makeDirectoryAsync.mockResolvedValueOnce(undefined as any);
     mockFs.writeAsStringAsync.mockResolvedValueOnce(undefined as any);
-    mockFs.moveAsync.mockResolvedValueOnce(undefined as any);
 
     const tasks = [
       { line: 1, raw: 'task one', done: false, text: 'task one', projects: [], contexts: [], extensions: {} },
@@ -69,14 +73,10 @@ describe('writeTasks', () => {
     await writeTasks('file:///mock-doc-dir/todo.txt', tasks);
 
     expect(mockFs.writeAsStringAsync).toHaveBeenCalledWith(
-      'file:///mock-doc-dir/todo.txt.tmp',
+      'file:///mock-doc-dir/todo.txt',
       'task one\ntask two\n',
       { encoding: 'utf8' }
     );
-    expect(mockFs.moveAsync).toHaveBeenCalledWith({
-      from: 'file:///mock-doc-dir/todo.txt.tmp',
-      to: 'file:///mock-doc-dir/todo.txt',
-    });
   });
 });
 

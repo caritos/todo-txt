@@ -13,8 +13,7 @@ import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today, sectionHeader } from '../src/utils';
 import { addDays } from '@shared/utils';
-import { buildAddRaw } from '@shared/commands/add';
-import { parseLine } from '@shared/parser';
+import { applyAdd } from '@shared/commands/add';
 import { taskOccurrence } from '@shared/commands/focus';
 import { usePendingDone } from '../src/hooks/usePendingDone';
 import type { Task } from '@shared/parser';
@@ -102,10 +101,9 @@ export default function TasksScreen() {
   async function submitDraft() {
     const text = draft.trim();
     if (!text) return;
-    const raw = buildAddRaw(text, todayStr);
-    const newTask = parseLine(raw, tasks.length + 1);
+    const { tasks: updated } = applyAdd([...tasks], text, todayStr);
     setDraft('');
-    await save([...tasks, newTask]);
+    await save(updated);
   }
 
   return (

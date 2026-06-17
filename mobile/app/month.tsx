@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
   },
-  dayHdr: { flex: 1, textAlign: 'center', fontSize: 10, color: '#555555', letterSpacing: 0.5 },
+  dayHdr: { flex: 1, textAlign: 'center', fontSize: 10, color: Colors.checkboxBorder, letterSpacing: 0.5 },
   grid: { flex: 1 },
   row: {
     flex: 1,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderColor: Colors.accent,
-    backgroundColor: '#1f1410',
+    backgroundColor: Colors.accentSubtle,
     zIndex: 1,
   },
   dateNumWrap: {
@@ -199,8 +199,8 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   dateNum: { fontSize: 11, color: Colors.text, fontFamily: Fonts.mono },
-  dateNumPast: { color: '#444444' },
-  dateNumToday: { color: '#ffffff', fontWeight: '700' },
+  dateNumPast: { color: Colors.textDim },
+  dateNumToday: { color: Colors.textOnAccent, fontWeight: '700' },
   taskTitle: {
     fontSize: 8,
     color: Colors.textSecondary,

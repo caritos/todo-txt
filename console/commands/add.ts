@@ -1,7 +1,6 @@
-import { appendFileSync } from 'fs';
-import { readTasks } from '../store';
+import { readTasks, writeTasks } from '../store';
 import { today, formatTask } from '../output';
-import { buildAddRaw } from '../../shared/commands/add';
+import { applyAdd } from '../../shared/commands/add';
 
 export function addCommand(filePath: string, textParts: string[]): void {
   if (textParts.length === 0) {
@@ -12,19 +11,14 @@ export function addCommand(filePath: string, textParts: string[]): void {
   const text = textParts.join(' ');
   const todayStr = today();
 
-  let raw: string;
+  let updated: ReturnType<typeof applyAdd>['tasks'];
   try {
-    raw = buildAddRaw(text, todayStr);
+    ({ tasks: updated } = applyAdd(readTasks(filePath), text, todayStr));
   } catch (e) {
     console.error((e as Error).message);
     process.exit(1);
   }
 
-  // Append to file (creates if not exists)
-  appendFileSync(filePath, raw + '\n', 'utf8');
-
-  // Read back to get the line number for display
-  const tasks = readTasks(filePath);
-  const added = tasks[tasks.length - 1]!;
-  console.log(`Added: ${formatTask(added, todayStr)}`);
+  writeTasks(filePath, updated);
+  console.log(`Added: ${formatTask(updated[updated.length - 1]!, todayStr)}`);
 }

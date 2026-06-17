@@ -1,6 +1,6 @@
-import { appendFileSync } from 'fs';
-import { readTasks } from '../store';
+import { readTasks, writeTasks } from '../store';
 import { today, formatTask } from '../output';
+import { parseLine } from '../../shared/parser';
 import { validateFrequency } from '../../shared/recurrence';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -64,9 +64,9 @@ export function eventCommand(filePath: string, textParts: string[]): void {
   const normalized = text.replace(/(?:^|\s)type:(?:event|anniversary|birthday)(?=\s|$)/g, ' ').trim();
   const raw = `${todayStr} ${normalized} type:${type}`;
 
-  appendFileSync(filePath, raw + '\n', 'utf8');
-
   const tasks = readTasks(filePath);
-  const added = tasks[tasks.length - 1]!;
-  console.log(`Added: ${formatTask(added, todayStr)}`);
+  const newTask = parseLine(raw, tasks.length + 1);
+  const updated = [...tasks, newTask];
+  writeTasks(filePath, updated);
+  console.log(`Added: ${formatTask(newTask, todayStr)}`);
 }

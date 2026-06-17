@@ -1,6 +1,8 @@
-import { readFileSync, appendFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { today } from '../output';
+import { readTasks, writeTasks } from '../store';
+import { parseLine } from '../../shared/parser';
 
 export type ReminderRecord = {
   id: string;
@@ -193,7 +195,10 @@ export function remindersCommand(filePath: string, args: string[], executor: JXA
     return;
   }
 
-  appendFileSync(filePath, newLines.join('\n') + '\n', 'utf8');
+  const existingTasks = readTasks(filePath);
+  const startLine = existingTasks.length + 1;
+  const newTasks = newLines.map((raw, i) => parseLine(raw, startLine + i));
+  writeTasks(filePath, [...existingTasks, ...newTasks]);
 
   const basename = filePath.split('/').pop() ?? filePath;
   const skipMsg = skipped > 0 ? ` (${skipped} skipped as duplicates)` : '';

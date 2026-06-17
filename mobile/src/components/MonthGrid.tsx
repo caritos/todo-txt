@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   todayCircle: { backgroundColor: Colors.accent, borderRadius: 14 },
   selectedCircle: { borderWidth: 1.5, borderColor: Colors.accent, borderRadius: 14 },
   dayNum: { fontSize: 13, color: Colors.text },
-  todayNum: { color: '#fff', fontWeight: '700' },
+  todayNum: { color: Colors.textOnAccent, fontWeight: '700' },
   dot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: Colors.textSecondary, marginTop: 1 },
-  dotToday: { backgroundColor: '#fff' },
+  dotToday: { backgroundColor: Colors.textOnAccent },
 });

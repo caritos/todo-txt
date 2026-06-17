@@ -1,6 +1,8 @@
-import { readFileSync, appendFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import ICAL from 'ical.js';
 import { today } from '../output';
+import { readTasks, writeTasks } from '../store';
+import { parseLine } from '../../shared/parser';
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as const;
 
@@ -189,7 +191,10 @@ export function importCommand(filePath: string, args: string[]): void {
     process.exit(1);
   }
 
-  appendFileSync(filePath, lines.join('\n') + '\n', 'utf8');
+  const existingTasks = readTasks(filePath);
+  const startLine = existingTasks.length + 1;
+  const newTasks = lines.map((raw, i) => parseLine(raw, startLine + i));
+  writeTasks(filePath, [...existingTasks, ...newTasks]);
 
   const basename = icsPath.split('/').pop() ?? icsPath;
   console.log(`Imported ${lines.length} event${lines.length === 1 ? '' : 's'} from ${basename} → ${filePath}`);

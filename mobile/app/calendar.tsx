@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   dayNumWrapToday: { backgroundColor: Colors.accent },
-  dayNumWrapSelected: { backgroundColor: '#2D2D2D' },
+  dayNumWrapSelected: { backgroundColor: Colors.surfaceSelected },
   dayNum: { fontSize: 12, color: Colors.textSecondary },
   dayNumToday: { color: Colors.text, fontWeight: '700' },
   dayNumSelected: { color: Colors.text },
@@ -391,9 +391,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent + '11',
   },
   sectionTitle: {
-    fontSize: 9,
+    fontSize: 11,
     color: Colors.textSecondary,
-    letterSpacing: 1.5,
+    letterSpacing: 2,
     fontFamily: Fonts.mono,
   },
   sectionTitleToday: {

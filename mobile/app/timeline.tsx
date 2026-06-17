@@ -313,13 +313,13 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
   },
   stripCell: { alignItems: 'center', gap: 3, paddingVertical: 3, paddingHorizontal: 2 },
-  stripCellSelected: { backgroundColor: '#2D2D2D', borderRadius: 5 },
+  stripCellSelected: { backgroundColor: Colors.surfaceSelected, borderRadius: 5 },
   stripDayName: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.5 },
   stripDayNameSelected: { color: Colors.accent, fontWeight: '600' },
   stripDayBox: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
   stripDayBoxToday: { backgroundColor: Colors.accent },
   stripDayNum: { fontSize: 12, color: Colors.text },
-  stripDayNumToday: { color: '#ffffff', fontWeight: '700' },
+  stripDayNumToday: { color: Colors.textOnAccent, fontWeight: '700' },
   stripDot: { backgroundColor: Colors.accent },
   stripDotPlaceholder: { height: 8 },
 
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   allDayLabelCol: { width: LABEL_WIDTH, alignItems: 'center', justifyContent: 'center', paddingVertical: 3 },
   allDayScroll: { flex: 1 },
   allDayCols: { flexDirection: 'row', paddingVertical: 3 },
-  allDayLabel: { fontSize: 7, color: '#555555', letterSpacing: 0.5, textAlign: 'center' },
+  allDayLabel: { fontSize: 7, color: Colors.checkboxBorder, letterSpacing: 0.5, textAlign: 'center' },
   allDayCell: { paddingHorizontal: 1, gap: 1 },
   allDayChip: {
     backgroundColor: Colors.accent + '22',
@@ -348,16 +348,16 @@ const styles = StyleSheet.create({
 
   labelCol: { position: 'absolute', left: 0, top: 0, width: LABEL_WIDTH, height: TIMELINE_HEIGHT },
   hourLabelCell: { position: 'absolute', left: 0, width: LABEL_WIDTH, paddingLeft: Spacing.sm, paddingTop: 3 },
-  hourLabelText: { fontSize: 9, color: '#444444', fontFamily: Fonts.mono },
+  hourLabelText: { fontSize: 9, color: Colors.textDim, fontFamily: Fonts.mono },
 
   grid: { position: 'absolute', top: 0, right: 0, height: TIMELINE_HEIGHT },
   hourLine: {
     position: 'absolute', left: 0, right: 0,
-    height: StyleSheet.hairlineWidth, backgroundColor: '#222222',
+    height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider,
   },
   selectedBg: {
     position: 'absolute', top: 0, height: TIMELINE_HEIGHT,
-    backgroundColor: '#2D2D2D',
+    backgroundColor: Colors.surfaceSelected,
   },
   todayBg: {
     position: 'absolute', top: 0, height: TIMELINE_HEIGHT,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   nowBar: { flex: 1, height: 1, backgroundColor: Colors.accent },
   column: {
     position: 'absolute', top: 0, height: TIMELINE_HEIGHT,
-    borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: '#222222',
+    borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: Colors.divider,
   },
   pill: {
     position: 'absolute',

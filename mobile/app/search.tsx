@@ -64,7 +64,7 @@ export default function SearchScreen() {
         ListEmptyComponent={() =>
           query.trim() ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>No tasks matching "{query}"</Text>
+              <Text style={styles.emptyText}>no tasks matching "{query}"</Text>
             </View>
           ) : null
         }

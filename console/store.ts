@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync, renameSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { parseLine } from '../shared/parser';
+import { parseLine, serializeTasks } from '../shared/parser';
 import type { Task } from '../shared/parser';
 
 export function resolveFile(flag?: string): string {
@@ -16,7 +16,5 @@ export function readTasks(filePath: string): Task[] {
 }
 
 export function writeTasks(filePath: string, tasks: Task[]): void {
-  const tmp = filePath + '.tmp';
-  writeFileSync(tmp, tasks.map(t => t.raw).join('\n') + '\n', 'utf8');
-  renameSync(tmp, filePath);
+  writeFileSync(filePath, serializeTasks(tasks), 'utf8');
 }
