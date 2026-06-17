@@ -261,7 +261,7 @@ export default function WeekScreen() {
                       const isEvent = !!task.extensions['type'];
                       return (
                         <View key={task.line} style={[isEvent ? styles.pillEvent : styles.pill, { top: rawTop + 1 }]}>
-                          <Text style={styles.pillText} numberOfLines={1}>{cleanTitle(task.text)}</Text>
+                          <Text style={styles.pillText}>{cleanTitle(task.text)}</Text>
                         </View>
                       );
                     })}
