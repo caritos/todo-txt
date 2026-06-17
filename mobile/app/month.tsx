@@ -94,9 +94,6 @@ export default function MonthScreen() {
               const isToday = dateStr === todayStr;
               const isPast = dateStr < todayStr;
               const dayTasks = tasksByDate.get(dateStr) ?? [];
-              const MAX_VISIBLE = 3;
-              const visibleTasks = dayTasks.slice(0, MAX_VISIBLE);
-              const overflow = Math.max(0, dayTasks.length - MAX_VISIBLE);
               const day = parseInt(dateStr.slice(8, 10), 10);
               return (
                 <TouchableOpacity
@@ -114,12 +111,9 @@ export default function MonthScreen() {
                       {day}
                     </Text>
                   </View>
-                  {visibleTasks.map(t => (
+                  {dayTasks.map(t => (
                     <Text key={t.line} style={styles.taskTitle} numberOfLines={1}>{cleanTitle(t.text)}</Text>
                   ))}
-                  {overflow > 0 ? (
-                    <Text style={styles.overflow}>+{overflow}</Text>
-                  ) : null}
                 </TouchableOpacity>
               );
             })}
@@ -194,10 +188,5 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontFamily: Fonts.mono,
     lineHeight: 11,
-  },
-  overflow: {
-    fontSize: 8,
-    color: '#555555',
-    fontFamily: Fonts.mono,
   },
 });
