@@ -67,28 +67,40 @@ export default function WeekScreen() {
   }, [sundayStr, weekContainsToday]);
 
   const { tasksPerDay, busyCounts } = useMemo(() => {
-    const perDay = new Map<string, { allDay: Task[]; timed: Task[] }>();
+    type TimedItem = { task: Task; col: number; total: number };
+    const rawPerDay = new Map<string, { allDay: Task[]; timedRaw: Array<{ task: Task; time: string }> }>();
     const counts = new Map<string, number>();
-    for (const d of weekDates) perDay.set(d, { allDay: [], timed: [] });
+    for (const d of weekDates) rawPerDay.set(d, { allDay: [], timedRaw: [] });
     const lastDay = weekDates[weekDates.length - 1];
     const minWindow = addDays(todayStr, 14);
     const windowEnd = lastDay > minWindow ? lastDay : minWindow;
     const items = applyFocusForWindow(tasks, todayStr, windowEnd);
     for (const item of items) {
       const occ = focusItemOccurrence(item);
-      const bucket = perDay.get(occ.date);
+      const bucket = rawPerDay.get(occ.date);
       if (!bucket) continue;
       counts.set(occ.date, (counts.get(occ.date) ?? 0) + 1);
-      if (occ.time) bucket.timed.push(item.task);
+      if (occ.time) bucket.timedRaw.push({ task: item.task, time: occ.time });
       else bucket.allDay.push(item.task);
     }
-    for (const bucket of perDay.values()) {
-      bucket.timed.sort((a, b) => {
-        const ta = taskOccurrence(a, todayStr)!.time!;
-        const tb = taskOccurrence(b, todayStr)!.time!;
-        const [ah, am] = ta.split(':').map(Number);
-        const [bh, bm] = tb.split(':').map(Number);
+    const perDay = new Map<string, { allDay: Task[]; timed: TimedItem[] }>();
+    for (const [d, bucket] of rawPerDay.entries()) {
+      bucket.timedRaw.sort((a, b) => {
+        const [ah, am] = a.time.split(':').map(Number);
+        const [bh, bm] = b.time.split(':').map(Number);
         return ah * 60 + am - (bh * 60 + bm);
+      });
+      const slotCount = new Map<string, number>();
+      for (const { time } of bucket.timedRaw) slotCount.set(time, (slotCount.get(time) ?? 0) + 1);
+      const slotCursor = new Map<string, number>();
+      perDay.set(d, {
+        allDay: bucket.allDay,
+        timed: bucket.timedRaw.map(({ task, time }) => {
+          const total = slotCount.get(time) ?? 1;
+          const col = slotCursor.get(time) ?? 0;
+          slotCursor.set(time, col + 1);
+          return { task, col, total };
+        }),
       });
     }
     return { tasksPerDay: perDay, busyCounts: counts };
@@ -252,15 +264,18 @@ export default function WeekScreen() {
                 const timed = tasksPerDay.get(dateStr)?.timed ?? [];
                 return (
                   <View key={dateStr} style={[styles.column, { left: colIndex * COL_WIDTH, width: COL_WIDTH }]}>
-                    {timed.map(task => {
+                    {timed.map(({ task, col, total }) => {
                       const occ = taskOccurrence(task, todayStr);
                       if (!occ?.time) return null;
                       const [hours, minutes] = occ.time.split(':').map(Number);
                       const rawTop = topOffset(hours, minutes);
                       if (rawTop < 0 || rawTop >= TIMELINE_HEIGHT) return null;
                       const isEvent = !!task.extensions['type'];
+                      const innerWidth = COL_WIDTH - 4;
+                      const pillWidth = total === 1 ? innerWidth : Math.floor((innerWidth - (total - 1)) / total);
+                      const pillLeft = 2 + col * (pillWidth + 1);
                       return (
-                        <View key={task.line} style={[isEvent ? styles.pillEvent : styles.pill, { top: rawTop + 1 }]}>
+                        <View key={task.line} style={[isEvent ? styles.pillEvent : styles.pill, { top: rawTop + 1, left: pillLeft, width: pillWidth }]}>
                           <Text style={styles.pillText}>{cleanTitle(task.text)}</Text>
                         </View>
                       );
@@ -359,13 +374,13 @@ const styles = StyleSheet.create({
     borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: '#222222',
   },
   pill: {
-    position: 'absolute', left: 2, right: 2,
+    position: 'absolute',
     backgroundColor: Colors.accent + '22',
     paddingVertical: 2, paddingHorizontal: 2,
     minHeight: 18,
   },
   pillEvent: {
-    position: 'absolute', left: 2, right: 2,
+    position: 'absolute',
     backgroundColor: Colors.accent + '40',
     paddingVertical: 2, paddingHorizontal: 2,
     minHeight: 18,
