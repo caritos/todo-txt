@@ -99,7 +99,7 @@ mobile/                       ← Expo Router iOS app
 
 **Design tokens**: background `#1A1A1A`, accent `#E8461A`, text `#F0F0F0`, secondary `#888888`, separator `#333333`. Task text in JetBrains Mono. One accent color only — Braun/Bauhaus.
 
-**iCloud sync**: user points Settings file path to iCloud Drive container; iOS syncs automatically with other devices and with the CLI on Mac.
+**iCloud sync**: user points Settings file path to iCloud Drive container; iOS syncs automatically with other devices and with the CLI on Mac. On first launch (no saved config), the app defaults to the iCloud Drive path computed by `ICLOUD_PATH` in `mobile/src/store.ts` (exported and re-used by `settings.tsx`). `writeTasks()` calls `makeDirectoryAsync({ intermediates: true })` before writing the `.tmp` file, so the parent directory is always created on demand — required for iCloud paths that may not exist yet.
 
 **Day/week view filtering**: Mobile day (`app/day/[date].tsx`) and week (`app/timeline.tsx`) views use `applyFocusForWindow(tasks, todayStr, windowEnd)` + `focusItemOccurrence(item)` from `@shared/commands/focus` — the same logic as the console's `focus` command. Never duplicate this filtering in the mobile layer. The window must be at least `addDays(todayStr, 14)` so overdue recurring tasks (whose `nextWeeklyDate` lands beyond today but whose `focusSortKey` resolves to today via `overdueOccurrenceDate`) pass `isInFocusWindow`.
 
@@ -108,6 +108,12 @@ mobile/                       ← Expo Router iOS app
 **Calendar navigation pattern**: tapping a day cell in Month view or a date in the Week strip navigates to `/day/[date]` via `router.push`. The ViewSwitcher (bottom-left ≡) and BottomActionBar label together support: Day, Week, Month, Year, Tasks, Search, Settings.
 
 **Temporal navigation consistency**: all calendar views (Day, Week, Month, Year, Calendar) have both `‹`/`›` arrow buttons in the header and horizontal swipe gestures. Swipe uses `activeOffsetX([-20, 20]).failOffsetY([-10, 10])` so vertical scrolling still works in views that scroll (Week timeline, Year month list). Year view scopes the swipe gesture to the header bar only to avoid conflicting with the month-list ScrollView body.
+
+**Week view pill layout** (`app/timeline.tsx`): timed pills and all-day chips have no `numberOfLines` cap — text wraps within the column width. Concurrent items at the same time slot are laid out side by side using the same slot-counting algorithm as the day view: `slotCount` maps each `time` string to a total count; `slotCursor` assigns each item a `col` index; pill `left` and `width` are computed as `2 + col * (pillWidth + 1)` and `Math.floor((innerWidth - (total-1)) / total)` respectively.
+
+**Month view today cell** (`app/month.tsx`): the accent-color border (`cellToday`) uses `zIndex: 1` on both the cell and the row containing today so all four border sides render on top of neighbouring cells' backgrounds and borders.
+
+**Search screen** (`app/search.tsx`): uses `useSafeAreaInsets` with `paddingTop: insets.top` on the input row so the status bar / Dynamic Island does not overlap the text field.
 
 **Tasks view** (`app/done.tsx`): single `ScrollView` with three zones — (1) completed tasks from the last 30 days grouped by completion date, **oldest-first** so the most-recent completions sit closest to the add-task anchor, with strikethrough styling; (2) an inline `+ add task…` `TextInput` anchor that the view scrolls to on mount via `onLayout` + `scrollTo`; (3) incomplete tasks sorted by `start:` date ascending, no `start:` sorts to bottom. Both zones exclude events (`task.extensions['type']` set). Incomplete task start-date labels show `today`/`yesterday` for those days, the actual date (`Jun 6`, with year when different) for overdue tasks, and weekday (`Mon`) for future tasks. Recurring tasks are hidden from the incomplete list when: `frequency:` + `last-done === todayStr` (completed today, waiting for next occurrence), `frequency:` + `start > todayStr` (next occurrence is in the future after being advanced by `applyDone`), or `frequency:` + `exdate:` + `taskOccurrence(task, todayStr).date > todayStr` while `start:` ≤ today (skipped). Add task uses `buildAddRaw` + `parseLine` + `save`.
 
