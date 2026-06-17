@@ -41,10 +41,12 @@ function generateOccurrences(
   const exdates = new Set((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
   const freqDay = task.extensions['frequency-day'];
   const freqMonthDay = task.extensions['frequency-month-day'];
+  const recurUntil = task.extensions['recur-until'];
+  const effectiveCutoff = recurUntil && recurUntil < cutoffStr ? recurUntil : cutoffStr;
   const results: Array<{ date: string; task: Task }> = [];
 
   if (!freq) {
-    if (startDate >= fromStr && startDate <= cutoffStr) {
+    if (startDate >= fromStr && startDate <= effectiveCutoff) {
       results.push({ date: startDate, task });
     }
     return results;
@@ -61,7 +63,7 @@ function generateOccurrences(
     return results;
   }
 
-  while (cursor <= cutoffStr) {
+  while (cursor <= effectiveCutoff) {
     results.push({ date: cursor, task });
     let next: string;
     if (freq === 'yearly') {
