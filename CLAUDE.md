@@ -60,7 +60,7 @@ mobile/                       ← Expo Router iOS app
 │   ├── list.tsx              ← List screen (stats cards + flat task list)
 │   ├── search.tsx            ← Search screen
 │   ├── report.tsx            ← Report screen (summary stats)
-│   ├── settings.tsx          ← File path + iCloud toggle
+│   ├── settings.tsx          ← File path settings
 │   ├── timeline.tsx          ← Week view (7-column timed grid); tap date → Day view
 │   ├── month.tsx             ← Month view (full-screen flex grid); tap cell → Day view
 │   ├── year.tsx              ← Year view (dot-density heatmap by month)
