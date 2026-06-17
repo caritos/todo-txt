@@ -19,6 +19,14 @@ const LABEL_WIDTH = 52;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COL_WIDTH = Math.floor((SCREEN_WIDTH - LABEL_WIDTH) / 7);
 
+// All-day section: sized to show exactly 4 chip rows before scrolling.
+// Chip: fontSize:7 (~10px) + paddingVertical:1*2 = 12px. Gap between chips: 1px.
+// Container paddingVertical:3 adds 6px.
+const ALLDAY_CHIP_H = 12;
+const ALLDAY_CHIP_GAP = 1;
+const ALLDAY_ROWS = 4;
+const ALLDAY_MAX_H = ALLDAY_ROWS * ALLDAY_CHIP_H + (ALLDAY_ROWS - 1) * ALLDAY_CHIP_GAP + 6;
+
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -294,7 +302,7 @@ const styles = StyleSheet.create({
 
   allDayRow: {
     flexDirection: 'row',
-    maxHeight: 120,
+    maxHeight: ALLDAY_MAX_H,
     borderBottomWidth: 1, borderBottomColor: Colors.separator,
   },
   allDayLabelCol: { width: LABEL_WIDTH, alignItems: 'center', justifyContent: 'center', paddingVertical: 3 },
