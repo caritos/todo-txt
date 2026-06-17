@@ -69,12 +69,20 @@ function generateOccurrences(
   return results;
 }
 
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function overdueSinceLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  return `due ${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
+
 type AgendaItem = {
   key: string;
   task: Task;
   kind: 'completed' | 'incomplete' | 'event';
   time?: string;
   isOverdue?: boolean;
+  overdueDate?: string;
 };
 
 type AgendaSection = {
@@ -133,16 +141,20 @@ export default function CalendarScreen() {
     for (const item of focusItems) {
       if (item.task.done || !!item.task.extensions['type']) continue;
       const occ = focusItemOccurrence(item);
-      const date = occ.date;
+      const startStr = item.task.extensions['start'] ?? '';
+      const occDate = occ.date;
+      const isOverdue = occDate < todayStr;
+      // Pin overdue tasks to today — same behaviour as day/week views
+      const date = isOverdue ? todayStr : occDate;
       if (date > futureCutoff) continue;
       ensure(date);
-      const startStr = item.task.extensions['start'] ?? '';
       byDate.get(date)!.push({
         key: `task-${item.task.line}-${date}`,
         task: item.task,
         kind: 'incomplete',
         time: occ.time ?? (startStr.length > 10 ? startStr.slice(11, 16) : undefined),
-        isOverdue: startStr.slice(0, 10) < todayStr,
+        isOverdue,
+        overdueDate: isOverdue ? occDate : undefined,
       });
     }
 
@@ -333,7 +345,9 @@ export default function CalendarScreen() {
             >
               {cleanTitle(item.task.text)}
             </Text>
-            {item.time ? (
+            {item.overdueDate ? (
+              <Text style={styles.agendaOverdue}>{overdueSinceLabel(item.overdueDate)}</Text>
+            ) : item.time ? (
               <Text style={styles.agendaTime}>{item.time}</Text>
             ) : null}
           </TouchableOpacity>
@@ -422,4 +436,5 @@ const styles = StyleSheet.create({
   agendaTitle: { flex: 1, fontSize: 13, color: Colors.text, fontFamily: Fonts.mono },
   agendaTitleDone: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
   agendaTime: { fontSize: 11, color: Colors.textSecondary, fontFamily: Fonts.mono },
+  agendaOverdue: { fontSize: 11, color: Colors.accent, fontFamily: Fonts.mono },
 });
