@@ -123,6 +123,14 @@ mobile/                       ← Expo Router iOS app
 
 **Task detail** (`app/task/[line].tsx`): shows a **DUE** row when `task.extensions['start']` is set, using `formatDateLabel(start.slice(0, 10))`. The date is tinted accent-red when overdue (`start < todayStr` and task not done). Delete alert message differs for recurring tasks: non-recurring says "This cannot be undone"; recurring says "This deletes all future occurrences. Use Skip to skip just this one." — because `applyRm` removes the single todo.txt line that defines all occurrences.
 
+**Default view**: The app opens to Calendar (`app/index.tsx` redirects to `/calendar`). BottomActionBar defaults to the `'Calendar'` label for unknown routes.
+
+**Calendar view** (`app/calendar.tsx`): scrollable agenda using `FlatList` (not `SectionList`) with two row-height constants `HEADER_H = 34` and `ROW_H = 44`. Offsets are pre-computed alongside `flatData` in a single O(n) useMemo pass and used by `getItemLayout` — this is required for `scrollToIndex` to work reliably when the target row is outside the initial render window. `initialScrollIndex` is set to today's index so the list opens at today without a `useEffect` delay. Sections sort items `incomplete → event → completed` using `KIND_ORDER = { incomplete: 0, event: 1, completed: 2 }`.
+
+**Overdue tasks in calendar**: any occurrence whose date is before today is pinned to today's section (`date = todayStr`) so it appears in today's agenda rather than a past date. The original past date is stored as `overdueDate` on the `AgendaItem` and shown as a label like `"due Apr 18"` in accent color beneath the task title.
+
+**Event occurrence generation** — `generateTaskOccurrences(task, fromStr, cutoffStr)` in `shared/commands/focus.ts` is the single source of truth for expanding recurring tasks/events into individual dated occurrences. It respects `recur-until`, `exdate`, `frequency`, `every`, `frequency-day`, and `frequency-month-day`. **Never duplicate this logic in mobile screens** — import it from `@shared/commands/focus`. Recurring tasks/events without a `recur-until` and with a `start:` date in the past will recur indefinitely; the data fix is to add `recur-until` to the task line.
+
 ## Key Invariants
 
 - `verbatimModuleSyntax: true` — use `import type` for all type-only imports (all layers).
