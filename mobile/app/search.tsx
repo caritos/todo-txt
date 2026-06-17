@@ -1,6 +1,7 @@
 import { View, Text, TextInput, FlatList, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTasks } from '../src/context/TaskContext';
 import { TaskRow } from '../src/components/TaskRow';
 import { applySearch } from '@shared/commands/search';
@@ -12,6 +13,7 @@ import { today } from '../src/utils';
 export default function SearchScreen() {
   const { tasks, save } = useTasks();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const todayStr = today();
   const [query, setQuery] = useState('');
 
@@ -36,7 +38,7 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, { paddingTop: Spacing.sm + insets.top }]}>
         <TextInput
           style={styles.input}
           placeholder="Search tasks…"

@@ -97,8 +97,10 @@ export default function MonthScreen() {
       </View>
 
       <View style={styles.grid}>
-        {rows.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
+        {rows.map((row, rowIndex) => {
+          const rowHasToday = row.some(d => d === todayStr);
+          return (
+          <View key={rowIndex} style={[styles.row, rowHasToday && styles.rowWithToday]}>
             {row.map((dateStr, colIndex) => {
               if (dateStr === null) {
                 return <View key={`empty-${rowIndex}-${colIndex}`} style={styles.cell} />;
@@ -130,7 +132,8 @@ export default function MonthScreen() {
               );
             })}
           </View>
-        ))}
+          );
+        })}
       </View>
     </View>
     </GestureDetector>
@@ -166,6 +169,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
   },
+  rowWithToday: { zIndex: 1 },
   cell: {
     flex: 1,
     borderRightWidth: StyleSheet.hairlineWidth,
@@ -181,6 +185,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: Colors.accent,
     backgroundColor: '#1f1410',
+    zIndex: 1,
   },
   dateNumWrap: {
     width: 18,
