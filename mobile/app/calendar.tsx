@@ -233,8 +233,13 @@ export default function CalendarScreen() {
         <View style={styles.calendarWrapper}>
           {/* Header */}
           <View style={styles.calHeader}>
-            <Text style={styles.monthText}>{MONTH_NAMES[calMonth]} </Text>
-            <Text style={styles.yearText}>{calYear}</Text>
+            <TouchableOpacity onPress={() => setCalMonth(m => { const n = m - 1; if (n < 0) { setCalYear(y => y - 1); return 11; } return n; })} style={styles.arrow} hitSlop={8}>
+              <Text style={styles.arrowText}>‹</Text>
+            </TouchableOpacity>
+            <Text style={styles.monthText}>{MONTH_NAMES[calMonth]} <Text style={styles.yearText}>{calYear}</Text></Text>
+            <TouchableOpacity onPress={() => setCalMonth(m => { const n = m + 1; if (n > 11) { setCalYear(y => y + 1); return 0; } return n; })} style={styles.arrow} hitSlop={8}>
+              <Text style={styles.arrowText}>›</Text>
+            </TouchableOpacity>
           </View>
           {/* Day labels */}
           <View style={styles.dayLabelRow}>
@@ -351,10 +356,12 @@ const styles = StyleSheet.create({
   },
   calHeader: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: Spacing.sm,
   },
+  arrow: { padding: Spacing.sm },
+  arrowText: { fontSize: 22, color: Colors.textSecondary },
   monthText: { fontSize: 17, color: Colors.textSecondary, fontWeight: '300' },
   yearText: { fontSize: 17, color: Colors.accent, fontWeight: '300' },
 

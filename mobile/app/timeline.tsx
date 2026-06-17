@@ -131,10 +131,16 @@ export default function WeekScreen() {
     <View style={styles.screen}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: Spacing.sm + insets.top }]}>
+        <TouchableOpacity onPress={() => setAnchorDate(prev => addDays(prev, -7))} style={styles.arrow} hitSlop={8}>
+          <Text style={styles.arrowText}>‹</Text>
+        </TouchableOpacity>
         <Text>
           <Text style={styles.monthText}>{MONTHS[sundayDate.getMonth()]} </Text>
           <Text style={styles.yearText}>{sundayDate.getFullYear()}</Text>
         </Text>
+        <TouchableOpacity onPress={() => setAnchorDate(prev => addDays(prev, 7))} style={styles.arrow} hitSlop={8}>
+          <Text style={styles.arrowText}>›</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Week strip */}
@@ -275,11 +281,13 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
     backgroundColor: Colors.navBar,
     borderBottomWidth: 1, borderBottomColor: Colors.separator,
   },
+  arrow: { padding: Spacing.sm },
+  arrowText: { fontSize: 22, color: Colors.textSecondary },
   monthText: { fontSize: 20, color: Colors.textSecondary, fontWeight: '300' },
   yearText: { fontSize: 20, color: Colors.accent, fontWeight: '300' },
 

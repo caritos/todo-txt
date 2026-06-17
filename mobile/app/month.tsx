@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
@@ -63,7 +64,18 @@ export default function MonthScreen() {
     return result;
   }, [cells]);
 
+  const swipe = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-10, 10])
+    .runOnJS(true)
+    .onEnd((e) => {
+      if (Math.abs(e.translationX) > Math.abs(e.translationY)) {
+        if (e.translationX < 0) nextMonth(); else prevMonth();
+      }
+    });
+
   return (
+    <GestureDetector gesture={swipe}>
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: Spacing.sm + insets.top }]}>
         <TouchableOpacity onPress={prevMonth} style={styles.arrow} hitSlop={8}>
@@ -121,6 +133,7 @@ export default function MonthScreen() {
         ))}
       </View>
     </View>
+    </GestureDetector>
   );
 }
 
