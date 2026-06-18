@@ -139,6 +139,7 @@ mobile/                       ← Expo Router iOS app
 - `matchesFilters()` in `shared/commands/list.ts` is exported and reused by console `listall`, `search`, and mobile.
 - `today()` returns the **local** calendar date (not UTC) — both `console/output.ts` and `mobile/src/utils.ts`.
 - `nextWeeklyDate` in `shared/commands/focus.ts` accepts an optional `frequencyDay` param (e.g. `"W,F"`). When present, it finds the next calendar date that falls on one of those weekdays rather than advancing by 7-day intervals.
+- `focusSortKey` skips the `last-done` cycle check for `frequency-day` tasks. For those tasks `applyDone` already advances `start:` to the next valid weekday, so `last-done` will always precede `currentOcc` — applying the 7-day cycle window would incorrectly jump to the occurrence after next (e.g. showing Monday when Friday is correct).
 - `rm` accepts multiple task numbers. Re-indexes remaining tasks after each removal so subsequent numbers in the same batch stay correct.
 - `done` accepts either a task number or a text string. When passed a string (`t done "buy milk"`), it creates the task and immediately marks it complete, writing `x <today> <today> <text>` to the file.
 - `done` advances `start` to the next scheduled occurrence for `frequency:weekly`, `frequency:monthly`, and `frequency:yearly` tasks. Daily and other frequencies are left unchanged.
