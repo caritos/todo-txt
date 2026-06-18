@@ -10,7 +10,10 @@
     "orientation": "portrait",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.caritos.todo-txt"
+      "bundleIdentifier": "com.caritos.todo-txt",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "plugins": [
       "expo-router",
