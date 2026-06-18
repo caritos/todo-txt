@@ -322,8 +322,11 @@ export function focusSortKey(task: Task, todayStr: string): string {
       const everyN = parseInt(task.extensions['every'] ?? '1');
       const currentOcc = nextWeeklyDate(start, todayStr, everyN, exdates, task.extensions['frequency-day']);
       const lastDone = task.extensions['last-done'];
-      // If last-done falls within the current cycle, the user already did this — show next occurrence
-      if (lastDone && lastDone > addDays(currentOcc, -(everyN * 7))) {
+      // If last-done falls within the current cycle, the user already did this — show next occurrence.
+      // Skip this check for frequency-day tasks: applyDone already advances start to the next
+      // occurrence, so last-done will always precede currentOcc by design and must not be treated
+      // as completing a future occurrence.
+      if (lastDone && !task.extensions['frequency-day'] && lastDone > addDays(currentOcc, -(everyN * 7))) {
         return nextWeeklyDate(start, addDays(currentOcc, 1), everyN, exdates, task.extensions['frequency-day']) + time;
       }
       return currentOcc + time;

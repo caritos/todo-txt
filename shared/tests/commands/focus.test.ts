@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { taskOccurrence, nextMonthlyDate, nextYearlyDate } from '../../commands/focus';
+import { taskOccurrence, nextMonthlyDate, nextYearlyDate, focusSortKey } from '../../commands/focus';
 import { parseLine } from '../../parser';
 
 function task(raw: string) { return parseLine(raw, 1); }
@@ -78,5 +78,18 @@ describe('nextMonthlyDate with every', () => {
   test('every:3 — quarterly starting Jan 15, today is Jan 10', () => {
     // Not yet reached first occurrence
     expect(nextMonthlyDate('2026-01-15', '2026-01-10', new Set(), undefined, 3)).toBe('2026-01-15');
+  });
+});
+
+describe('focusSortKey — frequency-day after done', () => {
+  // Regression: marking a weekday-recurring task done on Thu should show it on Fri,
+  // not skip ahead to Monday. applyDone advances start to the next occurrence (Fri),
+  // so the last-done cycle check must not treat Thu's completion as covering Fri.
+  test('frequency-day task with last-done on prior day shows next occurrence, not the one after', () => {
+    // Simulates state after: t done on Thu Jun 18
+    // applyDone advances start to Fri Jun 19 and sets last-done:2026-06-18
+    const t = task('%exercise %outdoor %walk start:2026-06-19 frequency:weekly frequency-day:M,T,W,Th,F last-done:2026-06-18');
+    // effToday passed by applyFocusForWindow when last-done === todayStr is addDays(nextOcc, 1) = '2026-06-19'
+    expect(focusSortKey(t, '2026-06-19')).toBe('2026-06-19');
   });
 });
