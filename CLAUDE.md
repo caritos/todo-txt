@@ -24,6 +24,30 @@ mobile/scripts/sim.sh
 mobile/scripts/ship.sh
 ```
 
+## App Store Submission Prerequisites
+
+Run these once before the first `ship.sh` invocation (or after credentials expire):
+
+```bash
+# 1. Log in to EAS
+eas login
+
+# 2. Set up iOS distribution certificate + provisioning profile (interactive)
+cd mobile && eas credentials
+# → Choose: Build Credentials → iOS → production → follow prompts
+
+# 3. Set up App Store Connect API key (interactive, first submit only)
+cd mobile && eas submit --platform ios --profile production --latest
+# → Choose an existing ASC API key or add a new one
+# Key is cached on EAS servers after first setup — subsequent ship.sh runs are non-interactive
+```
+
+**Required fields in `mobile/app.json`:**
+- `expo.ios.infoPlist.ITSAppUsesNonExemptEncryption: false` — required for all App Store uploads (this app uses no encryption)
+
+**Required fields in `mobile/eas.json`:**
+- `build.production.ios.image: "latest"` — ensures Xcode 26+ is used; Apple requires the iOS 26 SDK for all new submissions as of 2026
+
 ## Repo Structure
 
 Three strictly decoupled layers — each layer only imports from layers below it:
