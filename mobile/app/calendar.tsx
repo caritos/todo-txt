@@ -314,7 +314,7 @@ export default function CalendarScreen() {
                 item.kind === 'completed' && styles.agendaIconDone,
                 item.kind === 'incomplete' && item.isOverdue && styles.agendaIconOverdue,
               ]}>
-                {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '○'}
+                {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '□'}
               </Text>
               <Text
                 style={[styles.agendaTitle, item.kind === 'completed' && styles.agendaTitleDone]}
