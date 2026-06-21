@@ -117,6 +117,8 @@ mobile/                       ← Expo Router iOS app
 
 **Mutation pattern**: shared transforms return `{ tasks: Task[] }`. Console commands write `tasks` back via `writeTasks`, which writes each `task.raw` verbatim. `serializeTask` is called inside shared transforms before returning.
 
+**Focus clears the terminal**: `t` (no args) and `t focus` both write `\x1Bc` to stdout before rendering, giving a clean screen on every invocation.
+
 ## Mobile Layer
 
 **Tech stack**: Expo SDK 52, Expo Router v3, React Native (iOS only), expo-file-system, react-native-reanimated, react-native-gesture-handler, @expo-google-fonts/jetbrains-mono, chrono-node.

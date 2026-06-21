@@ -39,6 +39,7 @@ const cmd = filteredArgs[0];
 
 // Route to commands
 if (!cmd) {
+  process.stdout.write('\x1Bc');
   focusCommand(filePath);
   process.exit(0);
 }
@@ -95,6 +96,7 @@ switch (cmd) {
   }
 
   case 'focus': {
+    process.stdout.write('\x1Bc');
     focusCommand(filePath);
     break;
   }
