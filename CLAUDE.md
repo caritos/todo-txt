@@ -50,6 +50,7 @@ cd mobile && eas submit --platform ios --profile production --latest
 
 **Required fields in `mobile/app.json`:**
 - `expo.ios.infoPlist.ITSAppUsesNonExemptEncryption: false` — required for all App Store uploads (this app uses no encryption)
+- `expo.icon` — points to `./assets/icon/icon-1024.png` (1024×1024 PNG, the Braun Terminal photo cropped to square)
 
 **Required fields in `mobile/eas.json`:**
 - `build.production.ios.image: "latest"` — ensures Xcode 26+ is used; Apple requires the iOS 26 SDK for all new submissions as of 2026
@@ -75,6 +76,11 @@ shared/                       ← platform-agnostic business logic
 │   ├── search.ts             ← applySearch()
 │   └── report.ts             ← applyReport()
 └── tests/
+
+web/                          ← stark.caritos.com marketing site (Bun + Hono + TypeScript)
+├── src/index.ts              ← routes: /, /privacy, /support; serves screenshot strip
+├── scripts/deploy.sh         ← one-command SSH deploy to DreamHost VPS (port 8030)
+└── scripts/stark-web.service ← systemd user service
 
 console/                      ← CLI (Node.js / Bun)
 ├── index.ts                  ← CLI entry point: arg parsing, --file flag, command routing

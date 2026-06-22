@@ -8,6 +8,7 @@
       "ios"
     ],
     "orientation": "portrait",
+    "icon": "./assets/icon/icon-1024.png",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.caritos.todo-txt",
