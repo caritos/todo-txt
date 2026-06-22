@@ -535,7 +535,9 @@ export function generateTaskOccurrences(
   const startDate = startVal.slice(0, 10);
   const freq = task.extensions['frequency'];
   const every = parseInt(task.extensions['every'] ?? '1', 10);
+  const lastDone = task.extensions['last-done'];
   const exdates = new Set((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
+  if (lastDone) exdates.add(lastDone);
   const freqDay = task.extensions['frequency-day'];
   const freqMonthDay = task.extensions['frequency-month-day'];
   const recurUntil = task.extensions['recur-until'];

@@ -117,11 +117,8 @@ export default function CalendarScreen() {
     // 3. Event occurrences: past 30 days + future 2 years
     for (const t of tasks) {
       if (!t.extensions['type']) continue;
-      const lastDone = t.extensions['last-done'];
       const occurrences = generateTaskOccurrences(t, pastCutoff, futureCutoff);
       for (const occ of occurrences) {
-        // Skip occurrences the user already completed (last-done marks the finished occurrence)
-        if (lastDone && lastDone === occ.date) continue;
         ensure(occ.date);
         byDate.get(occ.date)!.push({
           key: `event-${t.line}-${occ.date}`,
