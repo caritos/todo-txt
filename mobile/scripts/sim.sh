@@ -127,7 +127,9 @@ config="Debug"
 xcrun simctl uninstall "$udid" "$bundle_id" 2>/dev/null || true
 
 # Clean build if no existing build or Podfile.lock changed
-derived_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/${config}-iphonesimulator/*" 2>/dev/null | head -1)
+derived_app=""
+[[ -d ~/Library/Developer/Xcode/DerivedData ]] && \
+  derived_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/${config}-iphonesimulator/*" 2>/dev/null | head -1) || true
 build_args=(-workspace "$workspace" -scheme "$scheme" -configuration "$config" -destination "id=$udid")
 if [[ -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
   echo "Clearing DerivedData for clean build..."
