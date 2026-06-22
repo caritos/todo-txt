@@ -24,6 +24,12 @@ mobile/scripts/sim.sh
 mobile/scripts/ship.sh
 ```
 
+### sim.sh build behavior
+
+`sim.sh` automatically detects stale or missing build artifacts and does the right thing:
+- **Incremental build** — uses the existing DerivedData build if `Podfile.lock` hasn't changed
+- **Clean build** — if DerivedData is missing (e.g. after running `cleanup-disk-space.sh`) or `Podfile.lock` is newer than the last build, it runs `xcodebuild clean build` automatically; no manual intervention needed
+
 ## App Store Submission Prerequisites
 
 Run these once before the first `ship.sh` invocation (or after credentials expire):
