@@ -69,7 +69,7 @@ export default function TaskDetail() {
         result = applyPri([...tasks], lineNum, p);
       } else {
         // applyDepri throws if no priority — guard against that
-        if (!task.priority) return;
+        if (!task?.priority) return;
         result = applyDepri([...tasks], lineNum);
       }
       await save(result.tasks);

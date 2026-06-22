@@ -13,6 +13,9 @@ const VIEWS: NavItem[] = [
   { label: 'Month', route: '/month' },
   { label: 'Year', route: '/year' },
   { separator: true },
+  { label: 'Tasks', route: '/done' },
+  { label: 'Search', route: '/search' },
+  { separator: true },
   { label: 'Settings', route: '/settings' },
 ];
 

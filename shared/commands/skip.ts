@@ -22,7 +22,7 @@ export function applySkip(
   const existing = task.extensions['exdate'] ?? '';
   const exdateList = existing.split(',').filter(Boolean);
   if (exdateList.includes(skipDate)) {
-    return { tasks, skippedDate: skipDate, nextDate: skipDate };
+    return { tasks, removed: false as const, skippedDate: skipDate, nextDate: skipDate };
   }
   exdateList.push(skipDate);
   exdateList.sort();
