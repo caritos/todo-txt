@@ -2,3 +2,5 @@
 node_modules/
 todo.txt
 .DS_Store
+.env
+dist/

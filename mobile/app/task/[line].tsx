@@ -168,7 +168,7 @@ export default function TaskDetail() {
         <ActionButton label="Cancel" color={Colors.textSecondary} onPress={() => router.back()} />
       </View>
 
-      <Text style={styles.rawText}>{task.raw}</Text>
+
     </ScrollView>
   );
 }
@@ -216,5 +216,4 @@ const styles = StyleSheet.create({
   dueValue: { fontFamily: Fonts.mono, fontSize: 14, color: Colors.text },
   dueOverdue: { color: Colors.accent },
   errorText: { color: Colors.textSecondary, padding: Spacing.lg },
-  rawText: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.separator, paddingHorizontal: Spacing.md, paddingTop: Spacing.xl },
 });

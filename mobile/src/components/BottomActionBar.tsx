@@ -10,8 +10,6 @@ const ROUTE_LABELS: Record<string, string> = {
   '/month': 'Month',
   '/year': 'Year',
   '/calendar': 'Calendar',
-  '/done': 'Tasks',
-  '/search': 'Search',
   '/settings': 'Settings',
 };
 
