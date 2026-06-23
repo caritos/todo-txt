@@ -15,7 +15,10 @@ export const ICLOUD_PATH = (() => {
     if (!match) return null;
     return `file:///Users/${match[1]}/Library/Mobile%20Documents/com~apple~CloudDocs/todo.txt`;
   }
-  return `${FileSystem.documentDirectory}../Library/Mobile Documents/iCloud~com~apple~CloudDocs/todo.txt`;
+  // On real devices, use the app's Documents folder — the iCloud container path requires
+  // registered entitlements (com.apple.developer.icloud-container-identifiers) that are
+  // not yet configured. Users can point Settings to any path they choose.
+  return FileSystem.documentDirectory + 'todo.txt';
 })();
 
 type Config = { filePath: string };
@@ -56,6 +59,12 @@ export async function readTasks(filePath: string): Promise<Task[]> {
 
 export async function writeTasks(filePath: string, tasks: Task[]): Promise<void> {
   const dir = filePath.slice(0, filePath.lastIndexOf('/'));
-  if (dir) await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+  if (dir) {
+    try {
+      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+    } catch {
+      // Directory already exists or is system-managed; proceed to write
+    }
+  }
   await FileSystem.writeAsStringAsync(filePath, serializeTasks(tasks), { encoding: 'utf8' });
 }
