@@ -41,6 +41,11 @@ export default function SettingsScreen() {
             <Text style={[styles.presetBtnText, pathInput === ICLOUD_PATH && styles.presetBtnTextActive]}>iCLOUD</Text>
           </TouchableOpacity>
         </View>
+        {pathInput === ICLOUD_PATH && (
+          <Text style={styles.hint}>
+            Mac CLI: ~/Library/Mobile Documents/iCloud~com~caritos~todo-txt/Documents/todo.txt
+          </Text>
+        )}
       </View>
 
       <Text style={styles.sectionTitle}>Todo File</Text>
@@ -106,4 +111,5 @@ const styles = StyleSheet.create({
   saveBtn: { alignSelf: 'flex-start', paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.accent, marginTop: Spacing.sm },
   saveBtnText: { color: Colors.accent, fontSize: 14, fontWeight: '500' },
   currentPath: { fontFamily: Fonts.mono, fontSize: 11, color: Colors.textSecondary, lineHeight: 18 },
+  hint: { fontFamily: Fonts.mono, fontSize: 10, color: Colors.textSecondary, lineHeight: 16 },
 });
