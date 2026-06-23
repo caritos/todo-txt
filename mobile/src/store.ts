@@ -3,11 +3,18 @@ import { parseLine, serializeTasks } from '@shared/parser';
 import type { Task } from '@shared/parser';
 
 const CONFIG_FILE = FileSystem.documentDirectory + 'todo-config.json';
-const DEFAULT_TODO = FileSystem.documentDirectory + 'todo.txt';
 
 // CoreSimulator only appears in documentDirectory on a Mac simulator, never on a real device
 const IS_SIMULATOR = (FileSystem.documentDirectory ?? '').includes('CoreSimulator');
 
+// Always-writable default inside the app sandbox
+export const LOCAL_PATH = FileSystem.documentDirectory
+  ? FileSystem.documentDirectory + 'todo.txt'
+  : null;
+
+// iCloud path — on simulator this is the Mac iCloud Drive (works for CLI dev).
+// On real devices this is the intended app container path; requires the
+// com.apple.developer.icloud-container-identifiers entitlement (see issue #46).
 export const ICLOUD_PATH = (() => {
   if (!FileSystem.documentDirectory) return null;
   if (IS_SIMULATOR) {
@@ -15,10 +22,7 @@ export const ICLOUD_PATH = (() => {
     if (!match) return null;
     return `file:///Users/${match[1]}/Library/Mobile%20Documents/com~apple~CloudDocs/todo.txt`;
   }
-  // On real devices, use the app's Documents folder — the iCloud container path requires
-  // registered entitlements (com.apple.developer.icloud-container-identifiers) that are
-  // not yet configured. Users can point Settings to any path they choose.
-  return FileSystem.documentDirectory + 'todo.txt';
+  return 'file:///private/var/mobile/Library/Mobile%20Documents/iCloud~com~caritos~todo-txt/Documents/todo.txt';
 })();
 
 type Config = { filePath: string };
@@ -28,7 +32,7 @@ async function readConfig(): Promise<Config> {
     const json = await FileSystem.readAsStringAsync(CONFIG_FILE!, { encoding: 'utf8' });
     return JSON.parse(json) as Config;
   } catch {
-    return { filePath: ICLOUD_PATH ?? DEFAULT_TODO! };
+    return { filePath: LOCAL_PATH! };
   }
 }
 

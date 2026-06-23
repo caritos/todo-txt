@@ -2,7 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert 
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTasks } from '../src/context/TaskContext';
-import { setFilePath } from '../src/store';
+import { setFilePath, LOCAL_PATH, ICLOUD_PATH } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 
 export default function SettingsScreen() {
@@ -25,6 +25,24 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={[styles.screen, { paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: 120 }}>
+      <Text style={styles.sectionTitle}>Location</Text>
+      <View style={styles.card}>
+        <View style={styles.presetRow}>
+          <TouchableOpacity
+            style={[styles.presetBtn, pathInput === LOCAL_PATH && styles.presetBtnActive]}
+            onPress={() => setPathInput(LOCAL_PATH ?? '')}
+          >
+            <Text style={[styles.presetBtnText, pathInput === LOCAL_PATH && styles.presetBtnTextActive]}>LOCAL</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.presetBtn, pathInput === ICLOUD_PATH && styles.presetBtnActive]}
+            onPress={() => setPathInput(ICLOUD_PATH ?? '')}
+          >
+            <Text style={[styles.presetBtnText, pathInput === ICLOUD_PATH && styles.presetBtnTextActive]}>iCLOUD</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <Text style={styles.sectionTitle}>Todo File</Text>
       <View style={styles.card}>
         <Text style={styles.fieldLabel}>File path</Text>
@@ -80,6 +98,11 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.separator,
     paddingVertical: Spacing.sm,
   },
+  presetRow: { flexDirection: 'row', gap: Spacing.sm },
+  presetBtn: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.separator },
+  presetBtnActive: { borderColor: Colors.accent },
+  presetBtnText: { fontSize: 12, letterSpacing: 2, color: Colors.textSecondary },
+  presetBtnTextActive: { color: Colors.accent },
   saveBtn: { alignSelf: 'flex-start', paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderWidth: 1, borderColor: Colors.accent, marginTop: Spacing.sm },
   saveBtnText: { color: Colors.accent, fontSize: 14, fontWeight: '500' },
   currentPath: { fontFamily: Fonts.mono, fontSize: 11, color: Colors.textSecondary, lineHeight: 18 },
