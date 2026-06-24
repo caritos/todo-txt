@@ -27,10 +27,18 @@ export const ICLOUD_PATH = (() => {
 
 type Config = { filePath: string };
 
+// Old iCloud path used `..` traversal out of the sandbox — iOS rejects it as non-writable.
+// Detect it and fall back to LOCAL_PATH so users with a stale saved config recover automatically.
+const OLD_ICLOUD_PATH_RE = /\/Documents\/\.\.\/Library\/Mobile.Documents\//;
+
 async function readConfig(): Promise<Config> {
   try {
     const json = await FileSystem.readAsStringAsync(CONFIG_FILE!, { encoding: 'utf8' });
-    return JSON.parse(json) as Config;
+    const config = JSON.parse(json) as Config;
+    if (OLD_ICLOUD_PATH_RE.test(config.filePath)) {
+      return { filePath: LOCAL_PATH! };
+    }
+    return config;
   } catch {
     return { filePath: LOCAL_PATH! };
   }
