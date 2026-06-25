@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { Task } from '@shared/parser';
 import { readTasks, writeTasks, resolveFile } from '../store';
 import { today } from '../utils';
@@ -21,8 +21,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(today());
 
+  // Keep a ref so save() always sees the latest filePath even if the
+  // callback closure hasn't been recreated yet (avoids stale-closure
+  // race on fast interactions shortly after launch).
+  const filePathRef = useRef('');
+
   const reload = useCallback(async () => {
     const path = await resolveFile();
+    filePathRef.current = path;
     setFilePath(path);
     const loaded = await readTasks(path);
     setTasks(loaded);
@@ -30,7 +36,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const save = useCallback(
     async (updated: Task[]) => {
-      await writeTasks(filePath, updated);
+      const path = filePathRef.current || filePath;
+      if (!path) throw new Error('File path not configured. Open Settings to set a location.');
+      await writeTasks(path, updated);
       setTasks(updated);
     },
     [filePath]

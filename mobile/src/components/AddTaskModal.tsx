@@ -105,11 +105,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
   }
 
   async function handleAdd() {
+    if (!title.trim()) return;
     setError('');
-    if (!title.trim()) {
-      setError('Enter a title.');
-      return;
-    }
     const todayStr = today();
     const parts: string[] = [title.trim()];
 
@@ -135,7 +132,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
       await save(updated);
       handleClose();
     } catch (e) {
-      setError((e as Error).message);
+      setError((e as Error).message || 'Could not save task.');
     }
   }
 

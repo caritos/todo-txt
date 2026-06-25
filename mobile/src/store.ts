@@ -70,13 +70,18 @@ export async function readTasks(filePath: string): Promise<Task[]> {
 }
 
 export async function writeTasks(filePath: string, tasks: Task[]): Promise<void> {
+  if (!filePath) throw new Error('File path not configured. Open Settings to set a location.');
   const dir = filePath.slice(0, filePath.lastIndexOf('/'));
   if (dir) {
     try {
       await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
     } catch {
-      // Directory already exists or is system-managed; proceed to write
+      // Directory already exists or is system-managed — proceed to write.
     }
   }
-  await FileSystem.writeAsStringAsync(filePath, serializeTasks(tasks), { encoding: 'utf8' });
+  try {
+    await FileSystem.writeAsStringAsync(filePath, serializeTasks(tasks), { encoding: 'utf8' });
+  } catch (e) {
+    throw new Error(`Could not write to ${filePath.replace(/^file:\/\//, '')}. Check the file path in Settings.`);
+  }
 }

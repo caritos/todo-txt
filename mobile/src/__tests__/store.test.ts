@@ -30,11 +30,11 @@ const mockFs = FileSystem as jest.Mocked<typeof FileSystem>;
 beforeEach(() => jest.clearAllMocks());
 
 describe('resolveFile', () => {
-  test('returns iCloud path when config does not exist', async () => {
+  test('returns LOCAL_PATH when config does not exist', async () => {
     mockFs.readAsStringAsync.mockRejectedValueOnce(new Error('not found'));
     const path = await resolveFile();
-    // Default is ICLOUD_PATH; on a non-simulator mock env this is the relative iCloud path
-    expect(path).toBe('file:///mock-doc-dir/../Library/Mobile Documents/iCloud~com~apple~CloudDocs/todo.txt');
+    // Default is LOCAL_PATH = documentDirectory + 'todo.txt'
+    expect(path).toBe('file:///mock-doc-dir/todo.txt');
   });
 
   test('returns stored path from config', async () => {
@@ -61,14 +61,14 @@ describe('readTasks', () => {
 });
 
 describe('writeTasks', () => {
+  const tasks = [
+    { line: 1, raw: 'task one', done: false, text: 'task one', projects: [], contexts: [], extensions: {} },
+    { line: 2, raw: 'task two', done: false, text: 'task two', projects: [], contexts: [], extensions: {} },
+  ] as any;
+
   test('writes tasks directly to file path without tmp', async () => {
     mockFs.makeDirectoryAsync.mockResolvedValueOnce(undefined as any);
     mockFs.writeAsStringAsync.mockResolvedValueOnce(undefined as any);
-
-    const tasks = [
-      { line: 1, raw: 'task one', done: false, text: 'task one', projects: [], contexts: [], extensions: {} },
-      { line: 2, raw: 'task two', done: false, text: 'task two', projects: [], contexts: [], extensions: {} },
-    ] as any;
 
     await writeTasks('file:///mock-doc-dir/todo.txt', tasks);
 
@@ -77,6 +77,19 @@ describe('writeTasks', () => {
       'task one\ntask two\n',
       { encoding: 'utf8' }
     );
+  });
+
+  test('throws descriptive error when write fails', async () => {
+    mockFs.makeDirectoryAsync.mockResolvedValueOnce(undefined as any);
+    mockFs.writeAsStringAsync.mockRejectedValueOnce(new Error('NSCocoaErrorDomain 517'));
+
+    await expect(writeTasks('file:///mock-doc-dir/todo.txt', tasks)).rejects.toThrow(
+      'Could not write to /mock-doc-dir/todo.txt. Check the file path in Settings.'
+    );
+  });
+
+  test('throws immediately for empty file path', async () => {
+    await expect(writeTasks('', tasks)).rejects.toThrow('File path not configured');
   });
 });
 
