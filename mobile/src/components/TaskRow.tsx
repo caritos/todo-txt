@@ -34,6 +34,7 @@ type Props = {
 export function TaskRow({ task, dateLabel, recurrenceLabel, isOverdue, onPress, onDone, onDelete }: Props) {
   const title = cleanTitle(task.text);
   const meta = [dateLabel, recurrenceLabel].filter(Boolean).join('   ');
+  const done = task.done;
 
   return (
     <Swipeable
@@ -42,20 +43,24 @@ export function TaskRow({ task, dateLabel, recurrenceLabel, isOverdue, onPress, 
       rightThreshold={40}
     >
       <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
-        <View style={[styles.checkbox, isOverdue && styles.checkboxOverdue]} />
+        {done ? (
+          <Text style={styles.checkboxDone}>✓</Text>
+        ) : (
+          <View style={[styles.checkbox, isOverdue && styles.checkboxOverdue]} />
+        )}
         <View style={styles.content}>
-          <Text style={[styles.title, isOverdue && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
-          {isOverdue ? (
+          <Text style={[styles.title, done && styles.titleDone, isOverdue && !done && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
+          {!done && isOverdue ? (
             <Text style={styles.meta}>
               {dateLabel ? <Text style={styles.metaStrike}>{dateLabel}</Text> : null}
               <Text style={styles.metaOverdue}>{dateLabel ? ' ↑ overdue' : '↑ overdue'}</Text>
               {recurrenceLabel ? <Text>{'   '}{recurrenceLabel}</Text> : null}
             </Text>
           ) : (
-            meta ? <Text style={styles.meta}>{meta}</Text> : null
+            meta && !done ? <Text style={styles.meta}>{meta}</Text> : null
           )}
         </View>
-        {task.priority ? (
+        {task.priority && !done ? (
           <Text style={styles.priority}>{task.priority}</Text>
         ) : null}
       </TouchableOpacity>
@@ -83,6 +88,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   checkboxOverdue: { borderColor: Colors.accent },
+  checkboxDone: { fontSize: 11, color: Colors.textSecondary, width: 17, marginTop: 2, flexShrink: 0 },
   content: { flex: 1, gap: 3 },
   title: {
     fontFamily: Fonts.mono,
@@ -90,6 +96,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     lineHeight: 19,
   },
+  titleDone: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
   titleOverdue: { color: Colors.accent },
   meta: { fontSize: 11, color: Colors.textSecondary, letterSpacing: 0.2 },
   metaStrike: { fontSize: 11, color: Colors.checkboxBorder, textDecorationLine: 'line-through', letterSpacing: 0.2 },
