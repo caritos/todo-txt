@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { Task } from '@shared/parser';
-import { readTasks, writeTasks, resolveFile } from '../store';
+import { readTasks, writeTasks, resolveFile, resolveWeekStart, setWeekStart as storeSetWeekStart } from '../store';
 import { today } from '../utils';
 
 type TaskContextValue = {
   tasks: Task[];
   filePath: string;
+  weekStart: 0 | 1;
+  setWeekStart: (ws: 0 | 1) => Promise<void>;
   loading: boolean;
   reload: () => Promise<void>;
   save: (updated: Task[]) => Promise<void>;
@@ -18,6 +20,7 @@ const TaskContext = createContext<TaskContextValue | null>(null);
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filePath, setFilePath] = useState('');
+  const [weekStart, setWeekStartState] = useState<0 | 1>(0);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(today());
 
@@ -27,11 +30,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const filePathRef = useRef('');
 
   const reload = useCallback(async () => {
-    const path = await resolveFile();
+    const [path, ws] = await Promise.all([resolveFile(), resolveWeekStart()]);
     filePathRef.current = path;
     setFilePath(path);
+    setWeekStartState(ws);
     const loaded = await readTasks(path);
     setTasks(loaded);
+  }, []);
+
+  const setWeekStart = useCallback(async (ws: 0 | 1) => {
+    await storeSetWeekStart(ws);
+    setWeekStartState(ws);
   }, []);
 
   const save = useCallback(
@@ -49,7 +58,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <TaskContext.Provider value={{ tasks, filePath, loading, reload, save, selectedDate, setSelectedDate }}>
+    <TaskContext.Provider value={{ tasks, filePath, weekStart, setWeekStart, loading, reload, save, selectedDate, setSelectedDate }}>
       {children}
     </TaskContext.Provider>
   );

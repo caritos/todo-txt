@@ -15,10 +15,10 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const ALL_DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function MonthScreen() {
-  const { tasks } = useTasks();
+  const { tasks, weekStart } = useTasks();
   const router = useRouter();
   const todayStr = today();
   const todayYear = parseInt(todayStr.slice(0, 4), 10);
@@ -54,7 +54,11 @@ export default function MonthScreen() {
     return map;
   }, [tasks]);
 
-  const cells = useMemo(() => buildCells(year, month), [year, month]);
+  const dayLabels = useMemo(
+    () => [...ALL_DAY_LABELS.slice(weekStart), ...ALL_DAY_LABELS.slice(0, weekStart)],
+    [weekStart]
+  );
+  const cells = useMemo(() => buildCells(year, month, weekStart), [year, month, weekStart]);
 
   const rows = useMemo(() => {
     const result: (string | null)[][] = [];
@@ -91,7 +95,7 @@ export default function MonthScreen() {
       </View>
 
       <View style={styles.dayHeaderRow}>
-        {DAY_LABELS.map((d, i) => (
+        {dayLabels.map((d, i) => (
           <Text key={i} style={styles.dayHdr}>{d}</Text>
         ))}
       </View>

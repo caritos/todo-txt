@@ -8,10 +8,11 @@ export function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-export function buildCells(year: number, month: number): (string | null)[] {
+export function buildCells(year: number, month: number, weekStart: 0 | 1 = 0): (string | null)[] {
   const firstDow = new Date(year, month, 1).getDay();
+  const offset = (firstDow - weekStart + 7) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (string | null)[] = Array(firstDow).fill(null);
+  const cells: (string | null)[] = Array(offset).fill(null);
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push(`${year}-${pad(month + 1)}-${pad(d)}`);
   }

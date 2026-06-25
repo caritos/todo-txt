@@ -17,7 +17,7 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const ALL_DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Fixed row heights — must match StyleSheet values below for getItemLayout accuracy
@@ -49,7 +49,7 @@ type FlatRow =
   | { type: 'item'; rowKey: string; item: AgendaItem; dateStr: string };
 
 export default function CalendarScreen() {
-  const { tasks, save } = useTasks();
+  const { tasks, save, weekStart } = useTasks();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const todayStr = today();
@@ -63,7 +63,11 @@ export default function CalendarScreen() {
 
   const flatListRef = useRef<FlatList<FlatRow>>(null);
 
-  const cells = useMemo(() => buildCells(calYear, calMonth), [calYear, calMonth]);
+  const dayLabels = useMemo(
+    () => [...ALL_DAY_LABELS.slice(weekStart), ...ALL_DAY_LABELS.slice(0, weekStart)],
+    [weekStart]
+  );
+  const cells = useMemo(() => buildCells(calYear, calMonth, weekStart), [calYear, calMonth, weekStart]);
   const rows = useMemo(() => {
     const result: (string | null)[][] = [];
     for (let i = 0; i < cells.length; i += 7) result.push(cells.slice(i, i + 7));
@@ -225,7 +229,7 @@ export default function CalendarScreen() {
           </View>
           {/* Day labels */}
           <View style={styles.dayLabelRow}>
-            {DAY_LABELS.map(d => (
+            {dayLabels.map(d => (
               <Text key={d} style={styles.dayLabel}>{d}</Text>
             ))}
           </View>

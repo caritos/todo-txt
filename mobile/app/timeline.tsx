@@ -38,7 +38,7 @@ function topOffset(hours: number, minutes: number): number {
 }
 
 export default function WeekScreen() {
-  const { tasks, selectedDate, setSelectedDate } = useTasks();
+  const { tasks, selectedDate, setSelectedDate, weekStart } = useTasks();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
@@ -48,11 +48,12 @@ export default function WeekScreen() {
   const { sundayStr, weekDates } = useMemo(() => {
     const d = new Date(anchorDate + 'T12:00:00');
     const dow = d.getDay();
+    const offset = (dow - weekStart + 7) % 7;
     const sun = new Date(d);
-    sun.setDate(d.getDate() - dow);
+    sun.setDate(d.getDate() - offset);
     const s = `${sun.getFullYear()}-${pad(sun.getMonth() + 1)}-${pad(sun.getDate())}`;
     return { sundayStr: s, weekDates: Array.from({ length: 7 }, (_, i) => addDays(s, i)) };
-  }, [anchorDate]);
+  }, [anchorDate, weekStart]);
 
   const weekContainsToday = weekDates.includes(todayStr);
 
@@ -170,7 +171,7 @@ export default function WeekScreen() {
               activeOpacity={0.7}
             >
               <Text style={[styles.stripDayName, isSelected && styles.stripDayNameSelected]}>
-                {DAY_NAMES[i]}
+                {DAY_NAMES[new Date(dateStr + 'T12:00:00').getDay()]}
               </Text>
               <View style={[styles.stripDayBox, isToday && styles.stripDayBoxToday]}>
                 <Text style={[styles.stripDayNum, isToday && styles.stripDayNumToday]}>

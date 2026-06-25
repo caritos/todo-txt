@@ -25,7 +25,7 @@ export const ICLOUD_PATH = (() => {
   return 'file:///private/var/mobile/Library/Mobile%20Documents/iCloud~com~caritos~todo-txt/Documents/todo.txt';
 })();
 
-type Config = { filePath: string };
+type Config = { filePath: string; weekStart?: 0 | 1 };
 
 // Old iCloud path used `..` traversal out of the sandbox — iOS rejects it as non-writable.
 // Detect it and fall back to LOCAL_PATH so users with a stale saved config recover automatically.
@@ -36,7 +36,7 @@ async function readConfig(): Promise<Config> {
     const json = await FileSystem.readAsStringAsync(CONFIG_FILE!, { encoding: 'utf8' });
     const config = JSON.parse(json) as Config;
     if (OLD_ICLOUD_PATH_RE.test(config.filePath)) {
-      return { filePath: LOCAL_PATH! };
+      return { ...config, filePath: LOCAL_PATH! };
     }
     return config;
   } catch {
@@ -44,17 +44,28 @@ async function readConfig(): Promise<Config> {
   }
 }
 
+async function writeConfig(config: Config): Promise<void> {
+  await FileSystem.writeAsStringAsync(CONFIG_FILE!, JSON.stringify(config), { encoding: 'utf8' });
+}
+
 export async function resolveFile(): Promise<string> {
   const config = await readConfig();
   return config.filePath;
 }
 
+export async function resolveWeekStart(): Promise<0 | 1> {
+  const config = await readConfig();
+  return config.weekStart ?? 0;
+}
+
 export async function setFilePath(filePath: string): Promise<void> {
-  await FileSystem.writeAsStringAsync(
-    CONFIG_FILE!,
-    JSON.stringify({ filePath }),
-    { encoding: 'utf8' }
-  );
+  const config = await readConfig();
+  await writeConfig({ ...config, filePath });
+}
+
+export async function setWeekStart(weekStart: 0 | 1): Promise<void> {
+  const config = await readConfig();
+  await writeConfig({ ...config, weekStart });
 }
 
 export async function readTasks(filePath: string): Promise<Task[]> {

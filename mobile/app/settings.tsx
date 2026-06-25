@@ -5,7 +5,7 @@ import { setFilePath, LOCAL_PATH, ICLOUD_PATH } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 
 export default function SettingsScreen() {
-  const { filePath, reload } = useTasks();
+  const { filePath, reload, weekStart, setWeekStart } = useTasks();
   const insets = useSafeAreaInsets();
 
   async function handleSelect(path: string) {
@@ -37,6 +37,25 @@ export default function SettingsScreen() {
         >
           <Text style={[styles.optionLabel, filePath === ICLOUD_PATH && styles.optionLabelActive]}>iCLOUD</Text>
           <Text style={styles.optionDesc}>Syncs across devices and with the Mac CLI.</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.sectionTitle}>Week starts on</Text>
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={[styles.option, weekStart === 0 && styles.optionActive]}
+          onPress={() => setWeekStart(0)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.optionLabel, weekStart === 0 && styles.optionLabelActive]}>SUNDAY</Text>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        <TouchableOpacity
+          style={[styles.option, weekStart === 1 && styles.optionActive]}
+          onPress={() => setWeekStart(1)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.optionLabel, weekStart === 1 && styles.optionLabelActive]}>MONDAY</Text>
         </TouchableOpacity>
       </View>
 
