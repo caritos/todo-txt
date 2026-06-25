@@ -128,6 +128,15 @@ scheme=$(basename "$workspace" .xcworkspace)
 config="Debug"
 [[ "$config_choice" == "2" ]] && config="Release"
 
+# Keep the xcassets icon in sync with the source asset.
+# expo prebuild writes a placeholder when it first generates ios/ — syncing
+# here ensures the real icon is always built in, even after a fresh prebuild.
+icon_src="assets/icon/icon-1024.png"
+icon_dst="ios/Todo/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png"
+if [[ -f "$icon_src" && -f "$icon_dst" ]]; then
+  cp "$icon_src" "$icon_dst"
+fi
+
 xcrun simctl uninstall "$udid" "$bundle_id" 2>/dev/null || true
 
 # Clean build if no existing build or Podfile.lock changed
