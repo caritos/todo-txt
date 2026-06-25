@@ -137,6 +137,14 @@ if [[ -f "$icon_src" && -f "$icon_dst" ]]; then
   cp "$icon_src" "$icon_dst"
 fi
 
+# Keep CFBundleDisplayName in sync with app.json "name".
+# expo prebuild sets it once; subsequent runs don't update it.
+app_name=$(node -e "console.log(require('./app.json').expo.name)")
+info_plist="ios/Todo/Info.plist"
+if [[ -f "$info_plist" && -n "$app_name" ]]; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $app_name" "$info_plist" 2>/dev/null || true
+fi
+
 xcrun simctl uninstall "$udid" "$bundle_id" 2>/dev/null || true
 
 # Clean build if no existing build or Podfile.lock changed
