@@ -19,7 +19,7 @@
       },
       "entitlements": {
         "com.apple.developer.icloud-container-identifiers": ["iCloud.com.caritos.todo-txt"],
-        "com.apple.developer.icloud-services": ["CloudDocuments"]
+        "com.apple.developer.icloud-services": ["CloudDocuments", "CloudKit"]
       }
     },
     "plugins": [
