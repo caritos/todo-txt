@@ -15,8 +15,12 @@ if [[ ! -d ios ]]; then
   npx expo prebuild --platform ios
 fi
 
-# Ensure pods are installed/synced
-if ! grep -q "expo-dev-client" ios/Podfile.lock 2>/dev/null; then
+# Ensure pods are installed/synced.
+# Run pod install if Podfile.lock is missing/stale OR if generated pod headers
+# are gone (e.g. after cleanup-disk-space.sh removed Pods/Headers without
+# removing Podfile.lock, which makes the content check below pass incorrectly).
+if ! grep -q "expo-dev-client" ios/Podfile.lock 2>/dev/null || \
+   [[ ! -d ios/Pods/Headers/Public/yoga ]]; then
   echo "Syncing CocoaPods..."
   (cd ios && pod install)
 fi
