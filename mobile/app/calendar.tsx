@@ -4,6 +4,7 @@ import { useRef, useState, useMemo, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTasks } from '../src/context/TaskContext';
+import { usePendingDone } from '../src/hooks/usePendingDone';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
@@ -48,10 +49,11 @@ type FlatRow =
   | { type: 'item'; rowKey: string; item: AgendaItem; dateStr: string };
 
 export default function CalendarScreen() {
-  const { tasks } = useTasks();
+  const { tasks, save } = useTasks();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const todayStr = today();
+  const { isPending, tapCheckbox } = usePendingDone(tasks, todayStr, save);
   const todayYear = parseInt(todayStr.slice(0, 4), 10);
   const todayMonth = parseInt(todayStr.slice(5, 7), 10) - 1;
 
@@ -298,6 +300,7 @@ export default function CalendarScreen() {
             );
           }
           const { item, dateStr } = row;
+          const pending = item.kind === 'incomplete' && isPending(item.task.line);
           return (
             <TouchableOpacity
               style={[
@@ -306,18 +309,23 @@ export default function CalendarScreen() {
               ]}
               onPress={() => router.push(`/task/${item.task.line}` as any)}
               activeOpacity={0.7}
-              hitSlop={8}
             >
-              <Text style={[
-                styles.agendaIcon,
-                item.kind === 'event' && styles.agendaIconEvent,
-                item.kind === 'completed' && styles.agendaIconDone,
-                item.kind === 'incomplete' && item.isOverdue && styles.agendaIconOverdue,
-              ]}>
-                {item.kind === 'completed' ? '✓' : item.kind === 'event' ? '◆' : '□'}
-              </Text>
+              <TouchableOpacity
+                onPress={() => item.kind === 'incomplete' && tapCheckbox(item.task)}
+                hitSlop={8}
+                style={styles.agendaIconBtn}
+              >
+                <Text style={[
+                  styles.agendaIcon,
+                  item.kind === 'event' && styles.agendaIconEvent,
+                  (item.kind === 'completed' || pending) && styles.agendaIconDone,
+                  item.kind === 'incomplete' && item.isOverdue && !pending && styles.agendaIconOverdue,
+                ]}>
+                  {item.kind === 'completed' || pending ? '✓' : item.kind === 'event' ? '◆' : '□'}
+                </Text>
+              </TouchableOpacity>
               <Text
-                style={[styles.agendaTitle, item.kind === 'completed' && styles.agendaTitleDone]}
+                style={[styles.agendaTitle, (item.kind === 'completed' || pending) && styles.agendaTitleDone]}
                 numberOfLines={1}
               >
                 {cleanTitle(item.task.text)}
@@ -413,6 +421,7 @@ const styles = StyleSheet.create({
   agendaRowToday: {
     backgroundColor: Colors.accent + '08',
   },
+  agendaIconBtn: { paddingRight: Spacing.sm },
   agendaIcon: { fontSize: 11, color: Colors.textSecondary, width: 14, textAlign: 'center' },
   agendaIconEvent: { color: Colors.accent },
   agendaIconDone: { color: Colors.textSecondary },
