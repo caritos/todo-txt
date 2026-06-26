@@ -48,6 +48,20 @@ cd mobile && eas submit --platform ios --profile production --latest
 # Key is cached on EAS servers after first setup — subsequent ship.sh runs are non-interactive
 ```
 
+**iCloud provisioning profile — must be created manually:**
+
+EAS auto-generated provisioning profiles do not include iCloud entitlements. The provisioning profile must be created manually in the Apple Developer Portal and uploaded to EAS via `credentials.json`.
+
+Steps (one-time, or when the profile expires):
+1. In the [Apple Developer Portal](https://developer.apple.com) → Identifiers → `com.caritos.todo-txt` → edit iCloud capability → select **Include CloudKit support (requires Xcode 6)** (not "Compatible with Xcode 5") → confirm `iCloud.com.caritos.todo-txt` container is checked → Save
+2. Profiles → + → **App Store Connect** → select `com.caritos.todo-txt` App ID → select the Sep 2026 distribution cert → Generate → Download
+3. Verify the profile has the right entitlements: `security cms -D -i <profile.mobileprovision> | grep icloud`  — you should see `icloud-container-identifiers`
+4. Download credentials from EAS: `cd mobile && eas credentials --platform ios` → credentials.json → Download
+5. Replace `mobile/credentials/ios/profile.mobileprovision` with the downloaded profile
+6. Upload back: same menu → Upload credentials from credentials.json to EAS
+
+`mobile/credentials.json` and `mobile/credentials/` are gitignored (contain the private key).
+
 **Required fields in `mobile/app.json`:**
 - `expo.ios.infoPlist.ITSAppUsesNonExemptEncryption: false` — required for all App Store uploads (this app uses no encryption)
 - `expo.icon` — points to `./assets/icon/icon-1024.png` (1024×1024 PNG, the Braun Terminal photo cropped to square)
