@@ -33,5 +33,12 @@ export async function writeICloudFile(path: string, content: string, containerId
 
 export async function readICloudFile(path: string, containerId: string): Promise<string> {
   assertLoaded();
-  return await ExpoIcloud.readFile(path, containerId) as string;
+  try {
+    return await ExpoIcloud.readFile(path, containerId) as string;
+  } catch (e: unknown) {
+    const code = (e as { code?: string }).code;
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn('[readICloudFile] failed — code:', code, 'msg:', msg);
+    return '';
+  }
 }
