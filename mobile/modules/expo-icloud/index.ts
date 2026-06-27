@@ -30,3 +30,8 @@ export async function writeICloudFile(path: string, content: string, containerId
     throw new Error(`Could not write to iCloud todo.txt. ${detail}`);
   }
 }
+
+export async function readICloudFile(path: string, containerId: string): Promise<string> {
+  assertLoaded();
+  return await ExpoIcloud.readFile(path, containerId) as string;
+}

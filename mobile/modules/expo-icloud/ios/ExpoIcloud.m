@@ -74,4 +74,46 @@ RCT_EXPORT_METHOD(writeFile:(NSString *)path
   });
 }
 
+// Reads an iCloud file using NSFileCoordinator, which triggers a download of evicted
+// files and waits for completion before returning content. Without coordination,
+// Expo FileSystem silently returns empty when the file hasn't been downloaded yet.
+RCT_EXPORT_METHOD(readFile:(NSString *)path
+                  containerId:(NSString *)containerId
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    [fm URLForUbiquityContainerIdentifier:containerId];
+
+    NSURL *fileURL = [NSURL fileURLWithPath:path];
+
+    // Trigger download of evicted file (non-blocking; coordination will wait)
+    [fm startDownloadingUbiquitousItemAtURL:fileURL error:nil];
+
+    NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
+    __block NSString *content = nil;
+    __block NSError *readError = nil;
+    NSError *coordinatorError = nil;
+
+    [coordinator coordinateReadingItemAtURL:fileURL
+                                    options:0
+                                      error:&coordinatorError
+                                 byAccessor:^(NSURL *newURL) {
+      content = [NSString stringWithContentsOfURL:newURL
+                                         encoding:NSUTF8StringEncoding
+                                            error:&readError];
+    }];
+
+    if (coordinatorError) {
+      reject(@"COORDINATOR_ERROR", coordinatorError.localizedDescription, coordinatorError);
+    } else if (readError) {
+      // File doesn't exist yet — return empty string so caller treats it as empty list
+      resolve(@"");
+    } else {
+      resolve(content ?: @"");
+    }
+  });
+}
+
 @end

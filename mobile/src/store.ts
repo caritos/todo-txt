@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system';
-import { writeICloudFile } from 'expo-icloud';
+import { writeICloudFile, readICloudFile } from 'expo-icloud';
 import { parseLine, serializeTasks } from '@shared/parser';
 import type { Task } from '@shared/parser';
 
@@ -71,7 +71,14 @@ export async function setWeekStart(weekStart: 0 | 1): Promise<void> {
 
 export async function readTasks(filePath: string): Promise<Task[]> {
   try {
-    const content = await FileSystem.readAsStringAsync(filePath, { encoding: 'utf8' });
+    const isIcloud = !IS_SIMULATOR && (filePath.includes('Mobile%20Documents') || filePath.includes('Mobile Documents'));
+    let content: string;
+    if (isIcloud) {
+      const nativePath = filePath.replace(/^file:\/\//, '').replace(/%20/g, ' ');
+      content = await readICloudFile(nativePath, ICLOUD_CONTAINER_ID);
+    } else {
+      content = await FileSystem.readAsStringAsync(filePath, { encoding: 'utf8' });
+    }
     return content
       .split('\n')
       .filter(line => line.trim().length > 0)
