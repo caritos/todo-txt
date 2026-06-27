@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system';
-import { initICloudContainer } from 'expo-icloud';
+import { writeICloudFile } from 'expo-icloud';
 import { parseLine, serializeTasks } from '@shared/parser';
 import type { Task } from '@shared/parser';
 
@@ -86,12 +86,15 @@ const ICLOUD_CONTAINER_ID = 'iCloud.com.caritos.todo-txt';
 export async function writeTasks(filePath: string, tasks: Task[]): Promise<void> {
   if (!filePath) throw new Error('File path not configured. Open Settings to set a location.');
 
-  // Initialize the iCloud ubiquity container before any write attempt.
-  // iOS only creates the container directory via url(forUbiquityContainerIdentifier:);
-  // skipping this call causes makeDirectoryAsync to fail with "not writable".
   const isIcloud = !IS_SIMULATOR && (filePath.includes('Mobile%20Documents') || filePath.includes('Mobile Documents'));
+
   if (isIcloud) {
-    await initICloudContainer(ICLOUD_CONTAINER_ID);
+    // iCloud paths require NSFileCoordinator for writes — Expo FileSystem does not use
+    // file coordination, so direct writes to iCloud containers fail with "not writable".
+    // The native module handles container init, directory creation, and coordinated write.
+    const nativePath = filePath.replace(/^file:\/\//, '').replace(/%20/g, ' ');
+    await writeICloudFile(nativePath, serializeTasks(tasks), ICLOUD_CONTAINER_ID);
+    return;
   }
 
   const dir = filePath.slice(0, filePath.lastIndexOf('/'));
@@ -99,21 +102,16 @@ export async function writeTasks(filePath: string, tasks: Task[]): Promise<void>
     try {
       await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
     } catch (mkdirErr) {
-      // If dir creation failed, check whether it actually exists (already-exists is fine).
       let dirExists = false;
       try {
         const info = await FileSystem.getInfoAsync(dir);
         dirExists = info.exists;
       } catch {
-        dirExists = true; // can't check — proceed optimistically
+        dirExists = true;
       }
       if (!dirExists) {
         const detail = mkdirErr instanceof Error ? mkdirErr.message : String(mkdirErr);
-        const isIcloud = filePath.includes('Mobile%20Documents') || filePath.includes('Mobile Documents');
-        const hint = isIcloud
-          ? 'Make sure iCloud Drive is enabled in iPhone Settings → [your name] → iCloud.'
-          : 'Check the file path in Settings.';
-        throw new Error(`Could not create directory for todo.txt. ${hint} (${detail})`);
+        throw new Error(`Could not create directory for todo.txt. Check the file path in Settings. (${detail})`);
       }
     }
   }
