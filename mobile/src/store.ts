@@ -86,13 +86,29 @@ export async function writeTasks(filePath: string, tasks: Task[]): Promise<void>
   if (dir) {
     try {
       await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-    } catch {
-      // Directory already exists or is system-managed — proceed to write.
+    } catch (mkdirErr) {
+      // If dir creation failed, check whether it actually exists (already-exists is fine).
+      let dirExists = false;
+      try {
+        const info = await FileSystem.getInfoAsync(dir);
+        dirExists = info.exists;
+      } catch {
+        dirExists = true; // can't check — proceed optimistically
+      }
+      if (!dirExists) {
+        const detail = mkdirErr instanceof Error ? mkdirErr.message : String(mkdirErr);
+        const isIcloud = filePath.includes('Mobile%20Documents') || filePath.includes('Mobile Documents');
+        const hint = isIcloud
+          ? 'Make sure iCloud Drive is enabled in iPhone Settings → [your name] → iCloud.'
+          : 'Check the file path in Settings.';
+        throw new Error(`Could not create directory for todo.txt. ${hint} (${detail})`);
+      }
     }
   }
   try {
     await FileSystem.writeAsStringAsync(filePath, serializeTasks(tasks), { encoding: 'utf8' });
   } catch (e) {
-    throw new Error(`Could not write to ${filePath.replace(/^file:\/\//, '')}. Check the file path in Settings.`);
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new Error(`Could not write to ${filePath.replace(/^file:\/\//, '')}. Check the file path in Settings. (${detail})`);
   }
 }
