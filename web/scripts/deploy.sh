@@ -11,10 +11,11 @@ DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "Deploying stark-web to DreamHost..."
 
-$SSH "$HOST" "mkdir -p $REMOTE_DIR/src $SERVICE_DIR"
+$SSH "$HOST" "mkdir -p $REMOTE_DIR/src $REMOTE_DIR/public $SERVICE_DIR"
 
 $SCP "$DIR/package.json" "$DIR/tsconfig.json" "$HOST:$REMOTE_DIR/"
 $SCP "$DIR/src/index.ts" "$HOST:$REMOTE_DIR/src/"
+$SCP -r "$DIR/public/." "$HOST:$REMOTE_DIR/public/"
 $SCP "$DIR/scripts/stark-web.service" "$HOST:$SERVICE_DIR/"
 
 $SSH "$HOST" bash <<'REMOTE'
