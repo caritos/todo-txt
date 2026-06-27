@@ -91,10 +91,7 @@ export async function writeTasks(filePath: string, tasks: Task[]): Promise<void>
   // skipping this call causes makeDirectoryAsync to fail with "not writable".
   const isIcloud = !IS_SIMULATOR && (filePath.includes('Mobile%20Documents') || filePath.includes('Mobile Documents'));
   if (isIcloud) {
-    const containerPath = await initICloudContainer(ICLOUD_CONTAINER_ID);
-    if (!containerPath) {
-      throw new Error('iCloud is not available. Go to iPhone Settings → [your name] → iCloud and make sure iCloud Drive is enabled.');
-    }
+    await initICloudContainer(ICLOUD_CONTAINER_ID);
   }
 
   const dir = filePath.slice(0, filePath.lastIndexOf('/'));
