@@ -74,9 +74,9 @@ RCT_EXPORT_METHOD(writeFile:(NSString *)path
   });
 }
 
-// Reads an iCloud file using NSFileCoordinator, which triggers a download of evicted
-// files and waits for completion before returning content. Without coordination,
-// Expo FileSystem silently returns empty when the file hasn't been downloaded yet.
+// Reads an iCloud file, waiting for it to download if it's a cloud-only stub.
+// startDownloadingUbiquitousItemAtURL is non-blocking, so we poll the download
+// status (up to 30s) before reading with NSFileCoordinator.
 RCT_EXPORT_METHOD(readFile:(NSString *)path
                   containerId:(NSString *)containerId
                   resolve:(RCTPromiseResolveBlock)resolve
@@ -88,8 +88,24 @@ RCT_EXPORT_METHOD(readFile:(NSString *)path
 
     NSURL *fileURL = [NSURL fileURLWithPath:path];
 
-    // Trigger download of evicted file (non-blocking; coordination will wait)
+    // File doesn't exist at all — return empty
+    if (![fm fileExistsAtPath:path]) {
+      resolve(@"");
+      return;
+    }
+
+    // Trigger download and poll until the file is on-device (max 30s)
     [fm startDownloadingUbiquitousItemAtURL:fileURL error:nil];
+    for (NSInteger i = 0; i < 60; i++) {
+      NSString *status = nil;
+      [fileURL getResourceValue:&status
+                         forKey:NSURLUbiquitousItemDownloadingStatusKey
+                          error:nil];
+      if (status && ![status isEqualToString:NSURLUbiquitousItemDownloadingStatusNotDownloaded]) {
+        break;
+      }
+      [NSThread sleepForTimeInterval:0.5];
+    }
 
     NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
     __block NSString *content = nil;
@@ -108,7 +124,6 @@ RCT_EXPORT_METHOD(readFile:(NSString *)path
     if (coordinatorError) {
       reject(@"COORDINATOR_ERROR", coordinatorError.localizedDescription, coordinatorError);
     } else if (readError) {
-      // File doesn't exist yet — return empty string so caller treats it as empty list
       resolve(@"");
     } else {
       resolve(content ?: @"");
