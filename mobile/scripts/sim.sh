@@ -15,6 +15,25 @@ if [[ ! -d ios ]]; then
   npx expo prebuild --platform ios
 fi
 
+# Detect stale entitlements: app.json declares entitlements but the generated
+# .entitlements plist is empty. This happens when ios/ was created before
+# entitlements were added to app.json and hasn't been regenerated since.
+_ent_plist=$(find ios -name "*.entitlements" -maxdepth 3 2>/dev/null | head -1)
+if [[ -n "$_ent_plist" ]]; then
+  _app_ent_count=$(node -e "const e=require('./app.json').expo?.ios?.entitlements||{}; console.log(Object.keys(e).length)" 2>/dev/null || echo 0)
+  _plist_key_count=$(grep -c '<key>' "$_ent_plist" 2>/dev/null || echo 0)
+  if (( _app_ent_count > 0 && _plist_key_count == 0 )); then
+    echo ""
+    echo "⚠  app.json has $_app_ent_count entitlement(s) but $_ent_plist is empty."
+    echo "   ios/ was generated before these entitlements were added."
+    read "answer?Delete ios/ and regenerate with expo prebuild? [y/N] "
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+      rm -rf ios
+      npx expo prebuild --platform ios
+    fi
+  fi
+fi
+
 # Ensure pods are installed/synced.
 # Run pod install if Podfile.lock is missing/stale OR if generated pod headers
 # are gone (e.g. after cleanup-disk-space.sh removed Pods/Headers without
