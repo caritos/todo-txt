@@ -9,6 +9,7 @@
     "android": "expo run:android"
   },
   "dependencies": {
+    "expo-icloud": "file:./modules/expo-icloud",
     "@expo-google-fonts/jetbrains-mono": "*",
     "@react-native-community/datetimepicker": "8.2.0",
     "@react-native-picker/picker": "2.9.0",
