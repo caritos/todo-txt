@@ -1,7 +1,7 @@
 import { serializeTask, baseText } from '../parser';
 import type { Task } from '../parser';
 import { addDays } from '../utils';
-import { nextWeeklyDate, nextMonthlyDate, nextYearlyDate, overdueOccurrenceDate } from './focus';
+import { nextWeeklyDate, nextMonthlyDate, overdueOccurrenceDate } from './focus';
 
 export interface SkippedTask {
   num: number;
@@ -64,7 +64,7 @@ export function applyDone(
       }
       task.extensions['last-done'] = todayStr;
 
-      if (startVal && (freq === 'weekly' || freq === 'monthly' || freq === 'yearly' || freq === 'daily')) {
+      if (startVal && (freq === 'weekly' || freq === 'monthly' || freq === 'daily')) {
         const every = parseInt(task.extensions['every'] ?? '1');
         const exdates = new Set<string>((task.extensions['exdate'] ?? '').split(',').filter(Boolean));
         const freqDay = task.extensions['frequency-day'];
@@ -77,7 +77,7 @@ export function applyDone(
         } else if (freq === 'monthly') {
           currentOcc = overdueOcc ?? nextMonthlyDate(startVal, todayStr, exdates, freqMonthDay, every);
           nextOcc = nextMonthlyDate(startVal, addDays(currentOcc, 1), exdates, freqMonthDay, every);
-        } else if (freq === 'daily') {
+        } else {
           const startDate = startVal.slice(0, 10);
           const startMs = new Date(startDate + 'T12:00:00').getTime();
           const todayMs = new Date(todayStr + 'T12:00:00').getTime();
@@ -85,9 +85,6 @@ export function applyDone(
           const cycles = daysSinceStart <= 0 ? 0 : Math.ceil(daysSinceStart / every);
           currentOcc = addDays(startDate, cycles * every);
           nextOcc = addDays(currentOcc, every);
-        } else {
-          currentOcc = nextYearlyDate(startVal.slice(0, 10), todayStr, exdates, freqMonthDay, every);
-          nextOcc = nextYearlyDate(startVal.slice(0, 10), addDays(currentOcc, 1), exdates, freqMonthDay, every);
         }
         const timePart = startVal.slice(10);
         const newStart = nextOcc + timePart;

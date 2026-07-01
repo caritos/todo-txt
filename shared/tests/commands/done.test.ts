@@ -51,3 +51,20 @@ describe('applyDone', () => {
     expect(updated[0]!.extensions['start']).toBe('2026-01-16');
   });
 });
+
+describe('applyDone with frequency:yearly', () => {
+  test('does not advance start: year — only last-done changes', () => {
+    const tasks = [makeTask('Birthday start:1990-03-15 frequency:yearly type:birthday')];
+    const { tasks: updated } = applyDone(tasks, [1], '2026-03-15');
+    expect(updated[0]!.extensions['start']).toBe('1990-03-15');
+    expect(updated[0]!.extensions['last-done']).toBe('2026-03-15');
+  });
+
+  test('start: year stays fixed across multiple completions', () => {
+    let tasks = [makeTask('Birthday start:1990-03-15 frequency:yearly type:birthday')];
+    tasks = applyDone(tasks, [1], '2026-03-15').tasks;
+    tasks = applyDone(tasks, [1], '2027-03-15').tasks;
+    expect(tasks[0]!.extensions['start']).toBe('1990-03-15');
+    expect(tasks[0]!.extensions['last-done']).toBe('2027-03-15');
+  });
+});
