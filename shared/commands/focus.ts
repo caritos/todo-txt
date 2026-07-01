@@ -1,4 +1,4 @@
-import { addDays } from '../utils';
+import { addDays, daysInMonth } from '../utils';
 import type { Task } from '../parser';
 import { baseText } from '../parser';
 import { isPastEvent } from './list';
@@ -58,7 +58,8 @@ export function nextYearlyDate(start: string, todayStr: string, exdates: Set<str
       const day = resolvePositionalDay(year, month0, frequencyMonthDay);
       return `${year}-${String(month0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
-    return `${year}-${start.slice(5, 10)}`;
+    const day = Math.min(parseInt(start.slice(8, 10), 10), daysInMonth(year, month0));
+    return `${year}-${String(month0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 
   if (every > 1) {
