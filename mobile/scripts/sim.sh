@@ -48,7 +48,14 @@ fi
 # Entry format: "type|udid|label"
 #   type: Booted | Shutdown  → simulator
 #         device             → physical device (USB, free)
-#         testflight         → EAS cloud build → TestFlight (uses build credits)
+#
+# TestFlight/App Store submission is NOT handled here — use ship.sh instead.
+# Dev-client (Debug config) builds can never pass Apple's App Store Connect
+# validation: RCTKeyCommands.m compiles in under #if RCT_DEV and references
+# private UIEvent selectors (_isKeyDown, _modifierFlags, _modifiedInput) that
+# altool now rejects on every upload, regardless of SDK image. ship.sh builds
+# the production profile (Release config, no dev client), which is required
+# to pass validation.
 
 entries=()
 
@@ -75,9 +82,6 @@ done < <(
     | sort -r
 )
 
-# TestFlight via EAS (uses build credits)
-entries+=("testflight||TestFlight via EAS cloud build  ⚠ uses build credits")
-
 if [ ${#entries[@]} -eq 0 ]; then
   echo "No devices or simulators found."
   exit 1
@@ -103,20 +107,6 @@ if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#entries[@]} ));
 fi
 
 IFS='|' read -r type udid label <<< "${entries[$choice]}"
-
-# ---- TestFlight path — EAS cloud build ----
-if [[ "$type" == "testflight" ]]; then
-  echo ""
-  echo "Starting EAS cloud build and submitting to TestFlight..."
-  echo "This uses your EAS build credits."
-  echo ""
-  eas build -p ios --profile development --submit
-  echo ""
-  echo "Done. You'll get an email when the build is available in TestFlight."
-  echo "After installing, open the app and connect to Metro:"
-  echo "  npx expo start --dev-client"
-  exit 0
-fi
 
 # ---- Physical device path — local Xcode build over USB ----
 if [[ "$type" == "device" ]]; then

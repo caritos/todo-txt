@@ -17,10 +17,10 @@ bun run ./console/index.ts help
 # Mobile unit tests (Jest)
 cd mobile && npm test
 
-# Mobile: build and run on simulator / USB device / TestFlight
+# Mobile: build and run on simulator / USB device (dev-client, Debug config)
 mobile/scripts/sim.sh
 
-# Mobile: build and submit to App Store
+# Mobile: build and submit to App Store / TestFlight
 mobile/scripts/ship.sh
 ```
 
@@ -29,6 +29,8 @@ mobile/scripts/ship.sh
 `sim.sh` automatically detects stale or missing build artifacts and does the right thing:
 - **Incremental build** — uses the existing DerivedData build if `Podfile.lock` hasn't changed
 - **Clean build** — if DerivedData is missing (e.g. after running `cleanup-disk-space.sh`) or `Podfile.lock` is newer than the last build, it runs `xcodebuild clean build` automatically; no manual intervention needed
+
+`sim.sh` only targets simulators and USB-connected physical devices — it does **not** offer a TestFlight/EAS-cloud-build option. A dev-client build (`developmentClient: true` in `eas.json`) requires the Xcode Debug configuration, which compiles React Native's `RCTKeyCommands.m` (`#if RCT_DEV`) into the binary. That file calls the private `UIEvent` selectors `_isKeyDown`, `_modifierFlags`, `_modifiedInput` to support hardware-keyboard dev-menu shortcuts — Apple's App Store Connect binary validator rejects any upload referencing them, so dev-client builds can never pass TestFlight/App Store submission, independent of SDK image version. Use `ship.sh` (the `production` profile — Release config, no dev client) for anything that needs to reach App Store Connect or TestFlight.
 
 ## App Store Submission Prerequisites
 
