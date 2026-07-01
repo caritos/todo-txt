@@ -70,15 +70,18 @@ export async function setWeekStart(weekStart: 0 | 1): Promise<void> {
 }
 
 export async function readTasks(filePath: string): Promise<Task[]> {
+  const isIcloud = !IS_SIMULATOR && (filePath.includes('Mobile%20Documents') || filePath.includes('Mobile Documents'));
+  if (isIcloud) {
+    // iCloud errors (CONTAINER_UNAVAILABLE, NOT_SIGNED_IN) propagate — callers show an error.
+    const nativePath = filePath.replace(/^file:\/\//, '').replace(/%20/g, ' ');
+    const content = await readICloudFile(nativePath, ICLOUD_CONTAINER_ID);
+    return content
+      .split('\n')
+      .filter(line => line.trim().length > 0)
+      .map((line, i) => parseLine(line, i + 1));
+  }
   try {
-    const isIcloud = !IS_SIMULATOR && (filePath.includes('Mobile%20Documents') || filePath.includes('Mobile Documents'));
-    let content: string;
-    if (isIcloud) {
-      const nativePath = filePath.replace(/^file:\/\//, '').replace(/%20/g, ' ');
-      content = await readICloudFile(nativePath, ICLOUD_CONTAINER_ID);
-    } else {
-      content = await FileSystem.readAsStringAsync(filePath, { encoding: 'utf8' });
-    }
+    const content = await FileSystem.readAsStringAsync(filePath, { encoding: 'utf8' });
     return content
       .split('\n')
       .filter(line => line.trim().length > 0)

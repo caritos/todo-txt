@@ -39,6 +39,12 @@ export async function readICloudFile(path: string, containerId: string): Promise
     const code = (e as { code?: string }).code;
     const msg = e instanceof Error ? e.message : String(e);
     console.warn('[readICloudFile] failed — code:', code, 'msg:', msg);
+    if (code === 'NOT_SIGNED_IN') {
+      throw new Error('Not signed into iCloud. Go to Settings → [your name] → iCloud and sign in.');
+    }
+    if (code === 'CONTAINER_UNAVAILABLE') {
+      throw new Error('iCloud is not available for Stark. Go to Settings → [your name] → iCloud → Show All and make sure Stark is enabled.');
+    }
     return '';
   }
 }

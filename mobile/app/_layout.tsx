@@ -1,11 +1,21 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts, JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
-import { TaskProvider } from '../src/context/TaskContext';
+import { TaskProvider, useTasks } from '../src/context/TaskContext';
 import { BottomActionBar } from '../src/components/BottomActionBar';
-import { Colors } from '../src/theme';
+import { Colors, Fonts } from '../src/theme';
+
+function ErrorBanner() {
+  const { error } = useTasks();
+  if (!error) return null;
+  return (
+    <View style={styles.errorBanner}>
+      <Text style={styles.errorText}>{error}</Text>
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ JetBrainsMono_400Regular });
@@ -33,6 +43,7 @@ export default function RootLayout() {
               options={{ presentation: 'formSheet', headerShown: false }}
             />
           </Stack>
+          <ErrorBanner />
           <BottomActionBar />
         </View>
       </TaskProvider>
@@ -42,4 +53,14 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
+  errorBanner: {
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  errorText: {
+    color: Colors.text,
+    fontFamily: Fonts.mono,
+    fontSize: 12,
+  },
 });

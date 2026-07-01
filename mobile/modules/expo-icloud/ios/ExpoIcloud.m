@@ -84,7 +84,16 @@ RCT_EXPORT_METHOD(readFile:(NSString *)path
 {
   dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
     NSFileManager *fm = [NSFileManager defaultManager];
-    [fm URLForUbiquityContainerIdentifier:containerId];
+    NSURL *containerURL = [fm URLForUbiquityContainerIdentifier:containerId];
+    if (!containerURL) {
+      // Container unavailable — missing ubiquity-container-identifiers entitlement or iCloud not signed in
+      if (!fm.ubiquityIdentityToken) {
+        reject(@"NOT_SIGNED_IN", @"NOT_SIGNED_IN", nil);
+      } else {
+        reject(@"CONTAINER_UNAVAILABLE", @"CONTAINER_UNAVAILABLE", nil);
+      }
+      return;
+    }
 
     NSURL *fileURL = [NSURL fileURLWithPath:path];
 

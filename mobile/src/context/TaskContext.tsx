@@ -9,6 +9,7 @@ type TaskContextValue = {
   weekStart: 0 | 1;
   setWeekStart: (ws: 0 | 1) => Promise<void>;
   loading: boolean;
+  error: string | null;
   reload: () => Promise<void>;
   save: (updated: Task[]) => Promise<void>;
   selectedDate: string;
@@ -22,6 +23,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [filePath, setFilePath] = useState('');
   const [weekStart, setWeekStartState] = useState<0 | 1>(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(today());
 
   // Keep a ref so save() always sees the latest filePath even if the
@@ -34,8 +36,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     filePathRef.current = path;
     setFilePath(path);
     setWeekStartState(ws);
-    const loaded = await readTasks(path);
-    setTasks(loaded);
+    try {
+      const loaded = await readTasks(path);
+      setTasks(loaded);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   }, []);
 
   const setWeekStart = useCallback(async (ws: 0 | 1) => {
@@ -58,7 +65,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <TaskContext.Provider value={{ tasks, filePath, weekStart, setWeekStart, loading, reload, save, selectedDate, setSelectedDate }}>
+    <TaskContext.Provider value={{ tasks, filePath, weekStart, setWeekStart, loading, error, reload, save, selectedDate, setSelectedDate }}>
       {children}
     </TaskContext.Provider>
   );

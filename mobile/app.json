@@ -18,6 +18,7 @@
         "NSUbiquitousContainerIsDocumentScopePublic": true
       },
       "entitlements": {
+        "com.apple.developer.ubiquity-container-identifiers": ["iCloud.com.caritos.todo-txt"],
         "com.apple.developer.icloud-container-identifiers": ["iCloud.com.caritos.todo-txt"],
         "com.apple.developer.icloud-services": ["CloudDocuments", "CloudKit"]
       }
