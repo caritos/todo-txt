@@ -10,6 +10,8 @@ import { applyPri, applyDepri } from '@shared/commands/pri';
 import { applySkip } from '@shared/commands/skip';
 import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today, formatDateLabel } from '../../src/utils';
+import { taskOccurrence } from '@shared/commands/focus';
+import { computeYearCount } from '@shared/commands/list';
 
 export default function TaskDetail() {
   const { line } = useLocalSearchParams<{ line: string }>();
@@ -40,6 +42,9 @@ export default function TaskDetail() {
   }
 
   const isRecurring = !!(task.extensions['frequency'] && task.extensions['start']);
+  const occurrence = task.extensions['start'] ? taskOccurrence(task, todayStr) : null;
+  const dueDate = occurrence?.date ?? task.extensions['start']?.slice(0, 10);
+  const years = computeYearCount(task, todayStr);
 
   async function handleDone() {
     try {
@@ -137,15 +142,22 @@ export default function TaskDetail() {
         )}
       </View>
 
-      {task.extensions['start'] && (
+      {task.extensions['start'] && dueDate && (
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>DUE</Text>
           <Text style={[
             styles.dueValue,
-            !task.done && task.extensions['start'].slice(0, 10) < todayStr && styles.dueOverdue,
+            !task.done && dueDate < todayStr && styles.dueOverdue,
           ]}>
-            {formatDateLabel(task.extensions['start'].slice(0, 10))}
+            {formatDateLabel(dueDate)}
           </Text>
+        </View>
+      )}
+
+      {years !== undefined && (
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>AGE</Text>
+          <Text style={styles.dueValue}>{years} years</Text>
         </View>
       )}
 
