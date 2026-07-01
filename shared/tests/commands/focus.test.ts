@@ -94,6 +94,28 @@ describe('focusSortKey — frequency-day after done', () => {
   });
 });
 
+describe('nextMonthlyDate day clamping', () => {
+  test('clamps day 31 to Feb 28 in a non-leap year', () => {
+    const result = nextMonthlyDate('2026-01-31', '2026-02-01', new Set());
+    expect(result).toBe('2026-02-28');
+  });
+
+  test('clamps day 31 to Feb 29 in a leap year', () => {
+    const result = nextMonthlyDate('2024-01-31', '2024-02-01', new Set());
+    expect(result).toBe('2024-02-29');
+  });
+
+  test('every>1 branch also clamps', () => {
+    // Quarterly (every:3) from Jan 31: cycle lands on Jan(0), Apr(3), Jul(6)...
+    // April only has 30 days. Before this fix, dayForMonth() returned the
+    // unclamped 31, so new Date(2026, 3, 31) silently overflowed to May 1 —
+    // verified by running this exact call against the pre-fix code, which
+    // returned '2026-05-01'. After clamping it must return April 30 instead.
+    const result = nextMonthlyDate('2026-01-31', '2026-04-01', new Set(), undefined, 3);
+    expect(result).toBe('2026-04-30');
+  });
+});
+
 describe('nextYearlyDate day clamping', () => {
   test('clamps June 31 to June 30', () => {
     // start's literal day (31) doesn't exist in June (30 days)
