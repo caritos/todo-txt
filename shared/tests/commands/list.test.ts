@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { matchesFilters, sortByPriority, isPastEvent, toJsonTask } from '../../commands/list';
+import { matchesFilters, sortByPriority, isPastEvent, toJsonTask, computeYearCount } from '../../commands/list';
 import { parseLine } from '../../parser';
 
 describe('matchesFilters', () => {
@@ -60,5 +60,32 @@ describe('isPastEvent', () => {
   test('returns false for birthday (yearly, never past)', () => {
     const t = parseLine("Mom's birthday type:birthday start:1980-06-15 frequency:yearly", 1);
     expect(isPastEvent(t, '2026-05-23')).toBe(false);
+  });
+});
+
+describe('computeYearCount', () => {
+  test('computes years for type:birthday', () => {
+    const t = parseLine('John Birthday start:1990-03-15 frequency:yearly type:birthday', 1);
+    expect(computeYearCount(t, '2026-03-15')).toBe(36);
+  });
+
+  test('computes years for type:anniversary', () => {
+    const t = parseLine('Anniversary start:1984-05-06 frequency:yearly type:anniversary', 1);
+    expect(computeYearCount(t, '2026-05-06')).toBe(42);
+  });
+
+  test('returns undefined for type:event', () => {
+    const t = parseLine('Team standup start:2024-05-06 type:event', 1);
+    expect(computeYearCount(t, '2026-05-06')).toBeUndefined();
+  });
+
+  test('returns undefined when start: is missing', () => {
+    const t = parseLine('Birthday frequency:yearly type:birthday', 1);
+    expect(computeYearCount(t, '2026-05-06')).toBeUndefined();
+  });
+
+  test('returns undefined when years would be zero or negative', () => {
+    const t = parseLine('Birthday start:2026-03-15 frequency:yearly type:birthday', 1);
+    expect(computeYearCount(t, '2026-03-15')).toBeUndefined();
   });
 });

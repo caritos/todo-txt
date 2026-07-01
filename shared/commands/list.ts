@@ -36,6 +36,17 @@ export function sortByPriority(tasks: Task[]): Task[] {
 
 const YEARLY_TYPES = new Set(['anniversary', 'birthday']);
 
+export function computeYearCount(task: Task, todayStr: string): number | undefined {
+  const type = task.extensions['type'];
+  if (!type || !YEARLY_TYPES.has(type)) return undefined;
+  const start = task.extensions['start'];
+  if (!start) return undefined;
+  const startYear = parseInt(start.slice(0, 4), 10);
+  const currentYear = parseInt(todayStr.slice(0, 4), 10);
+  const years = currentYear - startYear;
+  return years > 0 ? years : undefined;
+}
+
 export function isPastEvent(task: Task, todayStr: string): boolean {
   if (!task.extensions['type']) return false;
   const start = task.extensions['start'];

@@ -1,4 +1,4 @@
-import { addDays } from '../utils';
+import { addDays, daysInMonth } from '../utils';
 import type { Task } from '../parser';
 import { baseText } from '../parser';
 import { isPastEvent } from './list';
@@ -21,16 +21,16 @@ function resolvePositionalDay(year: number, month: number, positionalDay: string
   const dashIdx = positionalDay.indexOf('-');
   const position = positionalDay.slice(0, dashIdx);
   const dayType = positionalDay.slice(dashIdx + 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const totalDays = daysInMonth(year, month);
   if (position === 'last') {
-    for (let d = daysInMonth; d >= 1; d--) {
+    for (let d = totalDays; d >= 1; d--) {
       if (matchesDayType(new Date(year, month, d).getDay(), dayType)) return d;
     }
-    return daysInMonth;
+    return totalDays;
   }
   const count = POSITIONAL_POSITIONS[position] ?? 1;
   let found = 0;
-  for (let d = 1; d <= daysInMonth; d++) {
+  for (let d = 1; d <= totalDays; d++) {
     if (matchesDayType(new Date(year, month, d).getDay(), dayType)) {
       if (++found === count) return d;
     }
@@ -58,7 +58,8 @@ export function nextYearlyDate(start: string, todayStr: string, exdates: Set<str
       const day = resolvePositionalDay(year, month0, frequencyMonthDay);
       return `${year}-${String(month0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
-    return `${year}-${start.slice(5, 10)}`;
+    const day = Math.min(parseInt(start.slice(8, 10), 10), daysInMonth(year, month0));
+    return `${year}-${String(month0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 
   if (every > 1) {
@@ -142,7 +143,7 @@ export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set
   function dayForMonth(year: number, month: number): number {
     const fmd = frequencyMonthDay ?? startStr.slice(8, 10);
     if (isNaN(Number(fmd))) return resolvePositionalDay(year, month, fmd);
-    return parseInt(fmd);
+    return Math.min(parseInt(fmd, 10), daysInMonth(year, month));
   }
 
   if (every > 1) {
@@ -223,7 +224,7 @@ export function overdueOccurrenceDate(task: Task, todayStr: string): string | nu
     function dayForMonth(year: number, month: number): number {
       const val = fmd ?? startDate.slice(8, 10);
       if (isNaN(Number(val))) return resolvePositionalDay(year, month, val);
-      return parseInt(val);
+      return Math.min(parseInt(val, 10), daysInMonth(year, month));
     }
     const year = t.getFullYear();
     const month = t.getMonth();

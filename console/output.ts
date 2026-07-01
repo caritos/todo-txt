@@ -1,5 +1,6 @@
 import type { Task } from '../shared/parser';
 import { addDays } from '../shared/utils';
+import { computeYearCount } from '../shared/commands/list';
 
 const A = {
   reset:         '\x1b[0m',
@@ -44,18 +45,6 @@ function colorText(text: string, todayStr: string): string {
     });
 }
 
-function computeYearCount(task: Task, todayStr: string): string | undefined {
-  const type = task.extensions['type'];
-  if (type !== 'anniversary' && type !== 'birthday') return undefined;
-  const start = task.extensions['start'];
-  if (!start) return undefined;
-  const startYear = parseInt(start.slice(0, 4), 10);
-  const currentYear = parseInt(todayStr.slice(0, 4), 10);
-  const years = currentYear - startYear;
-  if (years <= 0) return undefined;
-  return `(${years} years)`;
-}
-
 export function formatTask(task: Task, todayStr: string): string {
   const num = c(A.dim, String(task.line).padStart(2));
 
@@ -69,7 +58,8 @@ export function formatTask(task: Task, todayStr: string): string {
   const parts: string[] = [];
   if (task.priority) parts.push(colorPriority(task.priority));
   if (task.creationDate) parts.push(c(A.dim, task.creationDate));
-  const yearCount = computeYearCount(task, todayStr);
+  const years = computeYearCount(task, todayStr);
+  const yearCount = years !== undefined ? `(${years} years)` : undefined;
   const displayText = task.text.replace(/(?:^|\s)last-done:\S+/g, ' ').replace(/\s+/g, ' ').trim();
   const coloredText = colorText(displayText, todayStr);
   parts.push(yearCount ? `${coloredText} ${c(A.dim, yearCount)}` : coloredText);
@@ -95,7 +85,8 @@ export function formatFocusTask(task: Task, todayStr: string, effectiveDate: str
   }
 
   const cleanText = task.text.replace(FOCUS_STRIP_RE, '').trim();
-  const yearCount = computeYearCount(task, todayStr);
+  const years = computeYearCount(task, todayStr);
+  const yearCount = years !== undefined ? `(${years} years)` : undefined;
   const colored = colorText(cleanText, todayStr);
   const title = yearCount ? `${colored} ${c(A.dim, yearCount)}` : colored;
 
