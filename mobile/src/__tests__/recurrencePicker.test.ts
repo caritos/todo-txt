@@ -1,3 +1,13 @@
+jest.mock('react-native', () => ({
+  View: 'View',
+  Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
+  StyleSheet: {
+    create: (styles: unknown) => styles,
+    hairlineWidth: 1,
+  },
+}));
+
 import { describe, test, expect } from '@jest/globals';
 import { recurrenceLabel } from '../components/RecurrencePicker';
 
