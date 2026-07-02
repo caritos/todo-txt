@@ -194,7 +194,12 @@ function ActionButton({ label, color, onPress }: { label: string; color: string;
 
 const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: Colors.surface },
-  handleRow: { alignItems: 'center', paddingVertical: Spacing.sm, position: 'relative' },
+  // height: 44 (not paddingVertical sized for the 4px handle alone) — closeBtn
+  // below is absolutely positioned with top:0/bottom:0, which stretches its
+  // rendered box to match this row's height. A row sized only for the drag
+  // handle left no room for the ✕ (lineHeight 26) to render without
+  // overflowing off-screen near the sheet's rounded top corner.
+  handleRow: { alignItems: 'center', justifyContent: 'center', height: 44, position: 'relative' },
   handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.separator },
   closeBtn: { position: 'absolute', left: Spacing.md, top: 0, bottom: 0, justifyContent: 'center', padding: Spacing.sm },
   closeText: { fontSize: 20, color: Colors.textSecondary, fontWeight: '300', lineHeight: 26 },
