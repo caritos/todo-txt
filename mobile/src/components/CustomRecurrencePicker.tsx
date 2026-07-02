@@ -289,7 +289,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    height: 150,
+    // 216, not an arbitrary round number: iOS pins UIPickerView (which backs
+    // the wheel-style Picker below) to a 216pt minimum height regardless of
+    // the frame given to it. A shorter box here doesn't shrink the native
+    // wheel — it just lets the wheel's overflow bleed into whatever renders
+    // next in the tree.
+    height: 216,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
   },
@@ -304,7 +309,7 @@ const styles = StyleSheet.create({
   },
   pickerWrap: {
     flex: 1,
-    height: 150,
+    height: 216,
   },
   picker: {
     flex: 1,
