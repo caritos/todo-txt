@@ -6,7 +6,7 @@
     "todo": "./console/index.ts"
   },
   "scripts": {
-    "test": "bun test"
+    "test": "bun test shared console"
   },
   "devDependencies": {
     "@types/bun": "latest"

@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Shared layer tests
-bun test
+# Shared + console layer tests
+bun test shared console
 
 # Run a single test file
 bun test shared/tests/parser.test.ts
@@ -160,6 +160,8 @@ mobile/                       ← Expo Router iOS app
 - **Reads** (`readFile`): calls `startDownloadingUbiquitousItemAtURL:` (triggers download of cloud-only stub files), polls `NSURLUbiquitousItemDownloadingStatusKey` every 500ms (up to 30s) until the file is on-device, then reads with `NSFileCoordinator coordinateReadingItemAtURL:`. Without the polling, stub files return empty content immediately.
 - **Native module pattern**: uses ObjC `RCT_EXPORT_MODULE()` (not Expo module system). `requireOptionalNativeModule` from `expo-modules-core` silently returns null for local modules even when compiled — use `NativeModules.ExpoIcloud` instead.
 - **Local dev builds**: `expo run:ios` requires the entitlements to be present in `app.json` before `ios/` is first generated. If `ios/` was generated before iCloud entitlements were added, `sim.sh` will detect the mismatch and offer to regenerate. When `app.json` entitlements change, manually mirror the change to `ios/Stark/Stark.entitlements` to keep the dev build in sync.
+
+**Testing code that imports `mobile/src/store.ts`**: `store.ts` unconditionally imports `expo-icloud` (`mobile/modules/expo-icloud/index.ts`), which imports `NativeModules` from `react-native`. Jest can't parse the real `react-native` package (Flow syntax), so any test file that imports `../store` — even indirectly, and even if the test only exercises the local-file path — must `jest.mock('expo-icloud', () => ({ writeICloudFile: jest.fn(), readICloudFile: jest.fn() }))` before the `../store` import, or the whole suite fails to load. See `mobile/src/__tests__/store.test.ts` and `task-lifecycle.test.ts` for the pattern.
 
 **Surfacing iCloud errors**: `readFile` in `ExpoIcloud.m` checks the `URLForUbiquityContainerIdentifier:` return value — if nil, it rejects with `NOT_SIGNED_IN` (when `fm.ubiquityIdentityToken` is also nil) or `CONTAINER_UNAVAILABLE` (container exists but entitlement/config mismatch), instead of silently falling through to an empty read. `readICloudFile` (`mobile/modules/expo-icloud/index.ts`) rethrows those codes as user-readable `Error` messages. `readTasks` (`mobile/src/store.ts`) lets iCloud errors propagate — it only wraps the local-file path in its own try/catch. `TaskContext.reload` catches the error into `error: string | null` state; `RootLayout` renders an `ErrorBanner` (`mobile/app/_layout.tsx`) above the `BottomActionBar` whenever `error` is non-null.
 
