@@ -177,7 +177,6 @@ export default function TaskDetail() {
           <ActionButton label="Skip" color={Colors.textSecondary} onPress={handleSkip} />
         )}
         <ActionButton label="Delete" color={Colors.actionDelete} onPress={handleDelete} />
-        <ActionButton label="Cancel" color={Colors.textSecondary} onPress={() => router.back()} />
       </View>
 
 
@@ -197,8 +196,8 @@ const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: Colors.surface },
   handleRow: { alignItems: 'center', paddingVertical: Spacing.sm, position: 'relative' },
   handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.separator },
-  closeBtn: { position: 'absolute', right: Spacing.md, top: 0, bottom: 0, justifyContent: 'center', padding: Spacing.sm },
-  closeText: { fontSize: 16, color: Colors.textSecondary },
+  closeBtn: { position: 'absolute', left: Spacing.md, top: 0, bottom: 0, justifyContent: 'center', padding: Spacing.sm },
+  closeText: { fontSize: 20, color: Colors.textSecondary, fontWeight: '300', lineHeight: 26 },
   titleRow: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.md },
   title: { fontFamily: Fonts.mono, fontSize: 16, color: Colors.text, lineHeight: 22 },
   editInput: {
