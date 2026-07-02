@@ -34,7 +34,7 @@ export function applyDone(
       const copyText = baseText(task.text);
       const copyRaw = ['x', todayStr, ...(task.creationDate ? [task.creationDate] : []), copyText].join(' ');
       const copy: Task = {
-        line: 0,
+        line: tasks.length + 1,
         raw: copyRaw,
         done: true,
         completionDate: todayStr,

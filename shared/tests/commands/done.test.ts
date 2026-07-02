@@ -68,3 +68,31 @@ describe('applyDone with frequency:yearly', () => {
     expect(tasks[0]!.extensions['last-done']).toBe('2027-03-15');
   });
 });
+
+describe('applyDone recurrence-copy line numbers', () => {
+  // Mobile's TaskContext.save() sets React state directly from applyDone's
+  // returned array — it does NOT re-read/renumber the file in between calls
+  // (unlike the CLI, which is stateless per invocation). If the completed
+  // "copy" task the recurring branch appends isn't given a correct line
+  // number, completing a second recurring task in the same session produces
+  // two Task objects sharing the same line, which several mobile screens key
+  // list rows by (`key={task.line}` / `done-${t.line}-${date}`) — a real
+  // "Encountered two children with the same key" crash (issue #61).
+  test('recurrence copy gets the next sequential line, not a placeholder', () => {
+    const tasks = [makeTask('stoicism start:2026-07-01 frequency:daily')];
+    const { tasks: updated, copies } = applyDone(tasks, [1], '2026-07-02');
+    expect(copies[0]!.line).toBe(2);
+    expect(updated.map(t => t.line)).toEqual([1, 2]);
+  });
+
+  test('completing two different recurring tasks in one session never collides on line', () => {
+    let tasks = [
+      makeTask('stoicism start:2026-07-01 frequency:daily', 1),
+      makeTask('another recurring task start:2026-07-01 frequency:daily', 2),
+    ];
+    tasks = applyDone(tasks, [1], '2026-07-02').tasks;
+    tasks = applyDone(tasks, [2], '2026-07-02').tasks;
+    const lines = tasks.map(t => t.line);
+    expect(new Set(lines).size).toBe(lines.length);
+  });
+});
