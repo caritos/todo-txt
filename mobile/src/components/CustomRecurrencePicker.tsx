@@ -33,6 +33,16 @@ const DAY_LABELS: Record<NonNullable<CustomConfig['positionWeekday']>, string> =
   thursday: 'Thu', friday: 'Fri', saturday: 'Sat',
 };
 
+const WEEKDAYS: { code: NonNullable<CustomConfig['weekDays']>[number]; label: string }[] = [
+  { code: 'Sun', label: 'Sun' },
+  { code: 'M', label: 'Mon' },
+  { code: 'T', label: 'Tue' },
+  { code: 'W', label: 'Wed' },
+  { code: 'Th', label: 'Thu' },
+  { code: 'F', label: 'Fri' },
+  { code: 'Sat', label: 'Sat' },
+];
+
 type Props = {
   config: CustomConfig;
   onChange: (c: CustomConfig) => void;
@@ -54,9 +64,18 @@ export function CustomRecurrencePicker({ config, onChange, onBack }: Props) {
       monthDate: undefined,
       positionOrdinal: undefined,
       positionWeekday: undefined,
+      weekDays: undefined,
     });
     setShowOnDays(false);
     setShowOnWeek(false);
+  }
+
+  function toggleWeekDay(code: (typeof WEEKDAYS)[number]['code']) {
+    const current = config.weekDays ?? [];
+    const next = current.includes(code)
+      ? current.filter(d => d !== code)
+      : WEEKDAYS.map(w => w.code).filter(c => current.includes(c) || c === code);
+    onChange({ ...config, weekDays: next });
   }
 
   function toggleOnDays() {
@@ -221,6 +240,30 @@ export function CustomRecurrencePicker({ config, onChange, onBack }: Props) {
           )}
         </>
       )}
+
+      {config.unit === 'week' && (
+        <>
+          <View style={styles.subRow}>
+            <Text style={styles.subLabel}>Repeat On</Text>
+          </View>
+          <View style={[styles.dayGrid, styles.dayGridLast]}>
+            {WEEKDAYS.map(({ code, label }) => {
+              const isSelected = (config.weekDays ?? []).includes(code);
+              return (
+                <TouchableOpacity
+                  key={code}
+                  style={[styles.dayChip, isSelected && styles.dayChipActive]}
+                  onPress={() => toggleWeekDay(code)}
+                >
+                  <Text style={[styles.dayChipText, isSelected && styles.dayChipTextActive]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -312,6 +355,9 @@ const styles = StyleSheet.create({
     gap: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.separator,
+  },
+  dayGridLast: {
+    borderBottomWidth: 0,
   },
   dayChip: {
     width: 38,
