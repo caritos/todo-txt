@@ -330,27 +330,25 @@ export function AddTaskModal({ visible, onClose }: Props) {
                 )}
               </View>
 
-              {/* Group 2: Priority — task type only */}
-              {addType === 'task' && (
-                <View style={styles.group}>
-                  <View style={[styles.frow, styles.frowLast]}>
-                    <Text style={styles.flabel}>Priority</Text>
-                    <View style={styles.pchips}>
-                      {(['A', 'B', 'C', 'none'] as const).map(p => (
-                        <TouchableOpacity
-                          key={p}
-                          style={[styles.pchip, priority === p && styles.pchipActive]}
-                          onPress={() => setPriority(p)}
-                        >
-                          <Text style={[styles.pchipText, priority === p && styles.pchipTextActive]}>
-                            {p === 'none' ? '—' : p}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
+              {/* Group 2: Priority — available for tasks and events alike */}
+              <View style={styles.group}>
+                <View style={[styles.frow, styles.frowLast]}>
+                  <Text style={styles.flabel}>Priority</Text>
+                  <View style={styles.pchips}>
+                    {(['A', 'B', 'C', 'none'] as const).map(p => (
+                      <TouchableOpacity
+                        key={p}
+                        style={[styles.pchip, priority === p && styles.pchipActive]}
+                        onPress={() => setPriority(p)}
+                      >
+                        <Text style={[styles.pchipText, priority === p && styles.pchipTextActive]}>
+                          {p === 'none' ? '—' : p}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 </View>
-              )}
+              </View>
             </>
           )}
 
