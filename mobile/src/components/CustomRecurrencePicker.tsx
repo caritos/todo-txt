@@ -16,6 +16,8 @@ export function customRecurrenceExtensions(c: CustomConfig): string {
     } else if (c.monthDayType === 'positional' && c.positionOrdinal && c.positionWeekday) {
       parts.push(`frequency-month-day:${c.positionOrdinal}-${c.positionWeekday}`);
     }
+  } else if (c.unit === 'week' && c.weekDays && c.weekDays.length > 0) {
+    parts.push(`frequency-day:${c.weekDays.join(',')}`);
   }
   return parts.join(' ');
 }
