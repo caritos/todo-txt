@@ -10,6 +10,8 @@ export type RecurrenceValue =
   | 'yearly'
   | 'custom';
 
+export type WeekDayCode = 'Sun' | 'M' | 'T' | 'W' | 'Th' | 'F' | 'Sat';
+
 export type CustomConfig = {
   n: number;
   unit: 'day' | 'week' | 'month' | 'year';
@@ -17,6 +19,7 @@ export type CustomConfig = {
   monthDate?: number; // 1–31; 32 = Last → frequency-month-day:last-day
   positionOrdinal?: 'first' | 'second' | 'third' | 'fourth' | 'last';
   positionWeekday?: 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+  weekDays?: WeekDayCode[]; // always pre-sorted Sun..Sat by the picker's toggle handler
 };
 
 const OPTIONS: { label: string; value: RecurrenceValue; extensions: string }[] = [
@@ -42,6 +45,9 @@ export function recurrenceLabel(value: RecurrenceValue, custom?: CustomConfig): 
       month: ['Mo', 'Mos'],
       year: ['Yr', 'Yrs'],
     };
+    if (custom.unit === 'week' && custom.weekDays && custom.weekDays.length > 0) {
+      return `Weekly · ${custom.weekDays.join(',')}`;
+    }
     if (custom.unit === 'month') {
       if (custom.monthDayType === 'date' && custom.monthDate != null) {
         const d = custom.monthDate;
