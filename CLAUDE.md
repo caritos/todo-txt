@@ -207,6 +207,7 @@ mobile/                       ← Expo Router iOS app
 
 - `verbatimModuleSyntax: true` — use `import type` for all type-only imports (all layers).
 - Completed tasks have no priority (stripped by `serializeTask` when `task.done = true`).
+- Typed tasks (`type:event`/`birthday`/`anniversary` — anything with `task.extensions['type']` set) never carry a priority — this is a deliberate product decision (issue #66), not an oversight. `AddTaskModal`'s Priority group only renders when `addType === 'task'`, and `handleAdd` defensively re-checks `addType === 'task'` before applying the picked priority (state persists across the TASK/EVENT toggle even though the UI hides it). `task/[line].tsx`'s Priority section only renders when `!task.extensions['type']`. Don't re-add priority to either screen for events without confirming first — it was added once already and reverted for exactly this reason.
 - Extension regex `([^/\s]\S*)` intentionally excludes URL schemes — values starting with `/` are not captured as extensions (prevents `http://` from matching as `http: //`).
 - `matchesFilters()` in `shared/commands/list.ts` is exported and reused by console `listall`, `search`, and mobile.
 - `today()` returns the **local** calendar date (not UTC) — both `console/output.ts` and `mobile/src/utils.ts`.

@@ -161,8 +161,12 @@ export default function TaskDetail() {
         </View>
       )}
 
-      <Text style={styles.label}>Priority</Text>
-      <PriorityPicker value={priority} onChange={handlePriorityChange} />
+      {!task.extensions['type'] && (
+        <>
+          <Text style={styles.label}>Priority</Text>
+          <PriorityPicker value={priority} onChange={handlePriorityChange} />
+        </>
+      )}
 
       <View style={styles.actions}>
         {!task.done && (

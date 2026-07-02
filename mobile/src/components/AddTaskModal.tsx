@@ -124,8 +124,11 @@ export function AddTaskModal({ visible, onClose }: Props) {
 
     if (addType === 'event') parts.push('type:event');
 
+    // Events never carry a priority, even if one was picked while addType was
+    // still 'task' — the Priority group is hidden for events, but state
+    // persists across the toggle, so re-check addType here defensively.
     const text =
-      priority !== 'none' ? `(${priority}) ${parts.join(' ')}` : parts.join(' ');
+      addType === 'task' && priority !== 'none' ? `(${priority}) ${parts.join(' ')}` : parts.join(' ');
 
     try {
       const { tasks: updated } = applyAdd([...tasks], text, todayStr);
