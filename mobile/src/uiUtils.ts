@@ -21,7 +21,7 @@ export function buildCells(year: number, month: number, weekStart: 0 | 1 = 0): (
 }
 
 export function cleanTitle(text: string): string {
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
+  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').replace(/(?:^|\s)%birthday\b/gi, '').trim();
 }
 
 export function hourLabel(h: number): string {

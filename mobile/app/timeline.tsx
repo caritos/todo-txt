@@ -8,6 +8,7 @@ import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
 import { taskOccurrence, applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
+import { birthdayLabel } from '@shared/commands/list';
 import type { Task } from '@shared/parser';
 import { pad, hourLabel, cleanTitle } from '../src/uiUtils';
 
@@ -203,7 +204,7 @@ export default function WeekScreen() {
                       const isEvent = !!t.extensions['type'];
                       return (
                         <View key={t.line} style={isEvent ? styles.allDayEventChip : styles.allDayChip}>
-                          <Text style={styles.allDayChipText}>{cleanTitle(t.text)}</Text>
+                          <Text style={styles.allDayChipText}>{birthdayLabel(t, todayStr) + cleanTitle(t.text)}</Text>
                         </View>
                       );
                     })}
@@ -277,7 +278,7 @@ export default function WeekScreen() {
                       const pillLeft = 2 + col * (pillWidth + 1);
                       return (
                         <View key={task.line} style={[isEvent ? styles.pillEvent : styles.pill, { top: rawTop + 1, left: pillLeft, width: pillWidth }]}>
-                          <Text style={styles.pillText}>{cleanTitle(task.text)}</Text>
+                          <Text style={styles.pillText}>{birthdayLabel(task, todayStr) + cleanTitle(task.text)}</Text>
                         </View>
                       );
                     })}

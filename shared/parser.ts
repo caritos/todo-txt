@@ -43,6 +43,9 @@ export function parseLine(raw: string, lineNum: number): Task {
   for (const m of text.matchAll(/(?:^|\s)(\w[\w-]*):([^/\s]\S*)/g)) {
     extensions[m[1]!] = m[2]!;
   }
+  if (!extensions['type'] && /(?:^|\s)%birthday\b/i.test(text)) {
+    extensions['type'] = 'birthday';
+  }
 
   return { line: lineNum, raw, done, completionDate, priority, creationDate, text, projects, contexts, extensions };
 }

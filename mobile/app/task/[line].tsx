@@ -11,7 +11,7 @@ import { applySkip } from '@shared/commands/skip';
 import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today, formatDateLabel } from '../../src/utils';
 import { taskOccurrence } from '@shared/commands/focus';
-import { computeYearCount } from '@shared/commands/list';
+import { computeYearCount, birthdayLabel } from '@shared/commands/list';
 
 export default function TaskDetail() {
   const { line } = useLocalSearchParams<{ line: string }>();
@@ -116,7 +116,7 @@ export default function TaskDetail() {
   }
 
   function cleanTitle(text: string): string {
-    return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
+    return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').replace(/(?:^|\s)%birthday\b/gi, '').trim();
   }
 
   return (
@@ -138,7 +138,7 @@ export default function TaskDetail() {
             autoFocus
           />
         ) : (
-          <Text style={styles.title}>{cleanTitle(task.text)}</Text>
+          <Text style={styles.title}>{birthdayLabel(task, todayStr) + cleanTitle(task.text)}</Text>
         )}
       </View>
 

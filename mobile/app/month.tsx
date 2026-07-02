@@ -7,6 +7,7 @@ import { useTasks } from '../src/context/TaskContext';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import type { Task } from '@shared/parser';
+import { birthdayLabel } from '@shared/commands/list';
 
 import { cleanTitle, buildCells } from '../src/uiUtils';
 
@@ -130,7 +131,7 @@ export default function MonthScreen() {
                     </Text>
                   </View>
                   {dayTasks.map(t => (
-                    <Text key={t.line} style={styles.taskTitle} numberOfLines={1}>{cleanTitle(t.text)}</Text>
+                    <Text key={t.line} style={styles.taskTitle} numberOfLines={1}>{birthdayLabel(t, todayStr) + cleanTitle(t.text)}</Text>
                   ))}
                 </TouchableOpacity>
               );

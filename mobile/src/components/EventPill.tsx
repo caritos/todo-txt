@@ -1,21 +1,23 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { Task } from '@shared/parser';
+import { birthdayLabel } from '@shared/commands/list';
 import { Colors, Fonts, Spacing } from '../theme';
 
 function cleanTitle(text: string): string {
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
+  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').replace(/(?:^|\s)%birthday\b/gi, '').trim();
 }
 
 type Props = {
   task: Task;
+  todayStr: string;
   dateLabel?: string;
   onPress: () => void;
 };
 
-export function EventPill({ task, dateLabel, onPress }: Props) {
+export function EventPill({ task, todayStr, dateLabel, onPress }: Props) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.pill}>
-      <Text style={styles.title} numberOfLines={1}>{cleanTitle(task.text)}</Text>
+      <Text style={styles.title} numberOfLines={1}>{birthdayLabel(task, todayStr) + cleanTitle(task.text)}</Text>
       {dateLabel ? <Text style={styles.date}>{dateLabel}</Text> : null}
     </TouchableOpacity>
   );

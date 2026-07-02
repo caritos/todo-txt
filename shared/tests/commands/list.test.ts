@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { matchesFilters, sortByPriority, isPastEvent, toJsonTask, computeYearCount } from '../../commands/list';
+import { matchesFilters, sortByPriority, isPastEvent, toJsonTask, computeYearCount, isBirthday, birthdayLabel } from '../../commands/list';
 import { parseLine } from '../../parser';
 
 describe('matchesFilters', () => {
@@ -87,5 +87,68 @@ describe('computeYearCount', () => {
   test('returns undefined when years would be zero or negative', () => {
     const t = parseLine('Birthday start:2026-03-15 frequency:yearly type:birthday', 1);
     expect(computeYearCount(t, '2026-03-15')).toBeUndefined();
+  });
+
+  test('computes years for a %birthday-tagged task with no type: extension', () => {
+    const t = parseLine('John %birthday start:1990-03-15 frequency:yearly', 1);
+    expect(computeYearCount(t, '2026-03-15')).toBe(36);
+  });
+});
+
+describe('isBirthday', () => {
+  test('true for type:birthday', () => {
+    const t = parseLine('John Birthday start:1990-03-15 type:birthday', 1);
+    expect(isBirthday(t)).toBe(true);
+  });
+
+  test('true for a %birthday-tagged task with no type: extension', () => {
+    const t = parseLine('John %birthday start:1990-03-15', 1);
+    expect(isBirthday(t)).toBe(true);
+  });
+
+  test('false for type:anniversary', () => {
+    const t = parseLine('Anniversary start:1984-05-06 type:anniversary', 1);
+    expect(isBirthday(t)).toBe(false);
+  });
+
+  test('false for a plain task', () => {
+    const t = parseLine('buy milk', 1);
+    expect(isBirthday(t)).toBe(false);
+  });
+
+  test('true for a %birthday-tagged task that also has an explicit type:event', () => {
+    // type: extensions take precedence over %birthday in the parser (an explicit
+    // type wins), so extensions['type'] stays 'event' here — isBirthday must not
+    // rely solely on extensions['type'], or a %birthday tag on an event-typed
+    // task (a common real-world shape) silently loses the cake icon.
+    const t = parseLine("Mom's Birthday %birthday start:1975-06-15 frequency:yearly type:event", 1);
+    expect(isBirthday(t)).toBe(true);
+  });
+});
+
+describe('birthdayLabel', () => {
+  test('includes the age for a birthday task, as a prefix', () => {
+    const t = parseLine('John Birthday start:1990-03-15 type:birthday', 1);
+    expect(birthdayLabel(t, '2026-03-15')).toBe('🎂 36 ');
+  });
+
+  test('includes the age for a %birthday-tagged task', () => {
+    const t = parseLine('John %birthday start:1990-03-15', 1);
+    expect(birthdayLabel(t, '2026-03-15')).toBe('🎂 36 ');
+  });
+
+  test('falls back to just the emoji when age cannot be computed', () => {
+    const t = parseLine('John Birthday %birthday', 1);
+    expect(birthdayLabel(t, '2026-03-15')).toBe('🎂 ');
+  });
+
+  test('includes the age for a %birthday-tagged task that also has an explicit type:event', () => {
+    const t = parseLine("Mom's Birthday %birthday start:1975-06-15 frequency:yearly type:event", 1);
+    expect(birthdayLabel(t, '2026-06-15')).toBe('🎂 51 ');
+  });
+
+  test('empty string for a non-birthday task', () => {
+    const t = parseLine('Anniversary start:1984-05-06 type:anniversary', 1);
+    expect(birthdayLabel(t, '2026-05-06')).toBe('');
   });
 });

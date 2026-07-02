@@ -10,6 +10,7 @@ import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
 import { applyFocusForWindow, focusItemOccurrence, generateTaskOccurrences } from '@shared/commands/focus';
+import { birthdayLabel } from '@shared/commands/list';
 
 import { pad, buildCells, cleanTitle } from '../src/uiUtils';
 
@@ -332,7 +333,7 @@ export default function CalendarScreen() {
                 style={[styles.agendaTitle, (item.kind === 'completed' || pending) && styles.agendaTitleDone]}
                 numberOfLines={1}
               >
-                {cleanTitle(item.task.text)}
+                {birthdayLabel(item.task, todayStr) + cleanTitle(item.task.text)}
               </Text>
               {item.overdueDate ? (
                 <Text style={styles.agendaOverdue}>{overdueSinceLabel(item.overdueDate)}</Text>

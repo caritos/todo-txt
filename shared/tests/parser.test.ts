@@ -54,6 +54,31 @@ describe('parseLine', () => {
     expect(t.extensions).toEqual({ due: '2026-05-10' });
   });
 
+  it('treats a standalone %birthday token as an alias for type:birthday', () => {
+    const t = parseLine("Mom's Birthday %birthday start:1975-06-15", 1);
+    expect(t.extensions['type']).toBe('birthday');
+  });
+
+  it('matches %birthday case-insensitively', () => {
+    const t = parseLine('Party %Birthday start:1975-06-15', 1);
+    expect(t.extensions['type']).toBe('birthday');
+  });
+
+  it('does not treat "birthday" without a % prefix as a type alias', () => {
+    const t = parseLine('birthday party planning', 1);
+    expect(t.extensions['type']).toBeUndefined();
+  });
+
+  it('does not treat %birthdays (longer word) as the alias', () => {
+    const t = parseLine('remember %birthdays list', 1);
+    expect(t.extensions['type']).toBeUndefined();
+  });
+
+  it('explicit type: extension takes precedence over %birthday', () => {
+    const t = parseLine('Anniversary %birthday type:anniversary start:2020-01-01', 1);
+    expect(t.extensions['type']).toBe('anniversary');
+  });
+
   it('parses a completed task with both dates', () => {
     const t = parseLine('x 2026-05-04 2026-05-01 Deploy server +backend', 1);
     expect(t.done).toBe(true);

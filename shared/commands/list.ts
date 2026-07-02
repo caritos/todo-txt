@@ -35,16 +35,30 @@ export function sortByPriority(tasks: Task[]): Task[] {
 }
 
 const YEARLY_TYPES = new Set(['anniversary', 'birthday']);
+const BIRTHDAY_TAG_RE = /(?:^|\s)%birthday\b/i;
+
+export function isBirthday(task: Task): boolean {
+  return task.extensions['type'] === 'birthday' || BIRTHDAY_TAG_RE.test(task.text);
+}
 
 export function computeYearCount(task: Task, todayStr: string): number | undefined {
   const type = task.extensions['type'];
-  if (!type || !YEARLY_TYPES.has(type)) return undefined;
+  const isYearlyPerson = (type !== undefined && YEARLY_TYPES.has(type)) || BIRTHDAY_TAG_RE.test(task.text);
+  if (!isYearlyPerson) return undefined;
   const start = task.extensions['start'];
   if (!start) return undefined;
   const startYear = parseInt(start.slice(0, 4), 10);
   const currentYear = parseInt(todayStr.slice(0, 4), 10);
   const years = currentYear - startYear;
   return years > 0 ? years : undefined;
+}
+
+// Prefixed (not suffixed) so numberOfLines={1} truncation on narrow rows
+// (Month cells, timed event pills) clips the title text instead of the age.
+export function birthdayLabel(task: Task, todayStr: string): string {
+  if (!isBirthday(task)) return '';
+  const years = computeYearCount(task, todayStr);
+  return years !== undefined ? `🎂 ${years} ` : '🎂 ';
 }
 
 export function isPastEvent(task: Task, todayStr: string): boolean {

@@ -123,6 +123,10 @@ describe('cleanTitle', () => {
     expect(cleanTitle('birthday party type:event')).toBe('birthday party');
   });
 
+  test('strips %birthday tag', () => {
+    expect(cleanTitle("Mom's Birthday %birthday start:1975-06-15")).toBe("Mom's Birthday");
+  });
+
   test('handles extension at start of string', () => {
     expect(cleanTitle('start:2026-01-01 do the thing')).toBe('do the thing');
   });

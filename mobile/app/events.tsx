@@ -7,6 +7,7 @@ import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
 import { addDays } from '@shared/utils';
 import { generateTaskOccurrences } from '@shared/commands/focus';
+import { birthdayLabel } from '@shared/commands/list';
 import type { Task } from '@shared/parser';
 
 const MONTH_NAMES = [
@@ -16,7 +17,7 @@ const MONTH_NAMES = [
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function cleanTitle(text: string): string {
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
+  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').replace(/(?:^|\s)%birthday\b/gi, '').trim();
 }
 
 function monthYearLabel(yyyyMM: string): string {
@@ -80,7 +81,7 @@ export default function EventsScreen() {
                   onPress={() => router.push(`/task/${occ.task.line}` as any)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.eventTitle}>{cleanTitle(occ.task.text)}</Text>
+                  <Text style={styles.eventTitle}>{birthdayLabel(occ.task, todayStr) + cleanTitle(occ.task.text)}</Text>
                   <Text style={styles.eventDate}>{dayLabel(occ.date)}</Text>
                 </TouchableOpacity>
               ))}

@@ -1,11 +1,12 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { Task } from '@shared/parser';
+import { birthdayLabel } from '@shared/commands/list';
 import { Colors, Fonts, Spacing } from '../theme';
 
 function cleanTitle(text: string): string {
   // Strip key:value extensions from display text, but preserve URL schemes
-  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').trim();
+  return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').replace(/(?:^|\s)%birthday\b/gi, '').trim();
 }
 
 function RightActions({ onDone, onDelete }: { onDone: () => void; onDelete: () => void }) {
@@ -23,6 +24,7 @@ function RightActions({ onDone, onDelete }: { onDone: () => void; onDelete: () =
 
 type Props = {
   task: Task;
+  todayStr: string;
   dateLabel?: string;
   recurrenceLabel?: string;
   isOverdue?: boolean;
@@ -31,8 +33,8 @@ type Props = {
   onDelete: () => void;
 };
 
-export function TaskRow({ task, dateLabel, recurrenceLabel, isOverdue, onPress, onDone, onDelete }: Props) {
-  const title = cleanTitle(task.text);
+export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue, onPress, onDone, onDelete }: Props) {
+  const title = birthdayLabel(task, todayStr) + cleanTitle(task.text);
   const meta = [dateLabel, recurrenceLabel].filter(Boolean).join('   ');
   const done = task.done;
 

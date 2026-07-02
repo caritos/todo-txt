@@ -56,6 +56,7 @@ export default function SearchScreen() {
         renderItem={({ item }) => (
           <TaskRow
             task={item}
+            todayStr={todayStr}
             onPress={() => router.push(`/task/${item.line}` as any)}
             onDone={() => handleDone(item.line)}
             onDelete={() => handleDelete(item.line)}

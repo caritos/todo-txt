@@ -9,6 +9,7 @@ import { today } from '../../src/utils';
 import { addDays } from '@shared/utils';
 import type { Task } from '@shared/parser';
 import { applyFocusForWindow, focusItemOccurrence } from '@shared/commands/focus';
+import { birthdayLabel } from '@shared/commands/list';
 import { usePendingDone } from '../../src/hooks/usePendingDone';
 import { parseDateParts, hourLabel, cleanTitle, formatTime } from '../../src/uiUtils';
 
@@ -155,7 +156,7 @@ export default function DayScreen() {
               const isEvent = !!task.extensions['type'];
               return isEvent ? (
                 <View key={task.line} style={styles.allDayEventRow}>
-                  <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
+                  <Text style={styles.allDayTitle}>{birthdayLabel(task, todayStr) + cleanTitle(task.text)}</Text>
                 </View>
               ) : (
                 <TouchableOpacity key={task.line} style={styles.allDayRow} onPress={() => router.push(`/task/${task.line}` as any)} activeOpacity={0.7}>
@@ -168,7 +169,7 @@ export default function DayScreen() {
                       <View style={styles.cb} />
                     )}
                   </TouchableOpacity>
-                  <Text style={styles.allDayTitle}>{cleanTitle(task.text)}</Text>
+                  <Text style={styles.allDayTitle}>{birthdayLabel(task, todayStr) + cleanTitle(task.text)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -224,7 +225,7 @@ export default function DayScreen() {
                   )}
                   <View style={styles.pillText}>
                     <Text style={[styles.eventTime, isEvent && styles.eventTimeEvent]}>{formatTime(hours, minutes)}</Text>
-                    <Text style={styles.eventTitle} numberOfLines={1}>{cleanTitle(task.text)}</Text>
+                    <Text style={styles.eventTitle} numberOfLines={1}>{birthdayLabel(task, todayStr) + cleanTitle(task.text)}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
