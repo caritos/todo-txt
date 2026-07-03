@@ -112,3 +112,39 @@ export function applyDone(
 
   return { tasks, completed, copies, skipped };
 }
+
+export interface UndoneSkip {
+  num: number;
+  reason: 'not-done' | 'recurring-not-supported';
+}
+
+export function applyUndone(
+  tasks: Task[],
+  nums: number[],
+): { tasks: Task[]; undone: Task[]; skipped: UndoneSkip[] } {
+  const undone: Task[] = [];
+  const skipped: UndoneSkip[] = [];
+
+  for (const n of nums) {
+    const task = tasks.find(t => t.line === n);
+    if (!task) throw new Error(`no task #${n}`);
+
+    const isRecurring = !!(task.extensions['frequency'] && task.extensions['start']);
+    if (isRecurring) {
+      skipped.push({ num: n, reason: 'recurring-not-supported' });
+      continue;
+    }
+
+    if (!task.done) {
+      skipped.push({ num: n, reason: 'not-done' });
+      continue;
+    }
+
+    task.done = false;
+    task.completionDate = undefined;
+    task.raw = serializeTask(task);
+    undone.push(task);
+  }
+
+  return { tasks, undone, skipped };
+}

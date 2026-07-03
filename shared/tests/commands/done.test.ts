@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { applyDone } from '../../commands/done';
+import { applyDone, applyUndone } from '../../commands/done';
 import { parseLine } from '../../parser';
 
 function makeTask(raw: string, line = 1) { return parseLine(raw, line); }
@@ -94,5 +94,44 @@ describe('applyDone recurrence-copy line numbers', () => {
     tasks = applyDone(tasks, [2], '2026-07-02').tasks;
     const lines = tasks.map(t => t.line);
     expect(new Set(lines).size).toBe(lines.length);
+  });
+});
+
+describe('applyUndone', () => {
+  test('undoes a plain done task', () => {
+    const tasks = [makeTask('x 2026-05-23 call dentist')];
+    const { tasks: updated, undone } = applyUndone(tasks, [1]);
+    expect(undone).toHaveLength(1);
+    expect(updated[0]!.done).toBe(false);
+    expect(updated[0]!.completionDate).toBeUndefined();
+    expect(updated[0]!.raw).toBe('call dentist');
+  });
+
+  test('does not restore priority lost on completion', () => {
+    const tasks = [makeTask('(A) call dentist')];
+    const { tasks: afterDone } = applyDone(tasks, [1], '2026-05-23');
+    const { tasks: afterUndone } = applyUndone(afterDone, [1]);
+    expect(afterUndone[0]!.priority).toBeUndefined();
+    expect(afterUndone[0]!.raw).toBe('call dentist');
+  });
+
+  test('skips a task that is not done', () => {
+    const tasks = [makeTask('call dentist')];
+    const { tasks: updated, undone, skipped } = applyUndone(tasks, [1]);
+    expect(undone).toHaveLength(0);
+    expect(skipped).toEqual([{ num: 1, reason: 'not-done' }]);
+    expect(updated[0]!.done).toBe(false);
+  });
+
+  test('skips a recurring task even if done is true', () => {
+    const tasks = [makeTask('x 2026-05-23 mow lawn start:2026-05-22 frequency:weekly')];
+    const { undone, skipped } = applyUndone(tasks, [1]);
+    expect(undone).toHaveLength(0);
+    expect(skipped).toEqual([{ num: 1, reason: 'recurring-not-supported' }]);
+  });
+
+  test('throws for unknown line number', () => {
+    const tasks = [makeTask('call dentist')];
+    expect(() => applyUndone(tasks, [99])).toThrow('no task #99');
   });
 });
