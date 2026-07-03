@@ -316,7 +316,7 @@ export default function CalendarScreen() {
               activeOpacity={0.7}
             >
               <TouchableOpacity
-                onPress={() => item.kind === 'incomplete' && tapCheckbox(item.task)}
+                onPress={() => (item.kind === 'incomplete' || item.kind === 'completed') && tapCheckbox(item.task)}
                 hitSlop={8}
                 style={styles.agendaIconBtn}
               >
