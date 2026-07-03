@@ -123,7 +123,7 @@ export default function CalendarScreen() {
 
     // 3. Event occurrences: past 30 days + future 2 years
     for (const t of tasks) {
-      if (!t.extensions['type']) continue;
+      if (!t.extensions['type'] || t.done) continue;
       const occurrences = generateTaskOccurrences(t, pastCutoff, futureCutoff);
       for (const occ of occurrences) {
         ensure(occ.date);
