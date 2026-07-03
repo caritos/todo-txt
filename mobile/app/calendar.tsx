@@ -50,7 +50,7 @@ type FlatRow =
   | { type: 'item'; rowKey: string; item: AgendaItem; dateStr: string };
 
 export default function CalendarScreen() {
-  const { tasks, save, weekStart } = useTasks();
+  const { tasks, save, weekStart, pendingDateJump, clearDateJump } = useTasks();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const todayStr = today();
@@ -58,9 +58,18 @@ export default function CalendarScreen() {
   const todayYear = parseInt(todayStr.slice(0, 4), 10);
   const todayMonth = parseInt(todayStr.slice(5, 7), 10) - 1;
 
-  const [calYear, setCalYear] = useState(todayYear);
-  const [calMonth, setCalMonth] = useState(todayMonth);
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  // Captured once at mount — pendingDateJump gets cleared shortly after
+  // (see the scroll effect below), but the delayed scrollToDate call still
+  // needs a stable target to read.
+  const jumpTargetRef = useRef(pendingDateJump);
+
+  const [calYear, setCalYear] = useState(() =>
+    jumpTargetRef.current ? parseInt(jumpTargetRef.current.slice(0, 4), 10) : todayYear
+  );
+  const [calMonth, setCalMonth] = useState(() =>
+    jumpTargetRef.current ? parseInt(jumpTargetRef.current.slice(5, 7), 10) - 1 : todayMonth
+  );
+  const [selectedDate, setSelectedDate] = useState(() => jumpTargetRef.current ?? todayStr);
 
   const flatListRef = useRef<FlatList<FlatRow>>(null);
 
@@ -184,7 +193,9 @@ export default function CalendarScreen() {
   useEffect(() => {
     if (flatData.length === 0 || hasScrolledToToday.current) return;
     hasScrolledToToday.current = true;
-    const timer = setTimeout(() => scrollToDate(todayStr), 200);
+    const target = jumpTargetRef.current ?? todayStr;
+    if (pendingDateJump) clearDateJump();
+    const timer = setTimeout(() => scrollToDate(target), 200);
     return () => clearTimeout(timer);
   }, [flatData]);
 

@@ -1,16 +1,12 @@
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing } from '../theme';
-import { useTasks } from '../context/TaskContext';
 
 type NavItem = { label: string; route: string } | { separator: true };
 
 const VIEWS: NavItem[] = [
   { label: 'Calendar', route: '/calendar' },
   { separator: true },
-  { label: 'Day', route: '/day' },
-  { label: 'Week', route: '/timeline' },
-  { label: 'Month', route: '/month' },
   { label: 'Year', route: '/year' },
   { separator: true },
   { label: 'Settings', route: '/settings' },
@@ -20,11 +16,9 @@ type Props = { visible: boolean; onClose: () => void };
 
 export function ViewSwitcher({ visible, onClose }: Props) {
   const router = useRouter();
-  const { selectedDate } = useTasks();
 
   function navigate(route: string) {
-    const target = route === '/day' ? `/day/${selectedDate}` : route;
-    router.push(target as any);
+    router.push(route as any);
     onClose();
   }
 

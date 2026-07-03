@@ -12,8 +12,9 @@ type TaskContextValue = {
   error: string | null;
   reload: () => Promise<void>;
   save: (updated: Task[]) => Promise<void>;
-  selectedDate: string;
-  setSelectedDate: (d: string) => void;
+  pendingDateJump: string | null;
+  requestDateJump: (date: string) => void;
+  clearDateJump: () => void;
 };
 
 const TaskContext = createContext<TaskContextValue | null>(null);
@@ -24,7 +25,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [weekStart, setWeekStartState] = useState<0 | 1>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState(today());
+  const [pendingDateJump, setPendingDateJump] = useState<string | null>(null);
 
   // Keep a ref so save() always sees the latest filePath even if the
   // callback closure hasn't been recreated yet (avoids stale-closure
@@ -60,12 +61,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     [filePath]
   );
 
+  const requestDateJump = useCallback((date: string) => setPendingDateJump(date), []);
+  const clearDateJump = useCallback(() => setPendingDateJump(null), []);
+
   useEffect(() => {
     reload().finally(() => setLoading(false));
   }, []);
 
   return (
-    <TaskContext.Provider value={{ tasks, filePath, weekStart, setWeekStart, loading, error, reload, save, selectedDate, setSelectedDate }}>
+    <TaskContext.Provider value={{ tasks, filePath, weekStart, setWeekStart, loading, error, reload, save, pendingDateJump, requestDateJump, clearDateJump }}>
       {children}
     </TaskContext.Provider>
   );

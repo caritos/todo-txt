@@ -25,7 +25,7 @@ function pad(n: number): string {
 }
 
 export default function YearScreen() {
-  const { tasks } = useTasks();
+  const { tasks, requestDateJump } = useTasks();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const todayStr = today();
@@ -114,7 +114,7 @@ export default function YearScreen() {
                       <TouchableOpacity
                         key={dateStr}
                         style={styles.dayCell}
-                        onPress={() => router.push(`/day/${dateStr}` as any)}
+                        onPress={() => { requestDateJump(dateStr); router.push('/calendar'); }}
                       >
                         <View style={[styles.dayNum, isToday && styles.dayNumToday]}>
                           <Text style={[
