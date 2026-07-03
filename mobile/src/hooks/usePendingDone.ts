@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Task } from '@shared/parser';
-import { applyDone } from '@shared/commands/done';
+import { applyDone, applyUndone } from '@shared/commands/done';
 
 export function usePendingDone(
   tasks: Task[],
@@ -34,6 +34,21 @@ export function usePendingDone(
   const tapCheckbox = useCallback(
     (task: Task) => {
       const line = task.line;
+
+      if (task.done) {
+        // Undo is immediate, with no pending-delay grace window. The delay on
+        // the complete side exists so a batch of taps isn't over-committed
+        // while scrolling; a correction tap on an already-completed row is a
+        // single deliberate action.
+        void (async () => {
+          try {
+            const { tasks: updated } = applyUndone([...tasksRef.current], [line]);
+            await save(updated);
+          } catch {}
+        })();
+        return;
+      }
+
       if (timers.current.has(line)) {
         // Undo: cancel the pending completion
         clearTimeout(timers.current.get(line));
