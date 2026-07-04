@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.navBar,
   },
   dismiss: { fontSize: 20, color: Colors.textSecondary, fontWeight: '300', lineHeight: 26 },
-  addBtn: { fontSize: 28, fontWeight: '300', color: Colors.accent },
+  addBtn: { fontSize: 28, fontWeight: '300', color: Colors.accent, lineHeight: 30 },
   addBtnDim: { color: Colors.textDim },
 
   typeToggle: { flexDirection: 'row' },
