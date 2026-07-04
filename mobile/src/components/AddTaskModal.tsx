@@ -182,7 +182,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
           <View style={styles.typeToggle}>
             <TouchableOpacity
               style={[styles.typeBtn, addType === 'task' && styles.typeBtnActive]}
-              onPress={() => setAddType('task')}
+              onPress={() => { setAddType('task'); setHasEnd(false); }}
             >
               <Text style={[styles.typeBtnText, addType === 'task' && styles.typeBtnTextActive]}>
                 TASK
@@ -261,6 +261,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
                       setHasDate(v);
                       if (!v) {
                         setHasTime(false);
+                        setHasEnd(false);
+                        setEndDate(new Date());
                         setRepeat('none');
                         setShowRepeat(false);
                       }
@@ -306,7 +308,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
                     )}
 
                     {addType === 'event' && hasEnd && (
-                      <View style={[styles.frow, styles.frowLast]}>
+                      <View style={styles.frow}>
                         <Text style={styles.flabel} />
                         <DateTimePicker
                           mode="date"
@@ -319,7 +321,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
                       </View>
                     )}
 
-                    <View style={styles.frow}>
+                    <View style={[styles.frow, hasEnd && !hasTime && styles.frowLast]}>
                       <Text style={styles.flabel}>Time</Text>
                       <Switch
                         value={hasTime}
@@ -331,7 +333,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
                     </View>
 
                     {hasTime && (
-                      <View style={styles.frow}>
+                      <View style={[styles.frow, hasEnd && styles.frowLast]}>
                         <Text style={styles.flabel} />
                         <View style={styles.timeSet}>
                           <DateTimePicker
