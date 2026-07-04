@@ -217,7 +217,18 @@ export default function TaskDetail() {
             <Text style={styles.endDateLabel}>Multi-day</Text>
             <Switch
               value={hasEnd}
-              onValueChange={v => handleEndDateChange(v ? dateToISO(endDate) : undefined)}
+              onValueChange={v => {
+                if (!v) {
+                  handleEndDateChange(undefined);
+                  return;
+                }
+                const startVal = task.extensions['start'];
+                const startDateOnly = startVal ? startVal.slice(0, 10) : undefined;
+                const currentStr = dateToISO(endDate);
+                const clampedStr = startDateOnly && currentStr < startDateOnly ? startDateOnly : currentStr;
+                if (clampedStr !== currentStr) setEndDate(new Date(clampedStr + 'T12:00:00'));
+                handleEndDateChange(clampedStr);
+              }}
               trackColor={{ false: Colors.separator, true: Colors.accent }}
               thumbColor={Colors.text}
               ios_backgroundColor={Colors.separator}
