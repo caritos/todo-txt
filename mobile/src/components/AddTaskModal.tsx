@@ -67,6 +67,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
   const [hasTime, setHasTime] = useState(false);
   const [time, setTime] = useState(() => new Date());
   const [repeat, setRepeat] = useState<RecurrenceValue>('none');
+  const [hasEnd, setHasEnd] = useState(false);
+  const [endDate, setEndDate] = useState(() => new Date());
   const [showRepeat, setShowRepeat] = useState(false);
   const [priority, setPriority] = useState<Priority>('none');
   const [error, setError] = useState('');
@@ -85,6 +87,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
     setDate(new Date());
     setHasTime(false);
     setTime(new Date());
+    setHasEnd(false);
+    setEndDate(new Date());
     setRepeat('none');
     setShowRepeat(false);
     setCustomConfig({ n: 1, unit: 'month' });
@@ -116,10 +120,14 @@ export function AddTaskModal({ visible, onClose }: Props) {
         ? `start:${dateStr}T${pad(time.getHours())}:${pad(time.getMinutes())}`
         : `start:${dateStr}`;
       parts.push(startExt);
-      const freqExt = repeat === 'custom'
-        ? customRecurrenceExtensions(customConfig)
-        : recurrenceExtensions(repeat);
-      if (freqExt) parts.push(freqExt);
+      if (addType === 'event' && hasEnd) {
+        parts.push(`end:${dateToISO(endDate)}`);
+      } else {
+        const freqExt = repeat === 'custom'
+          ? customRecurrenceExtensions(customConfig)
+          : recurrenceExtensions(repeat);
+        if (freqExt) parts.push(freqExt);
+      }
     }
 
     if (addType === 'event') parts.push('type:event');
@@ -140,11 +148,18 @@ export function AddTaskModal({ visible, onClose }: Props) {
   }
 
   function onDateChange(_: DateTimePickerEvent, d?: Date) {
-    if (d) setDate(d);
+    if (!d) return;
+    setDate(d);
+    if (hasEnd && dateToISO(d) > dateToISO(endDate)) setEndDate(d);
   }
 
   function onTimeChange(_: DateTimePickerEvent, t?: Date) {
     if (t) setTime(t);
+  }
+
+  function onEndDateChange(_: DateTimePickerEvent, d?: Date) {
+    if (!d) return;
+    setEndDate(dateToISO(d) < dateToISO(date) ? date : d);
   }
 
   return (
@@ -270,6 +285,40 @@ export function AddTaskModal({ visible, onClose }: Props) {
                       />
                     </View>
 
+                    {addType === 'event' && (
+                      <View style={styles.frow}>
+                        <Text style={styles.flabel}>End date</Text>
+                        <Switch
+                          value={hasEnd}
+                          onValueChange={v => {
+                            setHasEnd(v);
+                            if (v) {
+                              setEndDate(date);
+                              setRepeat('none');
+                              setShowRepeat(false);
+                            }
+                          }}
+                          trackColor={{ false: Colors.separator, true: Colors.accent }}
+                          thumbColor={Colors.text}
+                          ios_backgroundColor={Colors.separator}
+                        />
+                      </View>
+                    )}
+
+                    {addType === 'event' && hasEnd && (
+                      <View style={[styles.frow, styles.frowLast]}>
+                        <Text style={styles.flabel} />
+                        <DateTimePicker
+                          mode="date"
+                          display="compact"
+                          value={endDate}
+                          onChange={onEndDateChange}
+                          accentColor={Colors.accent}
+                          style={styles.compactPicker}
+                        />
+                      </View>
+                    )}
+
                     <View style={styles.frow}>
                       <Text style={styles.flabel}>Time</Text>
                       <Switch
@@ -303,16 +352,18 @@ export function AddTaskModal({ visible, onClose }: Props) {
                       </View>
                     )}
 
-                    <TouchableOpacity
-                      style={[styles.frow, styles.frowLast]}
-                      onPress={() => setShowRepeat(r => !r)}
-                    >
-                      <Text style={styles.flabel}>Repeat</Text>
-                      <Text style={repeat === 'none' ? styles.fnone : styles.fval}>
-                        {recurrenceLabel(repeat, repeat === 'custom' ? customConfig : undefined)}
-                      </Text>
-                    </TouchableOpacity>
-                    {showRepeat && (
+                    {!hasEnd && (
+                      <TouchableOpacity
+                        style={[styles.frow, styles.frowLast]}
+                        onPress={() => setShowRepeat(r => !r)}
+                      >
+                        <Text style={styles.flabel}>Repeat</Text>
+                        <Text style={repeat === 'none' ? styles.fnone : styles.fval}>
+                          {recurrenceLabel(repeat, repeat === 'custom' ? customConfig : undefined)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {!hasEnd && showRepeat && (
                       repeat === 'custom' ? (
                         <CustomRecurrencePicker
                           config={customConfig}
@@ -325,6 +376,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
                           onChange={r => {
                             setRepeat(r);
                             if (r !== 'custom') setShowRepeat(false);
+                            if (r !== 'none') setHasEnd(false);
                           }}
                         />
                       )
