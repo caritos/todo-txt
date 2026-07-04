@@ -546,7 +546,8 @@ export function generateTaskOccurrences(
   const results: Array<{ date: string; task: Task }> = [];
 
   if (!freq) {
-    const spanEnd = task.extensions['end']?.slice(0, 10) ?? startDate;
+    const rawEnd = task.extensions['end']?.slice(0, 10);
+    const spanEnd = rawEnd && rawEnd >= startDate ? rawEnd : startDate;
     let cursor = startDate;
     while (cursor <= spanEnd && cursor <= effectiveCutoff) {
       if (cursor >= fromStr) results.push({ date: cursor, task });

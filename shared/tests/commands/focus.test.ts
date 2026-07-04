@@ -166,4 +166,10 @@ describe('generateTaskOccurrences', () => {
     expect(occs).toHaveLength(8); // 07-13 through 07-20 inclusive
     expect(occs[occs.length - 1]!.date).toBe('2026-07-20');
   });
+
+  test('end: before start: (reversed/malformed data) degrades to a single day instead of vanishing', () => {
+    const t = task('art class type:event start:2026-07-17 end:2026-07-13');
+    const occs = generateTaskOccurrences(t, '2026-07-01', '2026-07-31');
+    expect(occs.map(o => o.date)).toEqual(['2026-07-17']);
+  });
 });
