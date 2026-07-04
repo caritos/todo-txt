@@ -1,5 +1,7 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import type { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useState, useMemo, useEffect } from 'react';
 import { useTasks } from '../../src/context/TaskContext';
 import { PriorityPicker } from '../../src/components/PriorityPicker';
@@ -25,11 +27,19 @@ export default function TaskDetail() {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(task?.text ?? '');
   const [priority, setPriority] = useState<string | undefined>(task?.priority);
+  const [hasEnd, setHasEnd] = useState(!!task?.extensions['end']);
+  const [endDate, setEndDate] = useState(() => {
+    const end = task?.extensions['end'];
+    return end ? new Date(end.slice(0, 10) + 'T12:00:00') : new Date();
+  });
 
   useEffect(() => {
     if (task && !editing) {
       setEditText(task.text);
       setPriority(task.priority);
+      setHasEnd(!!task.extensions['end']);
+      const end = task.extensions['end'];
+      setEndDate(end ? new Date(end.slice(0, 10) + 'T12:00:00') : new Date());
     }
   }, [task]);
 
@@ -83,6 +93,30 @@ export default function TaskDetail() {
     }
   }
 
+  async function handleEndDateChange(dateStr: string | undefined) {
+    if (!task) return;
+    setHasEnd(!!dateStr);
+    const withoutEnd = task.text.replace(/(?:^|\s)end:\S+/g, '').trim();
+    const newText = dateStr ? `${withoutEnd} end:${dateStr}` : withoutEnd;
+    try {
+      const result = applyEdit([...tasks], lineNum, newText, todayStr);
+      await save(result.tasks);
+    } catch (e) {
+      Alert.alert('Error', (e as Error).message);
+    }
+  }
+
+  function onEndDateChange(_: DateTimePickerEvent, d?: Date) {
+    if (!d || !task) return;
+    const startVal = task.extensions['start'];
+    const startDateOnly = startVal ? startVal.slice(0, 10) : undefined;
+    const dStr = dateToISO(d);
+    const clampedStr = startDateOnly && dStr < startDateOnly ? startDateOnly : dStr;
+    const clampedDate = clampedStr === dStr ? d : new Date(clampedStr + 'T12:00:00');
+    setEndDate(clampedDate);
+    handleEndDateChange(clampedStr);
+  }
+
   async function handleSkip() {
     try {
       const result = applySkip([...tasks], lineNum, todayStr);
@@ -117,6 +151,14 @@ export default function TaskDetail() {
 
   function cleanTitle(text: string): string {
     return text.replace(/(?:^|\s)[^\s:]+:[^\s/]\S*/g, '').replace(/(?:^|\s)%birthday\b/gi, '').trim();
+  }
+
+  function pad(n: number): string {
+    return String(n).padStart(2, '0');
+  }
+
+  function dateToISO(d: Date): string {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   return (
@@ -165,6 +207,35 @@ export default function TaskDetail() {
         <>
           <Text style={styles.label}>Priority</Text>
           <PriorityPicker value={priority} onChange={handlePriorityChange} />
+        </>
+      )}
+
+      {task.extensions['type'] === 'event' && !task.extensions['frequency'] && (
+        <>
+          <Text style={styles.label}>End Date</Text>
+          <View style={styles.endDateRow}>
+            <Text style={styles.endDateLabel}>Multi-day</Text>
+            <Switch
+              value={hasEnd}
+              onValueChange={v => handleEndDateChange(v ? dateToISO(endDate) : undefined)}
+              trackColor={{ false: Colors.separator, true: Colors.accent }}
+              thumbColor={Colors.text}
+              ios_backgroundColor={Colors.separator}
+            />
+          </View>
+          {hasEnd && (
+            <View style={styles.endDateRow}>
+              <Text style={styles.endDateLabel}>Ends</Text>
+              <DateTimePicker
+                mode="date"
+                display="compact"
+                value={endDate}
+                onChange={onEndDateChange}
+                accentColor={Colors.accent}
+                style={styles.endDatePicker}
+              />
+            </View>
+          )}
         </>
       )}
 
@@ -235,5 +306,8 @@ const styles = StyleSheet.create({
   metaLabel: { fontSize: 11, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5, width: 40 },
   dueValue: { fontFamily: Fonts.mono, fontSize: 14, color: Colors.text },
   dueOverdue: { color: Colors.accent },
+  endDateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
+  endDateLabel: { fontSize: 14, color: Colors.textSecondary },
+  endDatePicker: { height: 34 },
   errorText: { color: Colors.textSecondary, padding: Spacing.lg },
 });
