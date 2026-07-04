@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { taskOccurrence, nextMonthlyDate, nextYearlyDate, focusSortKey } from '../../commands/focus';
+import { taskOccurrence, nextMonthlyDate, nextYearlyDate, focusSortKey, generateTaskOccurrences } from '../../commands/focus';
 import { parseLine } from '../../parser';
 
 function task(raw: string) { return parseLine(raw, 1); }
@@ -136,5 +136,34 @@ describe('nextYearlyDate day clamping', () => {
   test('every>1 branch also clamps', () => {
     const result = nextYearlyDate('2020-06-31', '2026-01-01', new Set(), undefined, 2);
     expect(result).toBe('2026-06-30');
+  });
+});
+
+describe('generateTaskOccurrences', () => {
+  test('multi-day non-recurring event expands to one occurrence per day', () => {
+    const t = task('art class type:event start:2026-07-13 end:2026-07-17');
+    const occs = generateTaskOccurrences(t, '2026-07-01', '2026-07-31');
+    expect(occs.map(o => o.date)).toEqual([
+      '2026-07-13', '2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17',
+    ]);
+  });
+
+  test('single-day event with no end: still returns exactly one occurrence', () => {
+    const t = task('birthday party type:event start:2026-07-13');
+    const occs = generateTaskOccurrences(t, '2026-07-01', '2026-07-31');
+    expect(occs.map(o => o.date)).toEqual(['2026-07-13']);
+  });
+
+  test('span partially outside the query window only returns in-window days', () => {
+    const t = task('art class type:event start:2026-07-13 end:2026-07-17');
+    const occs = generateTaskOccurrences(t, '2026-07-15', '2026-07-31');
+    expect(occs.map(o => o.date)).toEqual(['2026-07-15', '2026-07-16', '2026-07-17']);
+  });
+
+  test('garbage far-future end: does not loop past effectiveCutoff', () => {
+    const t = task('art class type:event start:2026-07-13 end:2099-01-01');
+    const occs = generateTaskOccurrences(t, '2026-07-01', '2026-07-20');
+    expect(occs).toHaveLength(8); // 07-13 through 07-20 inclusive
+    expect(occs[occs.length - 1]!.date).toBe('2026-07-20');
   });
 });
