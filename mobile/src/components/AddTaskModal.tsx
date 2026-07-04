@@ -198,7 +198,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={handleAdd} disabled={!title.trim()}>
-            <Text style={[styles.addBtn, !title.trim() && styles.addBtnDim]}>Add</Text>
+            <Text style={[styles.addBtn, !title.trim() && styles.addBtnDim]}>+</Text>
           </TouchableOpacity>
         </View>
 
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.navBar,
   },
   dismiss: { fontSize: 20, color: Colors.textSecondary, fontWeight: '300', lineHeight: 26 },
-  addBtn: { fontSize: 15, fontWeight: '600', color: Colors.accent },
+  addBtn: { fontSize: 28, fontWeight: '300', color: Colors.accent },
   addBtnDim: { color: Colors.textDim },
 
   typeToggle: { flexDirection: 'row' },
