@@ -6,7 +6,7 @@ import { ViewSwitcher } from './ViewSwitcher';
 import { AddTaskModal } from './AddTaskModal';
 
 const ROUTE_LABELS: Record<string, string> = {
-  '/calendar': 'Calendar',
+  '/calendar': 'Day',
   '/year': 'Year',
   '/settings': 'Settings',
 };
@@ -17,7 +17,7 @@ export function BottomActionBar() {
   const [switcherVisible, setSwitcherVisible] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
 
-  const label = ROUTE_LABELS[pathname] ?? 'Calendar';
+  const label = ROUTE_LABELS[pathname] ?? 'Day';
 
   return (
     <>

@@ -5,7 +5,7 @@ import { Colors, Spacing } from '../theme';
 type NavItem = { label: string; route: string } | { separator: true };
 
 const VIEWS: NavItem[] = [
-  { label: 'Calendar', route: '/calendar' },
+  { label: 'Day', route: '/calendar' },
   { separator: true },
   { label: 'Year', route: '/year' },
   { separator: true },
