@@ -115,7 +115,7 @@ export default function CalendarScreen() {
       const occ = focusItemOccurrence(item);
       const startStr = item.task.extensions['start'] ?? '';
       const occDate = occ.date;
-      const isOverdue = occDate < todayStr;
+      const isOverdue = item.isOverdue;
       // Pin overdue tasks to today — same behaviour as day/week views
       const date = isOverdue ? todayStr : occDate;
       if (date > futureCutoff) continue;
@@ -126,7 +126,7 @@ export default function CalendarScreen() {
         kind: 'incomplete',
         time: occ.time ?? (startStr.length > 10 ? startStr.slice(11, 16) : undefined),
         isOverdue,
-        overdueDate: isOverdue ? occDate : undefined,
+        overdueDate: isOverdue ? (item.overdueDate ?? occDate) : undefined,
       });
     }
 

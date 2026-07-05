@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { taskOccurrence, nextMonthlyDate, nextYearlyDate, focusSortKey, generateTaskOccurrences } from '../../commands/focus';
+import { taskOccurrence, nextMonthlyDate, nextYearlyDate, focusSortKey, generateTaskOccurrences, applyFocusForWindow } from '../../commands/focus';
 import { parseLine } from '../../parser';
 
 function task(raw: string) { return parseLine(raw, 1); }
@@ -136,6 +136,44 @@ describe('nextYearlyDate day clamping', () => {
   test('every>1 branch also clamps', () => {
     const result = nextYearlyDate('2020-06-31', '2026-01-01', new Set(), undefined, 2);
     expect(result).toBe('2026-06-30');
+  });
+});
+
+describe('applyFocusForWindow — overdueDate', () => {
+  // Reproduces issue reported against the mobile calendar: a weekly task overdue
+  // by more than a full cycle showed on today's list with a plain time (09:00)
+  // instead of a "due Jul 3" label, because the only overdue signal available
+  // to callers was a boolean — the actual missed date was discarded.
+  test('weekly task overdue by more than one cycle exposes the missed occurrence date', () => {
+    const t = task('mow the front lawn start start:2026-06-19T09:00 frequency:weekly last-done:2026-06-11 exdate:2026-06-05');
+    const items = applyFocusForWindow([t], '2026-07-05', '2026-07-19');
+    expect(items).toHaveLength(1);
+    expect(items[0]!.isOverdue).toBe(true);
+    expect(items[0]!.overdueDate).toBe('2026-07-03');
+  });
+
+  test('weekly task completed within the current cycle is not overdue and has a null overdueDate', () => {
+    const t = task('weekly review start:2026-06-14 frequency:weekly last-done:2026-06-14');
+    const items = applyFocusForWindow([t], '2026-06-15', '2026-06-29');
+    expect(items).toHaveLength(1);
+    expect(items[0]!.isOverdue).toBe(false);
+    expect(items[0]!.overdueDate).toBeNull();
+  });
+
+  test('typed recurring event never reports an overdueDate (ongoing-event "today" display is intentional)', () => {
+    const t = task('standup type:event start:2026-06-14T09:00 frequency:weekly');
+    const items = applyFocusForWindow([t], '2026-06-15', '2026-06-29');
+    expect(items).toHaveLength(1);
+    expect(items[0]!.isOverdue).toBe(false);
+    expect(items[0]!.overdueDate).toBeNull();
+  });
+
+  test('plain non-recurring task with start: in the past reports its start date as overdueDate', () => {
+    const t = task('past scheduled task start:2026-06-01');
+    const items = applyFocusForWindow([t], '2026-06-15', '2026-06-29');
+    expect(items).toHaveLength(1);
+    expect(items[0]!.isOverdue).toBe(true);
+    expect(items[0]!.overdueDate).toBe('2026-06-01');
   });
 });
 

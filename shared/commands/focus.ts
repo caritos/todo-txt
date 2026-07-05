@@ -451,6 +451,7 @@ export type FocusItem = {
   recurrenceLabel: string;
   streak: number;
   isOverdue: boolean;
+  overdueDate: string | null;
 };
 
 export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: string): FocusItem[] {
@@ -497,16 +498,20 @@ export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: 
     const et = effToday(t);
     const start = t.extensions['start'];
     const frequency = t.extensions['frequency'];
-    const isOverdue = !t.extensions['type'] && !!(
-      (start && !frequency && start.slice(0, 10) < et) ||
-      (start && frequency && overdueOccurrenceDate(t, et) !== null)
-    );
+    const overdueDate = t.extensions['type']
+      ? null
+      : start && !frequency && start.slice(0, 10) < et
+      ? start.slice(0, 10)
+      : start && frequency
+      ? overdueOccurrenceDate(t, et)
+      : null;
     return {
       task: t,
       effectiveDate: focusSortKey(t, et),
       recurrenceLabel: focusNextRecurrence(t, et),
       streak: frequency ? computeStreak(t, tasks, todayStr) : 0,
-      isOverdue,
+      isOverdue: overdueDate !== null,
+      overdueDate,
     };
   });
 }
