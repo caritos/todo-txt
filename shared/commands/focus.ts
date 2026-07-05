@@ -487,24 +487,38 @@ export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: 
 
   const focused = relevant.filter(t => isInFocusWindow(t, effToday(t), windowEnd));
 
+  // Null when not overdue. Otherwise the actual missed occurrence date — distinct from
+  // focusSortKey's effectiveDate, which collapses overdue recurring tasks to today's date
+  // for display/bucketing purposes and must not be used to order the list.
+  const overdueDateFor = (t: Task, et: string): string | null => {
+    const start = t.extensions['start'];
+    const frequency = t.extensions['frequency'];
+    if (t.extensions['type']) return null;
+    if (start && !frequency && start.slice(0, 10) < et) return start.slice(0, 10);
+    if (start && frequency) return overdueOccurrenceDate(t, et);
+    return null;
+  };
+
+  const sortKeyFor = (t: Task): string => {
+    const et = effToday(t);
+    const overdueDate = overdueDateFor(t, et);
+    if (overdueDate === null) return focusSortKey(t, et);
+    const start = t.extensions['start'] ?? '';
+    const time = start.length > 10 ? start.slice(10) : '';
+    return overdueDate + time;
+  };
+
   focused.sort((a, b) => {
-    const da = focusSortKey(a, effToday(a));
-    const db = focusSortKey(b, effToday(b));
+    const da = sortKeyFor(a);
+    const db = sortKeyFor(b);
     if (da !== db) return da.localeCompare(db);
     return (a.priority ?? 'Z').localeCompare(b.priority ?? 'Z');
   });
 
   return focused.map(t => {
     const et = effToday(t);
-    const start = t.extensions['start'];
     const frequency = t.extensions['frequency'];
-    const overdueDate = t.extensions['type']
-      ? null
-      : start && !frequency && start.slice(0, 10) < et
-      ? start.slice(0, 10)
-      : start && frequency
-      ? overdueOccurrenceDate(t, et)
-      : null;
+    const overdueDate = overdueDateFor(t, et);
     return {
       task: t,
       effectiveDate: focusSortKey(t, et),

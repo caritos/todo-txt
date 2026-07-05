@@ -175,6 +175,16 @@ describe('applyFocusForWindow — overdueDate', () => {
     expect(items[0]!.isOverdue).toBe(true);
     expect(items[0]!.overdueDate).toBe('2026-06-01');
   });
+
+  // Reported bug: a weekly task overdue since Jul 3 (2 days overdue) sorted below
+  // a task merely due today, because sorting used the collapsed "today" sort key
+  // for overdue recurring tasks instead of their true missed date.
+  test('overdue recurring task sorts by its true missed date, ahead of a task merely due today', () => {
+    const overdueLawn = task('mow the front lawn start start:2026-06-19T09:00 frequency:weekly last-done:2026-06-11 exdate:2026-06-05');
+    const dueToday = task('ai weekly review on obsidian notes start:2026-07-05');
+    const items = applyFocusForWindow([dueToday, overdueLawn], '2026-07-05', '2026-07-19');
+    expect(items.map(i => i.task.raw)).toEqual([overdueLawn.raw, dueToday.raw]);
+  });
 });
 
 describe('generateTaskOccurrences', () => {
