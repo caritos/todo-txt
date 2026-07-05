@@ -185,6 +185,22 @@ describe('applyFocusForWindow — overdueDate', () => {
     const items = applyFocusForWindow([dueToday, overdueLawn], '2026-07-05', '2026-07-19');
     expect(items.map(i => i.task.raw)).toEqual([overdueLawn.raw, dueToday.raw]);
   });
+
+  // Reported bug: right after marking a weekly task done today, applyDone advances start to
+  // next week (per the "done advances start" invariant) and sets last-done to today. The task
+  // then reappeared on TODAY's list with a "due" (overdue) label for its own future occurrence,
+  // because effToday's "skip past the just-completed occurrence" shift assumed start still
+  // pointed at today's (unadvanced) occurrence, and blindly added another day on top of the
+  // already-advanced future start — landing one day past a 7-day cycle boundary and forcing
+  // an extra full week's advance downstream, which overdueOccurrenceDate then misread as overdue.
+  test('weekly task just completed today (start already advanced to next week) is not overdue and shows on its real next date', () => {
+    const t = task('transcribe voice memos start:2026-07-12T06:00 frequency:weekly last-done:2026-07-05');
+    const items = applyFocusForWindow([t], '2026-07-05', '2026-07-19');
+    expect(items).toHaveLength(1);
+    expect(items[0]!.isOverdue).toBe(false);
+    expect(items[0]!.overdueDate).toBeNull();
+    expect(items[0]!.effectiveDate).toBe('2026-07-12T06:00');
+  });
 });
 
 describe('generateTaskOccurrences', () => {

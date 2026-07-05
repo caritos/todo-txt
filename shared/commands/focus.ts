@@ -464,9 +464,18 @@ export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: 
       const every = t.extensions['every'] ?? '1';
       if (start && freq) {
         const exdates = taskExdates(t);
-        if (freq === 'weekly') return addDays(nextWeeklyDate(start, todayStr, parseInt(every), exdates, t.extensions['frequency-day']), 1);
-        if (freq === 'monthly') return addDays(nextMonthlyDate(start, todayStr, exdates, t.extensions['frequency-month-day'], parseInt(t.extensions['every'] ?? '1')), 1);
-        if (freq === 'yearly') return addDays(nextYearlyDate(start.slice(0, 10), todayStr, exdates, t.extensions['frequency-month-day'], parseInt(t.extensions['every'] ?? '1')), 1);
+        let nextOcc: string | null = null;
+        if (freq === 'weekly') nextOcc = nextWeeklyDate(start, todayStr, parseInt(every), exdates, t.extensions['frequency-day']);
+        else if (freq === 'monthly') nextOcc = nextMonthlyDate(start, todayStr, exdates, t.extensions['frequency-month-day'], parseInt(t.extensions['every'] ?? '1'));
+        else if (freq === 'yearly') nextOcc = nextYearlyDate(start.slice(0, 10), todayStr, exdates, t.extensions['frequency-month-day'], parseInt(t.extensions['every'] ?? '1'));
+        if (nextOcc !== null) {
+          // applyDone already advances start to the next occurrence for weekly/monthly/yearly
+          // tasks, so nextOcc is normally already in the future here. Only step a day past it
+          // when it still resolves to today itself (start wasn't pre-advanced — e.g. hand-edited
+          // data) — stepping past an already-future nextOcc would double-advance it, pushing one
+          // day past a cycle boundary and forcing an extra full cycle downstream.
+          return nextOcc > todayStr ? nextOcc : addDays(nextOcc, 1);
+        }
       }
       return addDays(todayStr, 1);
     }
