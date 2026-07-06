@@ -9,14 +9,14 @@ export const LOCAL_PATH = FileSystem.documentDirectory
   ? FileSystem.documentDirectory + 'todo.txt'
   : null;
 
-type Config = { filePath: string; weekStart?: 0 | 1 };
+type Config = { weekStart?: 0 | 1 };
 
 async function readConfig(): Promise<Config> {
   try {
     const json = await FileSystem.readAsStringAsync(CONFIG_FILE!, { encoding: 'utf8' });
     return JSON.parse(json) as Config;
   } catch {
-    return { filePath: LOCAL_PATH! };
+    return {};
   }
 }
 
@@ -24,19 +24,17 @@ async function writeConfig(config: Config): Promise<void> {
   await FileSystem.writeAsStringAsync(CONFIG_FILE!, JSON.stringify(config), { encoding: 'utf8' });
 }
 
+// There is only ever one valid storage location now (the app's own sandbox),
+// so this is always computed fresh rather than trusted from persisted config —
+// a persisted absolute path (embedding the sandbox container UUID) can go stale
+// across a reinstall/rebuild and silently fail to read, wiping the task list.
 export async function resolveFile(): Promise<string> {
-  const config = await readConfig();
-  return config.filePath;
+  return LOCAL_PATH!;
 }
 
 export async function resolveWeekStart(): Promise<0 | 1> {
   const config = await readConfig();
   return config.weekStart ?? 0;
-}
-
-export async function setFilePath(filePath: string): Promise<void> {
-  const config = await readConfig();
-  await writeConfig({ ...config, filePath });
 }
 
 export async function setWeekStart(weekStart: 0 | 1): Promise<void> {

@@ -4,21 +4,12 @@ import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import { parseLine, serializeTasks } from '@shared/parser';
 import { useTasks } from '../src/context/TaskContext';
-import { setFilePath, writeTasks, LOCAL_PATH } from '../src/store';
+import { writeTasks, LOCAL_PATH } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 
 export default function SettingsScreen() {
   const { filePath, tasks, reload, weekStart, setWeekStart } = useTasks();
   const insets = useSafeAreaInsets();
-
-  async function handleUseLocalPath() {
-    try {
-      await setFilePath(LOCAL_PATH ?? '');
-      await reload();
-    } catch (e) {
-      Alert.alert('Error', (e as Error).message);
-    }
-  }
 
   async function handleExport() {
     try {
@@ -59,7 +50,6 @@ export default function SettingsScreen() {
                 .split('\n')
                 .filter(line => line.trim().length > 0)
                 .map((line, i) => parseLine(line, i + 1));
-              await setFilePath(LOCAL_PATH ?? '');
               await writeTasks(LOCAL_PATH ?? '', parsed);
               await reload();
               Alert.alert('Imported', `${parsed.length} tasks loaded.`);
@@ -109,12 +99,6 @@ export default function SettingsScreen() {
       <Text style={styles.sectionTitle}>Current path</Text>
       <View style={styles.card}>
         <Text style={styles.currentPath}>{filePath}</Text>
-        {filePath !== LOCAL_PATH && (
-          <TouchableOpacity style={styles.option} onPress={handleUseLocalPath} activeOpacity={0.7}>
-            <Text style={styles.optionLabel}>SWITCH TO LOCAL FILE</Text>
-            <Text style={styles.optionDesc}>Point this device at its own local todo.txt (no paste needed).</Text>
-          </TouchableOpacity>
-        )}
       </View>
     </ScrollView>
   );

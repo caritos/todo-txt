@@ -23,26 +23,19 @@ jest.mock('@shared/parser', () => ({
 }));
 
 import * as FileSystem from 'expo-file-system';
-import { readTasks, writeTasks, resolveFile, setFilePath } from '../store';
+import { readTasks, writeTasks, resolveFile } from '../store';
 
 const mockFs = FileSystem as jest.Mocked<typeof FileSystem>;
 
 beforeEach(() => { jest.clearAllMocks(); });
 
 describe('resolveFile', () => {
-  test('returns LOCAL_PATH when config does not exist', async () => {
-    mockFs.readAsStringAsync.mockRejectedValueOnce(new Error('not found'));
+  test('always returns LOCAL_PATH, without touching persisted config', async () => {
     const path = await resolveFile();
-    // Default is LOCAL_PATH = documentDirectory + 'todo.txt'
+    // There is only one valid storage location now — LOCAL_PATH is computed
+    // fresh, never trusted from a persisted absolute path (see store.ts).
     expect(path).toBe('file:///mock-doc-dir/todo.txt');
-  });
-
-  test('returns stored path from config', async () => {
-    mockFs.readAsStringAsync.mockResolvedValueOnce(
-      JSON.stringify({ filePath: 'file:///mock-doc-dir/icloud/todo.txt' })
-    );
-    const path = await resolveFile();
-    expect(path).toBe('file:///mock-doc-dir/icloud/todo.txt');
+    expect(mockFs.readAsStringAsync).not.toHaveBeenCalled();
   });
 });
 
@@ -90,17 +83,5 @@ describe('writeTasks', () => {
 
   test('throws immediately for empty file path', async () => {
     await expect(writeTasks('', tasks)).rejects.toThrow('File path not configured');
-  });
-});
-
-describe('setFilePath', () => {
-  test('writes config file with new path', async () => {
-    mockFs.writeAsStringAsync.mockResolvedValueOnce(undefined as any);
-    await setFilePath('file:///icloud/todo.txt');
-    expect(mockFs.writeAsStringAsync).toHaveBeenCalledWith(
-      'file:///mock-doc-dir/todo-config.json',
-      JSON.stringify({ filePath: 'file:///icloud/todo.txt' }),
-      { encoding: 'utf8' }
-    );
   });
 });
