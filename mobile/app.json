@@ -14,13 +14,7 @@
       "bundleIdentifier": "com.caritos.todo-txt",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "UIFileSharingEnabled": true,
-        "NSUbiquitousContainerIsDocumentScopePublic": true
-      },
-      "entitlements": {
-        "com.apple.developer.ubiquity-container-identifiers": ["iCloud.com.caritos.todo-txt"],
-        "com.apple.developer.icloud-container-identifiers": ["iCloud.com.caritos.todo-txt"],
-        "com.apple.developer.icloud-services": ["CloudDocuments", "CloudKit"]
+        "UIFileSharingEnabled": true
       }
     },
     "plugins": [

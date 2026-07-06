@@ -7,13 +7,6 @@ jest.mock('expo-file-system', () => ({
   makeDirectoryAsync: jest.fn(),
 }));
 
-// store.ts imports expo-icloud unconditionally; these tests only exercise the
-// local-file path, so stub it out rather than loading the native react-native module.
-jest.mock('expo-icloud', () => ({
-  writeICloudFile: jest.fn(),
-  readICloudFile: jest.fn(),
-}));
-
 jest.mock('@shared/parser', () => ({
   parseLine: jest.fn((line: string, i: number) => ({
     line: i,

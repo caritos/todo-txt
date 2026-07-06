@@ -1,42 +1,89 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as FileSystem from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
+import { parseLine, serializeTasks } from '@shared/parser';
 import { useTasks } from '../src/context/TaskContext';
-import { setFilePath, LOCAL_PATH, ICLOUD_PATH } from '../src/store';
+import { setFilePath, writeTasks, LOCAL_PATH } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 
 export default function SettingsScreen() {
-  const { filePath, reload, weekStart, setWeekStart } = useTasks();
+  const { filePath, tasks, reload, weekStart, setWeekStart } = useTasks();
   const insets = useSafeAreaInsets();
 
-  async function handleSelect(path: string) {
+  async function handleUseLocalPath() {
     try {
-      await setFilePath(path);
+      await setFilePath(LOCAL_PATH ?? '');
       await reload();
     } catch (e) {
       Alert.alert('Error', (e as Error).message);
     }
   }
 
+  async function handleExport() {
+    try {
+      const fileUri = FileSystem.cacheDirectory + 'todo.txt';
+      await FileSystem.writeAsStringAsync(fileUri, serializeTasks(tasks), { encoding: 'utf8' });
+      await Share.share({ url: fileUri, title: 'todo.txt' });
+    } catch (e) {
+      Alert.alert('Export failed', (e as Error).message);
+    }
+  }
+
+  async function handleImport() {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ['text/plain', 'public.plain-text', '*/*'],
+      copyToCacheDirectory: true,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    let content: string;
+    try {
+      content = await FileSystem.readAsStringAsync(result.assets[0].uri, { encoding: 'utf8' });
+    } catch (e) {
+      Alert.alert('Import failed', (e as Error).message);
+      return;
+    }
+
+    Alert.alert(
+      'Replace all local tasks?',
+      `This replaces everything currently on this device with the contents of "${result.assets[0].name}". This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Replace',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const parsed = content
+                .split('\n')
+                .filter(line => line.trim().length > 0)
+                .map((line, i) => parseLine(line, i + 1));
+              await setFilePath(LOCAL_PATH ?? '');
+              await writeTasks(LOCAL_PATH ?? '', parsed);
+              await reload();
+              Alert.alert('Imported', `${parsed.length} tasks loaded.`);
+            } catch (e) {
+              Alert.alert('Import failed', (e as Error).message);
+            }
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <ScrollView style={[styles.screen, { paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: 120 }}>
-      <Text style={styles.sectionTitle}>Location</Text>
+      <Text style={styles.sectionTitle}>Transfer</Text>
       <View style={styles.card}>
-        <TouchableOpacity
-          style={[styles.option, filePath === LOCAL_PATH && styles.optionActive]}
-          onPress={() => handleSelect(LOCAL_PATH ?? '')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.optionLabel, filePath === LOCAL_PATH && styles.optionLabelActive]}>LOCAL</Text>
-          <Text style={styles.optionDesc}>Stored on this device only.</Text>
+        <TouchableOpacity style={styles.option} onPress={handleExport} activeOpacity={0.7}>
+          <Text style={styles.optionLabel}>EXPORT</Text>
+          <Text style={styles.optionDesc}>Share this device's tasks as a todo.txt file.</Text>
         </TouchableOpacity>
         <View style={styles.divider} />
-        <TouchableOpacity
-          style={[styles.option, filePath === ICLOUD_PATH && styles.optionActive]}
-          onPress={() => handleSelect(ICLOUD_PATH ?? '')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.optionLabel, filePath === ICLOUD_PATH && styles.optionLabelActive]}>iCLOUD</Text>
-          <Text style={styles.optionDesc}>Syncs across devices and with the Mac CLI.</Text>
+        <TouchableOpacity style={styles.option} onPress={handleImport} activeOpacity={0.7}>
+          <Text style={styles.optionLabel}>IMPORT</Text>
+          <Text style={styles.optionDesc}>Pick a todo.txt file to replace everything on this device.</Text>
         </TouchableOpacity>
       </View>
 
@@ -62,6 +109,12 @@ export default function SettingsScreen() {
       <Text style={styles.sectionTitle}>Current path</Text>
       <View style={styles.card}>
         <Text style={styles.currentPath}>{filePath}</Text>
+        {filePath !== LOCAL_PATH && (
+          <TouchableOpacity style={styles.option} onPress={handleUseLocalPath} activeOpacity={0.7}>
+            <Text style={styles.optionLabel}>SWITCH TO LOCAL FILE</Text>
+            <Text style={styles.optionDesc}>Point this device at its own local todo.txt (no paste needed).</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );

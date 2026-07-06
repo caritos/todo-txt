@@ -9,13 +9,6 @@ jest.mock('expo-file-system', () => ({
   moveAsync: jest.fn(), // should never be called with the direct-write approach
 }));
 
-// store.ts imports expo-icloud unconditionally; this path (FILE_PATH below) never
-// matches the iCloud branch, so stub it out rather than loading the native react-native module.
-jest.mock('expo-icloud', () => ({
-  writeICloudFile: jest.fn(),
-  readICloudFile: jest.fn(),
-}));
-
 import * as FileSystem from 'expo-file-system';
 import { writeTasks } from '../store';
 import { applyAdd } from '@shared/commands/add';
