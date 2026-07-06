@@ -5,7 +5,7 @@ import type { DateTimePickerEvent } from '@react-native-community/datetimepicker
 import { useState, useMemo, useEffect } from 'react';
 import { useTasks } from '../../src/context/TaskContext';
 import { PriorityPicker } from '../../src/components/PriorityPicker';
-import { applyDone } from '@shared/commands/done';
+import { applyDone, applyUndone } from '@shared/commands/done';
 import { applyRm } from '@shared/commands/rm';
 import { applyEdit } from '@shared/commands/edit';
 import { applyPri, applyDepri } from '@shared/commands/pri';
@@ -59,6 +59,16 @@ export default function TaskDetail() {
   async function handleDone() {
     try {
       const result = applyDone([...tasks], [lineNum], todayStr);
+      await save(result.tasks);
+      router.back();
+    } catch (e) {
+      Alert.alert('Error', (e as Error).message);
+    }
+  }
+
+  async function handleUndo() {
+    try {
+      const result = applyUndone([...tasks], [lineNum]);
       await save(result.tasks);
       router.back();
     } catch (e) {
@@ -253,6 +263,9 @@ export default function TaskDetail() {
       <View style={styles.actions}>
         {!task.done && (
           <ActionButton label="Done" color={Colors.accent} onPress={handleDone} />
+        )}
+        {task.done && (
+          <ActionButton label="Undo" color={Colors.accent} onPress={handleUndo} />
         )}
         {editing ? (
           <ActionButton label="Save Edit" color={Colors.accent} onPress={handleSaveEdit} />
