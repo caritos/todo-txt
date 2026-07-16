@@ -169,11 +169,11 @@ export function nextMonthlyDate(startStr: string, todayStr: string, exdates: Set
 
   let year = t.getFullYear();
   let month = t.getMonth();
-  let candidate = new Date(year, month, dayForMonth(year, month));
+  let candidate = new Date(year, month, dayForMonth(year, month), 12, 0, 0);
   if (candidate < t) {
     month++;
     if (month > 11) { month = 0; year++; }
-    candidate = new Date(year, month, dayForMonth(year, month));
+    candidate = new Date(year, month, dayForMonth(year, month), 12, 0, 0);
   }
   const result = `${candidate.getFullYear()}-${String(candidate.getMonth() + 1).padStart(2, '0')}-${String(candidate.getDate()).padStart(2, '0')}`;
   if (exdates.has(result)) return nextMonthlyDate(startStr, addDays(result, 1), exdates, frequencyMonthDay, every);
@@ -229,10 +229,10 @@ export function overdueOccurrenceDate(task: Task, todayStr: string): string | nu
     const year = t.getFullYear();
     const month = t.getMonth();
     const dayOfMonth = dayForMonth(year, month);
-    const currCandidate = new Date(year, month, dayOfMonth);
-    // Only consider this month's occurrence; if it's upcoming don't look at last month
-    // (avoids clobbering the sort key when nextMonthlyDate is already within the window)
-    if (currCandidate > t) return null;
+    const currCandidate = new Date(year, month, dayOfMonth, 12, 0, 0);
+    // Only consider an occurrence strictly before today; a same-day match is due today,
+    // not overdue (matches the weekly branch's diffDays <= 0 → not overdue behavior).
+    if (currCandidate >= t) return null;
     const candStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayOfMonth).padStart(2, '0')}`;
     if (!exdates.has(candStr)) prev = candStr;
   } else {

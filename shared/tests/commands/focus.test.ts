@@ -116,6 +116,15 @@ describe('nextMonthlyDate day clamping', () => {
   });
 });
 
+describe('nextMonthlyDate same-day occurrence', () => {
+  // The candidate date was built at local midnight and compared against `today` at noon,
+  // so a same-day match was wrongly judged "already passed" and skipped a whole month ahead.
+  test('when today is exactly the occurrence day, returns today rather than skipping a month', () => {
+    const result = nextMonthlyDate('2026-08-15', '2026-08-15', new Set());
+    expect(result).toBe('2026-08-15');
+  });
+});
+
 describe('nextYearlyDate day clamping', () => {
   test('clamps June 31 to June 30', () => {
     // start's literal day (31) doesn't exist in June (30 days)
@@ -200,6 +209,29 @@ describe('applyFocusForWindow — overdueDate', () => {
     expect(items[0]!.isOverdue).toBe(false);
     expect(items[0]!.overdueDate).toBeNull();
     expect(items[0]!.effectiveDate).toBe('2026-07-12T06:00');
+  });
+
+  // Issue #74: marking a monthly task done advances start to next month and sets
+  // last-done to today. nextMonthlyDate's same-day comparison built `candidate` at local
+  // midnight but compared it against `t` at noon, so a candidate falling on the exact same
+  // calendar day as `t` was wrongly judged "already passed" and skipped an entire month
+  // ahead. That pushed effToday's fake "today" forward to the task's own new start date,
+  // and overdueOccurrenceDate — which had the same midnight/noon mismatch — then read that
+  // exact-match date as an unfinished past-due occurrence, re-surfacing the task (a month
+  // away) on today's list labeled with its own future due date.
+  test('monthly task just completed today (start already advanced to next month) does not reappear on today\'s list', () => {
+    const t = task('pay costco credit card start:2026-08-15 frequency:monthly last-done:2026-07-15');
+    const items = applyFocusForWindow([t], '2026-07-15', '2026-07-29');
+    expect(items).toHaveLength(0);
+  });
+
+  test('monthly task due exactly today and not yet completed is due, not overdue', () => {
+    const t = task('pay costco credit card start:2026-07-15 frequency:monthly last-done:2026-06-15');
+    const items = applyFocusForWindow([t], '2026-07-15', '2026-07-29');
+    expect(items).toHaveLength(1);
+    expect(items[0]!.isOverdue).toBe(false);
+    expect(items[0]!.overdueDate).toBeNull();
+    expect(items[0]!.effectiveDate).toBe('2026-07-15');
   });
 });
 
