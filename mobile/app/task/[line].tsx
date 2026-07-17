@@ -12,6 +12,7 @@ import { applyPri, applyDepri } from '@shared/commands/pri';
 import { applySkip } from '@shared/commands/skip';
 import { Colors, Fonts, Spacing } from '../../src/theme';
 import { today, formatDateLabel } from '../../src/utils';
+import { timeMinutes, defaultEndTime } from '../../src/uiUtils';
 import { taskOccurrence } from '@shared/commands/focus';
 import { computeYearCount, birthdayLabel } from '@shared/commands/list';
 
@@ -32,6 +33,15 @@ export default function TaskDetail() {
     const end = task?.extensions['end'];
     return end ? new Date(end.slice(0, 10) + 'T12:00:00') : new Date();
   });
+  const [hasEndTime, setHasEndTime] = useState(!!task?.extensions['end-time']);
+  const [endTimeVal, setEndTimeVal] = useState(() => {
+    const et = task?.extensions['end-time'];
+    if (!et) return new Date();
+    const [h, m] = et.split(':').map(n => parseInt(n, 10));
+    const d = new Date();
+    d.setHours(h ?? 0, m ?? 0, 0, 0);
+    return d;
+  });
 
   useEffect(() => {
     if (task && !editing) {
@@ -40,6 +50,16 @@ export default function TaskDetail() {
       setHasEnd(!!task.extensions['end']);
       const end = task.extensions['end'];
       setEndDate(end ? new Date(end.slice(0, 10) + 'T12:00:00') : new Date());
+      setHasEndTime(!!task.extensions['end-time']);
+      const et = task.extensions['end-time'];
+      if (et) {
+        const [h, m] = et.split(':').map(n => parseInt(n, 10));
+        const d = new Date();
+        d.setHours(h ?? 0, m ?? 0, 0, 0);
+        setEndTimeVal(d);
+      } else {
+        setEndTimeVal(new Date());
+      }
     }
   }, [task]);
 
@@ -125,6 +145,32 @@ export default function TaskDetail() {
     const clampedDate = clampedStr === dStr ? d : new Date(clampedStr + 'T12:00:00');
     setEndDate(clampedDate);
     handleEndDateChange(clampedStr);
+  }
+
+  async function handleEndTimeChange(timeStr: string | undefined) {
+    if (!task) return;
+    setHasEndTime(!!timeStr);
+    const withoutEndTime = task.text.replace(/(?:^|\s)end-time:\S+/g, '').trim();
+    const newText = timeStr ? `${withoutEndTime} end-time:${timeStr}` : withoutEndTime;
+    try {
+      const result = applyEdit([...tasks], lineNum, newText, todayStr);
+      await save(result.tasks);
+    } catch (e) {
+      Alert.alert('Error', (e as Error).message);
+    }
+  }
+
+  function onEndTimeValChange(_: DateTimePickerEvent, t?: Date) {
+    if (!t || !task) return;
+    const startVal = task.extensions['start'];
+    const startMinutes = startVal && startVal.includes('T')
+      ? parseInt(startVal.slice(11, 13), 10) * 60 + parseInt(startVal.slice(14, 16), 10)
+      : 0;
+    const clamped = timeMinutes(t) < startMinutes
+      ? (() => { const d = new Date(t); d.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0); return d; })()
+      : t;
+    setEndTimeVal(clamped);
+    handleEndTimeChange(pad(clamped.getHours()) + ':' + pad(clamped.getMinutes()));
   }
 
   async function handleSkip() {
@@ -252,6 +298,48 @@ export default function TaskDetail() {
                 display="compact"
                 value={endDate}
                 onChange={onEndDateChange}
+                accentColor={Colors.accent}
+                style={styles.endDatePicker}
+              />
+            </View>
+          )}
+        </>
+      )}
+
+      {task.extensions['type'] === 'event' && !!task.extensions['start']?.includes('T') && (
+        <>
+          <Text style={styles.label}>End Time</Text>
+          <View style={styles.endDateRow}>
+            <Text style={styles.endDateLabel}>Has end time</Text>
+            <Switch
+              value={hasEndTime}
+              onValueChange={v => {
+                if (!v) {
+                  handleEndTimeChange(undefined);
+                  return;
+                }
+                const startVal = task.extensions['start'];
+                const startDate = new Date(
+                  parseInt(startVal.slice(0, 4)), parseInt(startVal.slice(5, 7)) - 1, parseInt(startVal.slice(8, 10)),
+                  parseInt(startVal.slice(11, 13)), parseInt(startVal.slice(14, 16)),
+                );
+                const next = defaultEndTime(startDate);
+                setEndTimeVal(next);
+                handleEndTimeChange(pad(next.getHours()) + ':' + pad(next.getMinutes()));
+              }}
+              trackColor={{ false: Colors.separator, true: Colors.accent }}
+              thumbColor={Colors.text}
+              ios_backgroundColor={Colors.separator}
+            />
+          </View>
+          {hasEndTime && (
+            <View style={styles.endDateRow}>
+              <Text style={styles.endDateLabel}>Ends at</Text>
+              <DateTimePicker
+                mode="time"
+                display="compact"
+                value={endTimeVal}
+                onChange={onEndTimeValChange}
                 accentColor={Colors.accent}
                 style={styles.endDatePicker}
               />
