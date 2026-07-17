@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { pad, buildCells, cleanTitle, hourLabel, formatTime, parseDateParts } from '../uiUtils';
+import { pad, buildCells, cleanTitle, hourLabel, formatTime, parseDateParts, timeMinutes, defaultEndTime } from '../uiUtils';
 
 // ─── pad ───────────────────────────────────────────────────────────────────
 describe('pad', () => {
@@ -248,5 +248,64 @@ describe('parseDateParts', () => {
     const result = parseDateParts('2025-11-20');
     expect(typeof result.year).toBe('number');
     expect(result.year).toBe(2025);
+  });
+});
+
+// ─── timeMinutes ───────────────────────────────────────────────────────────
+describe('timeMinutes', () => {
+  test('midnight is 0', () => {
+    expect(timeMinutes(new Date(2026, 0, 1, 0, 0))).toBe(0);
+  });
+
+  test('9:30 AM is 570', () => {
+    expect(timeMinutes(new Date(2026, 0, 1, 9, 30))).toBe(570);
+  });
+
+  test('11:59 PM is 1439', () => {
+    expect(timeMinutes(new Date(2026, 0, 1, 23, 59))).toBe(1439);
+  });
+
+  test('ignores date components, only reads hours/minutes', () => {
+    expect(timeMinutes(new Date(2020, 5, 15, 14, 0))).toBe(timeMinutes(new Date(2030, 0, 1, 14, 0)));
+  });
+});
+
+// ─── defaultEndTime ────────────────────────────────────────────────────────
+describe('defaultEndTime', () => {
+  test('adds 60 minutes to a mid-day start', () => {
+    const start = new Date(2026, 0, 1, 9, 0);
+    const end = defaultEndTime(start);
+    expect(end.getHours()).toBe(10);
+    expect(end.getMinutes()).toBe(0);
+  });
+
+  test('preserves the calendar date of start', () => {
+    const start = new Date(2026, 6, 15, 9, 0);
+    const end = defaultEndTime(start);
+    expect(end.getFullYear()).toBe(2026);
+    expect(end.getMonth()).toBe(6);
+    expect(end.getDate()).toBe(15);
+  });
+
+  test('clamps to 23:59 instead of rolling into the next day', () => {
+    const start = new Date(2026, 0, 1, 23, 30);
+    const end = defaultEndTime(start);
+    expect(end.getDate()).toBe(1);
+    expect(end.getHours()).toBe(23);
+    expect(end.getMinutes()).toBe(59);
+  });
+
+  test('23:00 plus 60 minutes clamps to 23:59, not 24:00', () => {
+    const start = new Date(2026, 0, 1, 23, 0);
+    const end = defaultEndTime(start);
+    expect(end.getHours()).toBe(23);
+    expect(end.getMinutes()).toBe(59);
+  });
+
+  test('22:00 plus 60 minutes is exactly 23:00 (no clamping needed)', () => {
+    const start = new Date(2026, 0, 1, 22, 0);
+    const end = defaultEndTime(start);
+    expect(end.getHours()).toBe(23);
+    expect(end.getMinutes()).toBe(0);
   });
 });

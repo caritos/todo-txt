@@ -21,6 +21,7 @@ import type { RecurrenceValue, CustomConfig } from './RecurrencePicker';
 import { CustomRecurrencePicker, customRecurrenceExtensions } from './CustomRecurrencePicker';
 import { Colors, Fonts, Spacing } from '../theme';
 import { today } from '../utils';
+import { timeMinutes, defaultEndTime } from '../uiUtils';
 
 type AddType = 'task' | 'event';
 type Priority = 'A' | 'B' | 'C' | 'none';
@@ -69,6 +70,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
   const [repeat, setRepeat] = useState<RecurrenceValue>('none');
   const [hasEnd, setHasEnd] = useState(false);
   const [endDate, setEndDate] = useState(() => new Date());
+  const [hasEndTime, setHasEndTime] = useState(false);
+  const [endTime, setEndTime] = useState(() => new Date());
   const [showRepeat, setShowRepeat] = useState(false);
   const [priority, setPriority] = useState<Priority>('none');
   const [error, setError] = useState('');
@@ -89,6 +92,8 @@ export function AddTaskModal({ visible, onClose }: Props) {
     setTime(new Date());
     setHasEnd(false);
     setEndDate(new Date());
+    setHasEndTime(false);
+    setEndTime(new Date());
     setRepeat('none');
     setShowRepeat(false);
     setCustomConfig({ n: 1, unit: 'month' });
@@ -128,6 +133,9 @@ export function AddTaskModal({ visible, onClose }: Props) {
           : recurrenceExtensions(repeat);
         if (freqExt) parts.push(freqExt);
       }
+      if (addType === 'event' && hasTime && hasEndTime) {
+        parts.push(`end-time:${pad(endTime.getHours())}:${pad(endTime.getMinutes())}`);
+      }
     }
 
     if (addType === 'event') parts.push('type:event');
@@ -154,7 +162,14 @@ export function AddTaskModal({ visible, onClose }: Props) {
   }
 
   function onTimeChange(_: DateTimePickerEvent, t?: Date) {
-    if (t) setTime(t);
+    if (!t) return;
+    setTime(t);
+    if (hasEndTime && timeMinutes(t) > timeMinutes(endTime)) setEndTime(t);
+  }
+
+  function onEndTimeChange(_: DateTimePickerEvent, t?: Date) {
+    if (!t) return;
+    setEndTime(timeMinutes(t) < timeMinutes(time) ? time : t);
   }
 
   function onEndDateChange(_: DateTimePickerEvent, d?: Date) {
@@ -182,7 +197,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
           <View style={styles.typeToggle}>
             <TouchableOpacity
               style={[styles.typeBtn, addType === 'task' && styles.typeBtnActive]}
-              onPress={() => { setAddType('task'); setHasEnd(false); }}
+              onPress={() => { setAddType('task'); setHasEnd(false); setHasEndTime(false); }}
             >
               <Text style={[styles.typeBtnText, addType === 'task' && styles.typeBtnTextActive]}>
                 TASK
@@ -325,7 +340,10 @@ export function AddTaskModal({ visible, onClose }: Props) {
                       <Text style={styles.flabel}>Time</Text>
                       <Switch
                         value={hasTime}
-                        onValueChange={setHasTime}
+                        onValueChange={v => {
+                          setHasTime(v);
+                          if (!v) setHasEndTime(false);
+                        }}
                         trackColor={{ false: Colors.separator, true: Colors.accent }}
                         thumbColor={Colors.text}
                         ios_backgroundColor={Colors.separator}
@@ -333,7 +351,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
                     </View>
 
                     {hasTime && (
-                      <View style={[styles.frow, hasEnd && styles.frowLast]}>
+                      <View style={styles.frow}>
                         <Text style={styles.flabel} />
                         <View style={styles.timeSet}>
                           <DateTimePicker
@@ -345,7 +363,45 @@ export function AddTaskModal({ visible, onClose }: Props) {
                             style={styles.compactPicker}
                           />
                           <TouchableOpacity
-                            onPress={() => setHasTime(false)}
+                            onPress={() => { setHasTime(false); setHasEndTime(false); }}
+                            style={styles.timeClear}
+                          >
+                            <Text style={styles.timeClearText}>✕</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+
+                    {addType === 'event' && hasTime && (
+                      <View style={[styles.frow, !hasEndTime && hasEnd && styles.frowLast]}>
+                        <Text style={styles.flabel}>End time</Text>
+                        <Switch
+                          value={hasEndTime}
+                          onValueChange={v => {
+                            setHasEndTime(v);
+                            if (v) setEndTime(defaultEndTime(time));
+                          }}
+                          trackColor={{ false: Colors.separator, true: Colors.accent }}
+                          thumbColor={Colors.text}
+                          ios_backgroundColor={Colors.separator}
+                        />
+                      </View>
+                    )}
+
+                    {addType === 'event' && hasTime && hasEndTime && (
+                      <View style={[styles.frow, hasEnd && styles.frowLast]}>
+                        <Text style={styles.flabel} />
+                        <View style={styles.timeSet}>
+                          <DateTimePicker
+                            mode="time"
+                            display="compact"
+                            value={endTime}
+                            onChange={onEndTimeChange}
+                            accentColor={Colors.accent}
+                            style={styles.compactPicker}
+                          />
+                          <TouchableOpacity
+                            onPress={() => setHasEndTime(false)}
                             style={styles.timeClear}
                           >
                             <Text style={styles.timeClearText}>✕</Text>

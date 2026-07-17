@@ -46,3 +46,14 @@ export function parseDateParts(dateStr: string): { month: string; day: number; y
     dayName: DAY_NAMES[d.getDay()].toUpperCase(),
   };
 }
+
+export function timeMinutes(d: Date): number {
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+export function defaultEndTime(start: Date): Date {
+  const mins = Math.min(timeMinutes(start) + 60, 23 * 60 + 59);
+  const d = new Date(start);
+  d.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+  return d;
+}

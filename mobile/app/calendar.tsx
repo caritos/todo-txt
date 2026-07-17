@@ -35,6 +35,7 @@ type AgendaItem = {
   task: Task;
   kind: 'completed' | 'incomplete' | 'event';
   time?: string;
+  endTime?: string;
   isOverdue?: boolean;
   overdueDate?: string;
 };
@@ -141,6 +142,7 @@ export default function CalendarScreen() {
           task: t,
           kind: 'event',
           time: t.extensions['start']?.slice(11, 16) || undefined,
+          endTime: t.extensions['end-time'] || undefined,
         });
       }
     }
@@ -349,7 +351,7 @@ export default function CalendarScreen() {
               {item.overdueDate ? (
                 <Text style={styles.agendaOverdue}>{overdueSinceLabel(item.overdueDate)}</Text>
               ) : item.time ? (
-                <Text style={styles.agendaTime}>{item.time}</Text>
+                <Text style={styles.agendaTime}>{item.time}{item.endTime ? ` - ${item.endTime}` : ''}</Text>
               ) : null}
             </TouchableOpacity>
           );
