@@ -156,12 +156,22 @@ fi
 
 xcrun simctl uninstall "$udid" "$bundle_id" 2>/dev/null || true
 
-# Clean build if no existing build or Podfile.lock changed
+# Clean build if no existing build or Podfile.lock changed.
+# Release is ALWAYS a full clean build, never incrementally reused: expo-dev-client's
+# podspec links expo-dev-launcher only for the Debug pod configuration
+# (`:configurations => :debug`), so a truly fresh Release build never includes the
+# dev-client launcher and boots straight into the app — no "Development servers /
+# npx expo start" screen, no Metro dependency at all. An incrementally-reused Release
+# build in DerivedData can be a stale artifact from before some pod/config change and
+# silently still carry the old (possibly dev-launcher-linked) binary; Podfile.lock's
+# mtime alone isn't a reliable signal that the cached build still reflects the
+# current pod graph. Release builds are infrequent (screenshots only), so the extra
+# build time is a worthwhile trade for guaranteeing this can't happen.
 derived_app=""
 [[ -d ~/Library/Developer/Xcode/DerivedData ]] && \
   derived_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/${config}-iphonesimulator/*" 2>/dev/null | head -1) || true
 build_args=(-workspace "$workspace" -scheme "$scheme" -configuration "$config" -destination "id=$udid")
-if [[ -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
+if [[ "$config" == "Release" || -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
   echo "Clearing DerivedData for clean build..."
   rm -rf ~/Library/Developer/Xcode/DerivedData/${scheme}-*(N) 2>/dev/null || true
   build_args+=(clean)
