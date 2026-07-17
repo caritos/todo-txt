@@ -197,7 +197,7 @@ export function AddTaskModal({ visible, onClose }: Props) {
           <View style={styles.typeToggle}>
             <TouchableOpacity
               style={[styles.typeBtn, addType === 'task' && styles.typeBtnActive]}
-              onPress={() => { setAddType('task'); setHasEnd(false); }}
+              onPress={() => { setAddType('task'); setHasEnd(false); setHasEndTime(false); }}
             >
               <Text style={[styles.typeBtnText, addType === 'task' && styles.typeBtnTextActive]}>
                 TASK
