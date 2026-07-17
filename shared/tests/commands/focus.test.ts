@@ -233,6 +233,19 @@ describe('applyFocusForWindow — overdueDate', () => {
     expect(items[0]!.overdueDate).toBeNull();
     expect(items[0]!.effectiveDate).toBe('2026-07-15');
   });
+
+  // Issue #76: a weekly task overdue since *today* (its current cycle lands today, not yet
+  // done) sorted after same-day timed items instead of clustering with other overdue items,
+  // because the sort key appended the task's start time-of-day — a value never shown to the
+  // user once an item is overdue (the UI always shows a "due <date>" label instead of the
+  // time). Sorting by a hidden value produced a list position with no visible justification.
+  test('weekly task overdue since today sorts ahead of same-day timed items, ignoring its hidden start time', () => {
+    // Friday: weekly cycle started Jun 19 (also Friday) lands exactly on Jul 17, not done yet.
+    const overdueToday = task('mow the front lawn start:2026-06-19T14:00 frequency:weekly last-done:2026-06-11');
+    const timedMorning = task('beautify front and back yard start:2026-07-17T09:00');
+    const items = applyFocusForWindow([timedMorning, overdueToday], '2026-07-17', '2026-07-31');
+    expect(items.map(i => i.task.raw)).toEqual([overdueToday.raw, timedMorning.raw]);
+  });
 });
 
 describe('generateTaskOccurrences', () => {

@@ -508,13 +508,14 @@ export function applyFocusForWindow(tasks: Task[], todayStr: string, windowEnd: 
     return null;
   };
 
+  // Overdue items sort by date alone, never by their start time-of-day: once an item is
+  // flagged overdue, the UI always shows a "due <date>" label in place of the time, so
+  // ordering by a time the user can never see would produce an unexplainable position.
   const sortKeyFor = (t: Task): string => {
     const et = effToday(t);
     const overdueDate = overdueDateFor(t, et);
     if (overdueDate === null) return focusSortKey(t, et);
-    const start = t.extensions['start'] ?? '';
-    const time = start.length > 10 ? start.slice(10) : '';
-    return overdueDate + time;
+    return overdueDate;
   };
 
   focused.sort((a, b) => {
