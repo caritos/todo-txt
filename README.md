@@ -88,7 +88,8 @@ Add these `key:value` pairs to any task or event:
 | Extension | Description | Example |
 |---|---|---|
 | `start:<date>` | Start date — `YYYY-MM-DD` or `YYYY-MM-DDThh:mm` | `start:2026-05-10T09:00` |
-| `end:<date>` | End date/time | `end:2026-05-10T09:30` |
+| `end:<date>` | End date — `YYYY-MM-DD`, for multi-day spans | `end:2026-05-12` |
+| `end-time:<time>` | End time of day — `HH:MM`, for events with a `start:` time | `end-time:09:30` |
 | `due:<date>` | Due date (shown in focus when approaching or overdue) | `due:2026-05-15` |
 | `frequency:<freq>` | Recurrence: `daily` `weekly` `monthly` `yearly` | `frequency:weekly` |
 | `every:<n>` | Repeat every N weeks with frequency:weekly (e.g. bi-weekly) | `every:2` |
@@ -111,6 +112,7 @@ Add these `key:value` pairs to any task or event:
 
 ```bash
 todo event "Standup start:2026-05-10T09:00 frequency:weekly frequency-day:M,W,F"
+todo event "Standup start:2026-05-10T09:00 end-time:09:30 frequency:weekly frequency-day:M,W,F"
 todo add "Pay rent frequency:monthly frequency-month-day:1"
 todo event "Book club start:2026-05-06 frequency:monthly frequency-month-day:first-tuesday"
 todo edit 45 "Mom's birthday start:1975-05-15 frequency:yearly type:anniversary"

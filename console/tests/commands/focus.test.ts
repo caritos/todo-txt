@@ -58,6 +58,30 @@ describe('focus command', () => {
     expect(stdout).toContain('Dentist');
   });
 
+  test('shows end time range when end-time: is set alongside a start: time', () => {
+    const start = addDays(today, 5);
+    writeFileSync(todoFile, `2026-05-06 Standup start:${start}T09:00 end-time:09:30 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('09:00-09:30');
+  });
+
+  test('shows only start time when end-time: is not set', () => {
+    const start = addDays(today, 5);
+    writeFileSync(todoFile, `2026-05-06 Dentist start:${start}T09:00 type:event\n`, 'utf8');
+    const { stdout } = run(['--file', todoFile, 'focus']);
+    expect(stdout).toContain('09:00');
+    expect(stdout).not.toContain('09:00-');
+  });
+
+  test('does not crash when end-time: is set but start: has no time component', () => {
+    const start = addDays(today, 5);
+    writeFileSync(todoFile, `2026-05-06 All-day thing start:${start} end-time:09:30 type:event\n`, 'utf8');
+    const { stdout, code } = run(['--file', todoFile, 'focus']);
+    expect(code).toBe(0);
+    expect(stdout).toContain('All-day thing');
+    expect(stdout).not.toContain('09:30');
+  });
+
   test('hides non-recurring event with start: after window', () => {
     const start = addDays(today, 20);
     writeFileSync(todoFile, `2026-05-06 Future Event start:${start} type:event\n`, 'utf8');

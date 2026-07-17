@@ -68,7 +68,7 @@ export function formatTask(task: Task, todayStr: string): string {
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MON_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const FOCUS_STRIP_RE = /\s+(?:reminders-id|start|end|location|exdate|frequency(?:-(?:day|month(?:-day)?|month))?|recur-until|note|description|due|type|last-done|every):\S+/g;
+const FOCUS_STRIP_RE = /\s+(?:reminders-id|start|end|end-time|location|exdate|frequency(?:-(?:day|month(?:-day)?|month))?|recur-until|note|description|due|type|last-done|every):\S+/g;
 
 export function formatFocusTask(task: Task, todayStr: string, effectiveDate: string, recLabel = '', streak = 0): string {
   const num = c(A.dim, String(task.line).padStart(4));
@@ -83,6 +83,9 @@ export function formatFocusTask(task: Task, todayStr: string, effectiveDate: str
     const dm = `${MON_ABBR[d.getMonth()]} ${d.getDate()}`;
     when = timePart ? `${DAY_ABBR[d.getDay()]} ${dm} ${timePart}` : `${DAY_ABBR[d.getDay()]} ${dm}`;
   }
+
+  const endTimeExt = task.extensions['end-time'];
+  if (endTimeExt && timePart) when += `-${endTimeExt}`;
 
   const cleanText = task.text.replace(FOCUS_STRIP_RE, '').trim();
   const years = computeYearCount(task, todayStr);
