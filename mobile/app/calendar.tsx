@@ -157,7 +157,15 @@ export default function CalendarScreen() {
       const day = d.getDate();
       const suffix = dateStr === todayStr ? ' — TODAY' : '';
       const title = `${dow} ${mon} ${day}${suffix}`;
-      const data = byDate.get(dateStr)!.sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
+      // Within a kind, sort by time-of-day (untimed items — e.g. "" — sort first).
+      // Event occurrences come from iterating the raw task list (generateTaskOccurrences),
+      // not from applyFocusForWindow's own time-aware sort, so without this they'd keep
+      // their todo.txt file order instead of chronological order.
+      const data = byDate.get(dateStr)!.sort((a, b) => {
+        const kindDiff = KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
+        if (kindDiff !== 0) return kindDiff;
+        return (a.time ?? '').localeCompare(b.time ?? '');
+      });
       return { dateStr, title, data };
     });
 
