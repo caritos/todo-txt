@@ -182,6 +182,7 @@ export default function CalendarScreen() {
         // them with same-day timed items, since the UI shows "due <date>" instead.
         const overdueDiff = Number(!!b.isOverdue) - Number(!!a.isOverdue);
         if (overdueDiff !== 0) return overdueDiff;
+        if (a.isOverdue && b.isOverdue) return (a.overdueDate ?? '').localeCompare(b.overdueDate ?? '');
         return (a.time ?? '').localeCompare(b.time ?? '');
       });
       return { dateStr, title, data };
@@ -355,7 +356,7 @@ export default function CalendarScreen() {
             );
           }
           const { item, dateStr } = row;
-          const pending = item.kind === 'incomplete' && isPending(item.task.line);
+          const pending = item.kind === 'incomplete' && isPending(item.task.raw);
           return (
             <TouchableOpacity
               style={[

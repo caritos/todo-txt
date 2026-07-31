@@ -59,11 +59,11 @@ export default function SearchScreen() {
           <TaskRow
             task={item}
             todayStr={todayStr}
-            pending={isPending(item.line)}
+            pending={isPending(item.raw)}
             onPress={() => router.push(`/task/${item.line}` as any)}
             onDone={() => handleDone(item.line)}
             onDelete={() => handleDelete(item.line)}
-            onCheckboxPress={() => tapCheckbox(item)}
+            onCheckboxPress={() => (item.done || !item.extensions['type']) && tapCheckbox(item)}
           />
         )}
         ListEmptyComponent={() =>

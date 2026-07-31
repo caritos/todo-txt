@@ -47,7 +47,7 @@ export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue,
       rightThreshold={40}
     >
       <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
-        <TouchableOpacity onPress={() => onCheckboxPress?.()} hitSlop={8}>
+        <TouchableOpacity onPress={() => onCheckboxPress?.()} disabled={!onCheckboxPress} hitSlop={8}>
           {(done || pending) ? (
             <Text style={styles.checkboxDone}>✓</Text>
           ) : (
@@ -55,8 +55,8 @@ export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue,
           )}
         </TouchableOpacity>
         <View style={styles.content}>
-          <Text style={[styles.title, (done || pending) && styles.titleDone, isOverdue && !done && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
-          {!done && isOverdue ? (
+          <Text style={[styles.title, (done || pending) && styles.titleDone, isOverdue && !done && !pending && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
+          {!done && isOverdue && !pending ? (
             <Text style={styles.meta}>
               {dateLabel ? <Text style={styles.metaStrike}>{dateLabel}</Text> : null}
               <Text style={styles.metaOverdue}>{dateLabel ? ' ↑ overdue' : '↑ overdue'}</Text>

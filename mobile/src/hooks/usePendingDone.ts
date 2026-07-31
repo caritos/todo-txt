@@ -8,11 +8,16 @@ export function usePendingDone(
   save: (updated: Task[]) => Promise<void>,
   delayMs = 2500,
 ): {
-  isPending: (line: number) => boolean;
+  isPending: (raw: string) => boolean;
   tapCheckbox: (task: Task) => void;
 } {
-  const [pendingLines, setPendingLines] = useState<ReadonlySet<number>>(new Set());
-  const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  // Pending state is keyed by the task's raw todo.txt line (a stable identity
+  // within a pending window) rather than task.line. applyRm renumbers every
+  // task after the deleted index, so a line-keyed pending timer can fire
+  // against a completely different task if a row above it is deleted while
+  // the timer is still running.
+  const [pendingKeys, setPendingKeys] = useState<ReadonlySet<string>>(new Set());
+  const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   // Keep a ref so the timer callback always reads the latest tasks list,
   // avoiding stale-closure bugs when tasks change before the timer fires.
   const tasksRef = useRef(tasks);
@@ -22,18 +27,36 @@ export function usePendingDone(
 
   useEffect(() => {
     return () => {
-      for (const t of timers.current.values()) clearTimeout(t);
+      // Flush (commit) any still-pending completions instead of silently
+      // dropping them. A pushed screen (e.g. Search) can unmount mid-window
+      // when the user navigates back, and losing the completion with no
+      // error and no visual sign would be a silent data-loss bug.
+      const linesToCommit: number[] = [];
+      for (const [key, timer] of timers.current) {
+        clearTimeout(timer);
+        const current = tasksRef.current.find(t => t.raw === key);
+        if (current) linesToCommit.push(current.line);
+      }
+      timers.current.clear();
+      if (linesToCommit.length > 0) {
+        try {
+          const { tasks: updated } = applyDone([...tasksRef.current], linesToCommit, todayStrRef.current);
+          // Fire-and-forget: the component is unmounting, so there is no
+          // state left here to update afterward.
+          void save(updated);
+        } catch {}
+      }
     };
   }, []);
 
   const isPending = useCallback(
-    (line: number) => pendingLines.has(line),
-    [pendingLines],
+    (raw: string) => pendingKeys.has(raw),
+    [pendingKeys],
   );
 
   const tapCheckbox = useCallback(
     (task: Task) => {
-      const line = task.line;
+      const key = task.raw;
 
       if (task.done) {
         // Undo is immediate, with no pending-delay grace window. The delay on
@@ -42,6 +65,8 @@ export function usePendingDone(
         // single deliberate action.
         void (async () => {
           try {
+            const current = tasksRef.current.find(t => t.raw === key);
+            const line = current?.line ?? task.line;
             const { tasks: updated } = applyUndone([...tasksRef.current], [line]);
             await save(updated);
           } catch {}
@@ -49,31 +74,34 @@ export function usePendingDone(
         return;
       }
 
-      if (timers.current.has(line)) {
+      if (timers.current.has(key)) {
         // Undo: cancel the pending completion
-        clearTimeout(timers.current.get(line));
-        timers.current.delete(line);
-        setPendingLines(prev => {
+        clearTimeout(timers.current.get(key));
+        timers.current.delete(key);
+        setPendingKeys(prev => {
           const next = new Set(prev);
-          next.delete(line);
+          next.delete(key);
           return next;
         });
       } else {
         // Start pending
-        setPendingLines(prev => new Set([...prev, line]));
+        setPendingKeys(prev => new Set([...prev, key]));
         const timer = setTimeout(async () => {
-          timers.current.delete(line);
+          timers.current.delete(key);
           try {
-            const { tasks: updated } = applyDone([...tasksRef.current], [line], todayStrRef.current);
-            await save(updated);
+            const current = tasksRef.current.find(t => t.raw === key);
+            if (current) {
+              const { tasks: updated } = applyDone([...tasksRef.current], [current.line], todayStrRef.current);
+              await save(updated);
+            }
           } catch {}
-          setPendingLines(prev => {
+          setPendingKeys(prev => {
             const next = new Set(prev);
-            next.delete(line);
+            next.delete(key);
             return next;
           });
         }, delayMs);
-        timers.current.set(line, timer);
+        timers.current.set(key, timer);
       }
     },
     [save, delayMs],
