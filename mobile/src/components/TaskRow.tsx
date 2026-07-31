@@ -28,12 +28,14 @@ type Props = {
   dateLabel?: string;
   recurrenceLabel?: string;
   isOverdue?: boolean;
+  pending?: boolean;
   onPress: () => void;
   onDone: () => void;
   onDelete: () => void;
+  onCheckboxPress?: () => void;
 };
 
-export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue, onPress, onDone, onDelete }: Props) {
+export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue, pending, onPress, onDone, onDelete, onCheckboxPress }: Props) {
   const title = birthdayLabel(task, todayStr) + cleanTitle(task.text);
   const meta = [dateLabel, recurrenceLabel].filter(Boolean).join('   ');
   const done = task.done;
@@ -45,13 +47,15 @@ export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue,
       rightThreshold={40}
     >
       <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
-        {done ? (
-          <Text style={styles.checkboxDone}>✓</Text>
-        ) : (
-          <View style={[styles.checkbox, isOverdue && styles.checkboxOverdue]} />
-        )}
+        <TouchableOpacity onPress={() => onCheckboxPress?.()} hitSlop={8}>
+          {(done || pending) ? (
+            <Text style={styles.checkboxDone}>✓</Text>
+          ) : (
+            <View style={[styles.checkbox, isOverdue && styles.checkboxOverdue]} />
+          )}
+        </TouchableOpacity>
         <View style={styles.content}>
-          <Text style={[styles.title, done && styles.titleDone, isOverdue && !done && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
+          <Text style={[styles.title, (done || pending) && styles.titleDone, isOverdue && !done && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
           {!done && isOverdue ? (
             <Text style={styles.meta}>
               {dateLabel ? <Text style={styles.metaStrike}>{dateLabel}</Text> : null}

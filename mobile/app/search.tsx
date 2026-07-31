@@ -9,6 +9,7 @@ import { applyDone } from '@shared/commands/done';
 import { applyRm } from '@shared/commands/rm';
 import { Colors, Fonts, Spacing } from '../src/theme';
 import { today } from '../src/utils';
+import { usePendingDone } from '../src/hooks/usePendingDone';
 
 export default function SearchScreen() {
   const { tasks, save } = useTasks();
@@ -16,6 +17,7 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const todayStr = today();
   const [query, setQuery] = useState('');
+  const { isPending, tapCheckbox } = usePendingDone(tasks, todayStr, save);
 
   const results = useMemo(
     () => (query.trim() ? applySearch(tasks, query.trim()) : []),
@@ -57,9 +59,11 @@ export default function SearchScreen() {
           <TaskRow
             task={item}
             todayStr={todayStr}
+            pending={isPending(item.line)}
             onPress={() => router.push(`/task/${item.line}` as any)}
             onDone={() => handleDone(item.line)}
             onDelete={() => handleDelete(item.line)}
+            onCheckboxPress={() => tapCheckbox(item)}
           />
         )}
         ListEmptyComponent={() =>
