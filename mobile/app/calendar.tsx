@@ -12,7 +12,7 @@ import type { Task } from '@shared/parser';
 import { applyFocusForWindow, focusItemOccurrence, generateTaskOccurrences } from '@shared/commands/focus';
 import { birthdayLabel } from '@shared/commands/list';
 
-import { pad, buildCells, cleanTitle } from '../src/uiUtils';
+import { pad, buildCells, cleanTitle, formatMonthDayNumeric } from '../src/uiUtils';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -38,6 +38,7 @@ type AgendaItem = {
   endTime?: string;
   isOverdue?: boolean;
   overdueDate?: string;
+  endDate?: string;
 };
 
 type AgendaSection = {
@@ -135,6 +136,9 @@ export default function CalendarScreen() {
     for (const t of tasks) {
       if (!t.extensions['type'] || t.done) continue;
       const occurrences = generateTaskOccurrences(t, pastCutoff, futureCutoff);
+      const startDate = t.extensions['start']?.slice(0, 10);
+      const endDateVal = t.extensions['end']?.slice(0, 10);
+      const endDate = endDateVal && endDateVal !== startDate ? endDateVal : undefined;
       for (const occ of occurrences) {
         ensure(occ.date);
         byDate.get(occ.date)!.push({
@@ -143,6 +147,7 @@ export default function CalendarScreen() {
           kind: 'event',
           time: t.extensions['start']?.slice(11, 16) || undefined,
           endTime: t.extensions['end-time'] || undefined,
+          endDate,
         });
       }
     }
@@ -364,6 +369,8 @@ export default function CalendarScreen() {
                 <Text style={styles.agendaOverdue}>{overdueSinceLabel(item.overdueDate)}</Text>
               ) : item.time ? (
                 <Text style={styles.agendaTime}>{item.time}{item.endTime ? ` - ${item.endTime}` : ''}</Text>
+              ) : item.endDate ? (
+                <Text style={styles.agendaTime}>{formatMonthDayNumeric(item.endDate)}</Text>
               ) : null}
             </TouchableOpacity>
           );

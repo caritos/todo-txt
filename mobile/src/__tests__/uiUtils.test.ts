@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { pad, buildCells, cleanTitle, hourLabel, formatTime, parseDateParts, timeMinutes, defaultEndTime } from '../uiUtils';
+import { pad, buildCells, cleanTitle, hourLabel, formatTime, parseDateParts, formatMonthDayNumeric, timeMinutes, defaultEndTime } from '../uiUtils';
 
 // ─── pad ───────────────────────────────────────────────────────────────────
 describe('pad', () => {
@@ -248,6 +248,21 @@ describe('parseDateParts', () => {
     const result = parseDateParts('2025-11-20');
     expect(typeof result.year).toBe('number');
     expect(result.year).toBe(2025);
+  });
+});
+
+// ─── formatMonthDayNumeric ─────────────────────────────────────────────────
+describe('formatMonthDayNumeric', () => {
+  test('double-digit month and double-digit day', () => {
+    expect(formatMonthDayNumeric('2026-08-19')).toBe('8/19');
+  });
+
+  test('single-digit month and single-digit day', () => {
+    expect(formatMonthDayNumeric('2026-01-05')).toBe('1/5');
+  });
+
+  test('single-digit month and double-digit day', () => {
+    expect(formatMonthDayNumeric('2026-03-31')).toBe('3/31');
   });
 });
 

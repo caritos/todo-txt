@@ -47,6 +47,11 @@ export function parseDateParts(dateStr: string): { month: string; day: number; y
   };
 }
 
+export function formatMonthDayNumeric(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 export function timeMinutes(d: Date): number {
   return d.getHours() * 60 + d.getMinutes();
 }
