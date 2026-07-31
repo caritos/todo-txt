@@ -86,7 +86,7 @@ export default function CalendarScreen() {
     return result;
   }, [cells]);
 
-  const { sections, datesWithItems } = useMemo(() => {
+  const { sections, dateCounts } = useMemo(() => {
     const pastCutoff = addDays(todayStr, -30);
     const futureCutoff = addDays(todayStr, 730);
     const byDate = new Map<string, AgendaItem[]>();
@@ -154,7 +154,16 @@ export default function CalendarScreen() {
 
     const KIND_ORDER: Record<AgendaItem['kind'], number> = { incomplete: 0, event: 1, completed: 2 };
     const sortedDates = [...byDate.keys()].sort();
-    const dotSet = new Set(sortedDates);
+    const counts = new Map<string, { taskCount: number; eventCount: number }>();
+    for (const [date, items] of byDate) {
+      let taskCount = 0;
+      let eventCount = 0;
+      for (const item of items) {
+        if (item.kind === 'incomplete' || item.kind === 'completed') taskCount++;
+        else if (item.kind === 'event') eventCount++;
+      }
+      counts.set(date, { taskCount, eventCount });
+    }
     const sectionList: AgendaSection[] = sortedDates.map(dateStr => {
       const d = new Date(dateStr + 'T12:00:00');
       const dow = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()];
@@ -178,7 +187,7 @@ export default function CalendarScreen() {
       return { dateStr, title, data };
     });
 
-    return { sections: sectionList, datesWithItems: dotSet };
+    return { sections: sectionList, dateCounts: counts };
   }, [tasks, todayStr]);
 
   // Flatten sections into a single array for FlatList so getItemLayout can provide accurate offsets
@@ -271,7 +280,9 @@ export default function CalendarScreen() {
                 if (!dateStr) return <View key={`e-${ri}-${ci}`} style={styles.calCell} />;
                 const isToday = dateStr === todayStr;
                 const isSelected = dateStr === selectedDate && !isToday;
-                const hasDot = datesWithItems.has(dateStr);
+                const counts = dateCounts.get(dateStr);
+                const taskDots = Math.min(counts?.taskCount ?? 0, 3);
+                const eventDots = Math.min(counts?.eventCount ?? 0, 3);
                 const day = parseInt(dateStr.slice(8), 10);
                 return (
                   <TouchableOpacity
@@ -296,8 +307,17 @@ export default function CalendarScreen() {
                         {day}
                       </Text>
                     </View>
-                    {hasDot
-                      ? <View style={styles.dot} />
+                    {(taskDots > 0 || eventDots > 0)
+                      ? (
+                        <View style={styles.dotRow}>
+                          {Array.from({ length: taskDots }).map((_, i) => (
+                            <View key={`t-${i}`} style={[styles.dot, styles.dotTask]} />
+                          ))}
+                          {Array.from({ length: eventDots }).map((_, i) => (
+                            <View key={`e-${i}`} style={[styles.dot, styles.dotEvent]} />
+                          ))}
+                        </View>
+                      )
                       : <View style={styles.dotPlaceholder} />
                     }
                   </TouchableOpacity>
@@ -420,7 +440,10 @@ const styles = StyleSheet.create({
   dayNum: { fontSize: 12, color: Colors.textSecondary },
   dayNumToday: { color: Colors.text, fontWeight: '700' },
   dayNumSelected: { color: Colors.text },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.accent, marginTop: 1 },
+  dot: { width: 4, height: 4, borderRadius: 2 },
+  dotTask: { backgroundColor: Colors.accent },
+  dotEvent: { backgroundColor: Colors.eventDot },
+  dotRow: { flexDirection: 'row', gap: 2, marginTop: 1, height: 4 },
   dotPlaceholder: { width: 4, height: 4, marginTop: 1 },
 
   // Section header — height must match HEADER_H constant

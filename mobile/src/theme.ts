@@ -16,6 +16,10 @@ export const Colors = {
   actionDelete: '#6B0000',
   navBar: '#111111',
   overlay: 'rgba(0,0,0,0.6)',
+  // Deliberate, narrowly-scoped exception to the one-accent-color/Bauhaus rule:
+  // used only by the month-grid density dots (issue #81) to distinguish tasks
+  // from events at a glance. Do not reuse this color anywhere else.
+  eventDot: '#8E5FD9',
 } as const;
 
 export const Fonts = {
