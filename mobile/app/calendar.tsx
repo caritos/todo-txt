@@ -164,6 +164,10 @@ export default function CalendarScreen() {
       const data = byDate.get(dateStr)!.sort((a, b) => {
         const kindDiff = KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
         if (kindDiff !== 0) return kindDiff;
+        // Group overdue items together: their hidden start time-of-day must not interleave
+        // them with same-day timed items, since the UI shows "due <date>" instead.
+        const overdueDiff = Number(!!b.isOverdue) - Number(!!a.isOverdue);
+        if (overdueDiff !== 0) return overdueDiff;
         return (a.time ?? '').localeCompare(b.time ?? '');
       });
       return { dateStr, title, data };
