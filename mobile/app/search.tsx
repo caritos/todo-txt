@@ -7,8 +7,9 @@ import { TaskRow } from '../src/components/TaskRow';
 import { applySearch } from '@shared/commands/search';
 import { applyDone } from '@shared/commands/done';
 import { applyRm } from '@shared/commands/rm';
+import { taskOccurrence } from '@shared/commands/focus';
 import { Colors, Fonts, Spacing } from '../src/theme';
-import { today } from '../src/utils';
+import { today, formatDateLabel } from '../src/utils';
 import { usePendingDone } from '../src/hooks/usePendingDone';
 
 export default function SearchScreen() {
@@ -55,17 +56,25 @@ export default function SearchScreen() {
       <FlatList
         data={results}
         keyExtractor={t => String(t.line)}
-        renderItem={({ item }) => (
-          <TaskRow
-            task={item}
-            todayStr={todayStr}
-            pending={isPending(item.raw)}
-            onPress={() => router.push(`/task/${item.line}` as any)}
-            onDone={() => handleDone(item.line)}
-            onDelete={() => handleDelete(item.line)}
-            onCheckboxPress={() => tapCheckbox(item)}
-          />
-        )}
+        renderItem={({ item }) => {
+          const occurrence = item.extensions['start'] ? taskOccurrence(item, todayStr) : null;
+          const dueDate = occurrence?.date ?? item.extensions['start']?.slice(0, 10);
+          const dateLabel = dueDate ? formatDateLabel(dueDate) : undefined;
+          const isOverdue = !!(dueDate && !item.done && dueDate < todayStr);
+          return (
+            <TaskRow
+              task={item}
+              todayStr={todayStr}
+              dateLabel={dateLabel}
+              isOverdue={isOverdue}
+              pending={isPending(item.raw)}
+              onPress={() => router.push(`/task/${item.line}` as any)}
+              onDone={() => handleDone(item.line)}
+              onDelete={() => handleDelete(item.line)}
+              onCheckboxPress={() => tapCheckbox(item)}
+            />
+          );
+        }}
         ListEmptyComponent={() =>
           query.trim() ? (
             <View style={styles.empty}>
