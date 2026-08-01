@@ -16,7 +16,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "UIFileSharingEnabled": true
       },
-      "buildNumber": "9"
+      "buildNumber": "10"
     },
     "plugins": [
       "expo-router",

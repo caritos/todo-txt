@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { AppState } from 'react-native';
 import type { Task } from '@shared/parser';
 import { applyDone, applyUndone } from '@shared/commands/done';
+import { commitPendingLines } from './pendingDoneCommit';
 
 export function usePendingDone(
   tasks: Task[],
@@ -25,28 +27,45 @@ export function usePendingDone(
   const todayStrRef = useRef(todayStr);
   useEffect(() => { todayStrRef.current = todayStr; }, [todayStr]);
 
+  // Flush (commit) any still-pending completions instead of silently
+  // dropping them. Shared by the unmount cleanup (a pushed screen like
+  // Search can unmount mid-window on back-navigation) and the AppState
+  // listener below (the app backgrounding or being killed mid-window loses
+  // the pending setTimeout forever, since JS timers don't survive that).
+  const flushPending = useCallback(() => {
+    const linesToCommit: number[] = [];
+    for (const [key, timer] of timers.current) {
+      clearTimeout(timer);
+      const current = tasksRef.current.find(t => t.raw === key);
+      if (current) linesToCommit.push(current.line);
+    }
+    timers.current.clear();
+    if (linesToCommit.length > 0) {
+      void commitPendingLines(tasksRef.current, linesToCommit, todayStrRef.current, save).catch(() => {});
+      setPendingKeys(new Set());
+    }
+  }, [save]);
+
   useEffect(() => {
-    return () => {
-      // Flush (commit) any still-pending completions instead of silently
-      // dropping them. A pushed screen (e.g. Search) can unmount mid-window
-      // when the user navigates back, and losing the completion with no
-      // error and no visual sign would be a silent data-loss bug.
-      const linesToCommit: number[] = [];
-      for (const [key, timer] of timers.current) {
-        clearTimeout(timer);
-        const current = tasksRef.current.find(t => t.raw === key);
-        if (current) linesToCommit.push(current.line);
-      }
-      timers.current.clear();
-      if (linesToCommit.length > 0) {
-        try {
-          const { tasks: updated } = applyDone([...tasksRef.current], linesToCommit, todayStrRef.current);
-          // Fire-and-forget: the component is unmounting, so there is no
-          // state left here to update afterward.
-          void save(updated);
-        } catch {}
-      }
-    };
+    // A pending completion is only safe from loss while the app stays in
+    // the foreground — a JS setTimeout does not survive the app being
+    // backgrounded and then killed (by the user or the OS). Commit
+    // immediately on the way out instead of trusting the timer to fire.
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState !== 'active') flushPending();
+    });
+    return () => subscription.remove();
+  }, [flushPending]);
+
+  // Kept as a ref so this effect's deps stay `[]` — it must only run its
+  // cleanup on a genuine unmount, not whenever `save`'s identity changes
+  // (which would flush prematurely, not just when the screen actually goes
+  // away).
+  const flushPendingRef = useRef(flushPending);
+  useEffect(() => { flushPendingRef.current = flushPending; }, [flushPending]);
+
+  useEffect(() => {
+    return () => flushPendingRef.current();
   }, []);
 
   const isPending = useCallback(
