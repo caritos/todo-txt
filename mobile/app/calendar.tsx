@@ -12,7 +12,7 @@ import type { Task } from '@shared/parser';
 import { applyFocusForWindow, focusItemOccurrence, generateTaskOccurrences } from '@shared/commands/focus';
 import { birthdayLabel } from '@shared/commands/list';
 
-import { pad, buildCells, cleanTitle, formatMonthDayNumeric } from '../src/uiUtils';
+import { pad, buildCells, cleanTitle, formatMonthDayNumeric, daysUntil, daysLeftLabel } from '../src/uiUtils';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -391,7 +391,7 @@ export default function CalendarScreen() {
               ) : item.time ? (
                 <Text style={styles.agendaTime}>{item.time}{item.endTime ? ` - ${item.endTime}` : ''}</Text>
               ) : item.endDate ? (
-                <Text style={styles.agendaTime}>{formatMonthDayNumeric(item.endDate)}</Text>
+                <Text style={styles.agendaTime}>{formatMonthDayNumeric(item.endDate)} · {daysLeftLabel(daysUntil(dateStr, item.endDate))}</Text>
               ) : null}
             </TouchableOpacity>
           );

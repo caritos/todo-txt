@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { pad, buildCells, cleanTitle, hourLabel, formatTime, parseDateParts, formatMonthDayNumeric, timeMinutes, defaultEndTime } from '../uiUtils';
+import { pad, buildCells, cleanTitle, hourLabel, formatTime, parseDateParts, formatMonthDayNumeric, daysUntil, daysLeftLabel, timeMinutes, defaultEndTime } from '../uiUtils';
 
 // ─── pad ───────────────────────────────────────────────────────────────────
 describe('pad', () => {
@@ -263,6 +263,36 @@ describe('formatMonthDayNumeric', () => {
 
   test('single-digit month and double-digit day', () => {
     expect(formatMonthDayNumeric('2026-03-31')).toBe('3/31');
+  });
+});
+
+// ─── daysUntil ───────────────────────────────────────────────────────────────
+describe('daysUntil', () => {
+  test('counts forward across a month boundary', () => {
+    expect(daysUntil('2026-08-01', '2026-08-19')).toBe(18);
+  });
+
+  test('zero when the two dates are the same', () => {
+    expect(daysUntil('2026-08-19', '2026-08-19')).toBe(0);
+  });
+
+  test('one day before the end date', () => {
+    expect(daysUntil('2026-08-18', '2026-08-19')).toBe(1);
+  });
+});
+
+// ─── daysLeftLabel ─────────────────────────────────────────────────────────
+describe('daysLeftLabel', () => {
+  test('multiple days left', () => {
+    expect(daysLeftLabel(18)).toBe('18d left');
+  });
+
+  test('one day left', () => {
+    expect(daysLeftLabel(1)).toBe('1d left');
+  });
+
+  test('zero days left reads as the last day', () => {
+    expect(daysLeftLabel(0)).toBe('last day');
   });
 });
 

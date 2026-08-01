@@ -52,6 +52,21 @@ export function formatMonthDayNumeric(dateStr: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+// Noon-anchored (matches every other date-diff in this codebase) so DST
+// transitions and time-of-day never shift the day count by one.
+export function daysUntil(fromDateStr: string, toDateStr: string): number {
+  const from = new Date(fromDateStr + 'T12:00:00');
+  const to = new Date(toDateStr + 'T12:00:00');
+  return Math.round((to.getTime() - from.getTime()) / 86400000);
+}
+
+// Compact — shares a single agenda-row line with the end date, so "N days
+// left" would crowd out the task title's already-truncated space.
+export function daysLeftLabel(daysLeft: number): string {
+  if (daysLeft <= 0) return 'last day';
+  return `${daysLeft}d left`;
+}
+
 export function timeMinutes(d: Date): number {
   return d.getHours() * 60 + d.getMinutes();
 }
