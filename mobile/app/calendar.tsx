@@ -389,7 +389,10 @@ export default function CalendarScreen() {
               {item.overdueDate ? (
                 <Text style={styles.agendaOverdue}>{overdueSinceLabel(item.overdueDate)}</Text>
               ) : item.time ? (
-                <Text style={styles.agendaTime}>{item.time}{item.endTime ? ` - ${item.endTime}` : ''}</Text>
+                <Text style={styles.agendaTime}>
+                  {item.time}{item.endTime ? ` - ${item.endTime}` : ''}
+                  {item.endDate ? ` · ${daysLeftLabel(daysUntil(dateStr, item.endDate))}` : ''}
+                </Text>
               ) : item.endDate ? (
                 <Text style={styles.agendaTime}>{formatMonthDayNumeric(item.endDate)} · {daysLeftLabel(daysUntil(dateStr, item.endDate))}</Text>
               ) : null}
