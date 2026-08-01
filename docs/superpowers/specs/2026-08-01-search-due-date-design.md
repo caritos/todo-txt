@@ -18,6 +18,8 @@ const dueDate = occurrence?.date ?? task.extensions['start']?.slice(0, 10);
 ```
 and renders it via `formatDateLabel(dueDate)` (from `mobile/src/utils.ts`), with overdue styling gated on `!task.done && dueDate < todayStr`. This is the single source of truth for "what date is this task/event due" per CLAUDE.md, and must be reused as-is rather than re-derived.
 
+**Known limitation (accepted):** reusing this pattern means recurring tasks (weekly/monthly/yearly `frequency:`) never get the "↑ overdue" treatment in Search, even when actually overdue — `focusSortKey` collapses an overdue recurring task's occurrence to today (`shared/commands/focus.ts:322,336`), so `dueDate < todayStr` can never be true for that class. Calendar avoids this by using `overdueOccurrenceDate` instead, which is out of scope here — this design deliberately reuses Task Detail's simpler pattern rather than porting Calendar's. One-off dated tasks/events (the motivating case) are unaffected.
+
 ## Scope
 
 - Search results only (`mobile/app/search.tsx`). No changes to Calendar, Task Detail, or shared logic.
