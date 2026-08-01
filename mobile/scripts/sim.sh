@@ -15,33 +15,38 @@ if [[ ! -d ios ]]; then
   npx expo prebuild --platform ios
 fi
 
-# Detect stale entitlements: app.json declares entitlements but the generated
-# .entitlements plist is empty. This happens when ios/ was created before
-# entitlements were added to app.json and hasn't been regenerated since.
-_ent_plist=$(find ios -name "*.entitlements" -maxdepth 3 2>/dev/null | head -1)
-if [[ -n "$_ent_plist" ]]; then
-  _app_ent_count=$(node -e "const e=require('./app.json').expo?.ios?.entitlements||{}; console.log(Object.keys(e).length)" 2>/dev/null || echo 0)
-  _plist_key_count=$(grep -c '<key>' "$_ent_plist" 2>/dev/null || echo 0)
-  if (( _app_ent_count > 0 && _plist_key_count == 0 )); then
-    echo ""
-    echo "⚠  app.json has $_app_ent_count entitlement(s) but $_ent_plist is empty."
-    echo "   ios/ was generated before these entitlements were added."
-    read "answer?Delete ios/ and regenerate with expo prebuild? [y/N] "
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-      rm -rf ios
-      npx expo prebuild --platform ios
-    fi
-  fi
-fi
-
 # Ensure pods are installed/synced.
-# Run pod install if Podfile.lock is missing/stale OR if generated pod headers
+# Run pod install if Podfile.lock is missing/stale, if generated pod headers
 # are gone (e.g. after cleanup-disk-space.sh removed Pods/Headers without
-# removing Podfile.lock, which makes the content check below pass incorrectly).
+# removing Podfile.lock, which makes the content check below pass incorrectly),
+# or if package.json has changed more recently than Podfile.lock — the general
+# case: any newly added/merged native dependency leaves ios/Pods stale until
+# pod install re-syncs it.
 if ! grep -q "expo-dev-client" ios/Podfile.lock 2>/dev/null || \
-   [[ ! -d ios/Pods/Headers/Public/yoga ]]; then
+   [[ ! -d ios/Pods/Headers/Public/yoga ]] || \
+   [[ package.json -nt ios/Podfile.lock ]]; then
   echo "Syncing CocoaPods..."
   (cd ios && pod install)
+fi
+
+# Keep the xcassets icon in sync with the source asset.
+# expo prebuild writes a placeholder when it first generates ios/ — syncing
+# here ensures the real icon is always built in, even after a fresh prebuild.
+# Applies to both the device and simulator paths below.
+icon_src="assets/icon/icon-1024.png"
+icon_dst=$(find ios -maxdepth 3 -path "*AppIcon.appiconset/App-Icon-1024x1024@1x.png" -not -path "*/Pods/*" | head -1)
+if [[ -f "$icon_src" && -n "$icon_dst" ]]; then
+  cp "$icon_src" "$icon_dst"
+fi
+
+# Keep CFBundleDisplayName in sync with app.json "name".
+# expo prebuild sets it once; subsequent runs don't update it. Runs before
+# target selection so both the device and simulator paths pick up a name
+# change, not just whichever path used to set it.
+app_name=$(node -e "console.log(require('./app.json').expo.name)")
+info_plist=$(find ios -maxdepth 2 -name "Info.plist" -not -path "*/Pods/*" | head -1)
+if [[ -n "$info_plist" && -n "$app_name" ]]; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $app_name" "$info_plist" 2>/dev/null || true
 fi
 
 # ---- Build target list ----
@@ -108,70 +113,88 @@ fi
 
 IFS='|' read -r type udid label <<< "${entries[$choice]}"
 
-# ---- Physical device path — local Xcode build over USB ----
-if [[ "$type" == "device" ]]; then
-  echo ""
-  echo "Building and installing on: $label ($udid)"
-  echo "No build credits used — builds locally with Xcode."
-  echo ""
-  npx expo run:ios --device "$udid"
-  exit 0
+# Bump the build number on every local build (device or simulator) so
+# Settings' "vX.Y.Z (N)" always reflects the build actually installed. This
+# is an EAS-independent counter — appVersionSource: "remote" in eas.json
+# means EAS ignores app.json's ios.buildNumber and manages its own for
+# TestFlight/App Store builds (ship.sh), so the two numbers are expected to
+# differ; this one only tracks local sim/device installs.
+new_build=$(node -e "
+  const fs = require('fs');
+  const config = require('./app.json');
+  config.expo.ios = config.expo.ios || {};
+  const next = String(parseInt(config.expo.ios.buildNumber || '0', 10) + 1);
+  config.expo.ios.buildNumber = next;
+  fs.writeFileSync('./app.json', JSON.stringify(config, null, 2) + '\n');
+  console.log(next);
+")
+echo "Build number: $new_build"
+if [[ -n "$info_plist" ]]; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $new_build" "$info_plist" 2>/dev/null || true
 fi
-
-# ---- Simulator path ----
-echo ""
-echo "Build configuration:"
-echo ""
-echo "  1) Debug   — dev build, live reload (default)"
-echo "  2) Release — standalone build for screenshots (no dev overlay)"
-echo ""
-read "config_choice?Choice [1-2, default 1]: "
-
-echo ""
-echo "Deploying to: $label ($udid)"
-echo ""
 
 bundle_id=$(node -e "console.log(require('./app.json').expo.ios.bundleIdentifier)")
 workspace=$(find ios -name "*.xcworkspace" -maxdepth 1 | head -1)
 scheme=$(basename "$workspace" .xcworkspace)
-config="Debug"
-[[ "$config_choice" == "2" ]] && config="Release"
+config="Release"
 
-# Keep the xcassets icon in sync with the source asset.
-# expo prebuild writes a placeholder when it first generates ios/ — syncing
-# here ensures the real icon is always built in, even after a fresh prebuild.
-icon_src="assets/icon/icon-1024.png"
-icon_dst="ios/Todo/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png"
-if [[ -f "$icon_src" && -f "$icon_dst" ]]; then
-  cp "$icon_src" "$icon_dst"
+echo ""
+echo "Deploying to: $label ($udid) [$config]"
+echo ""
+
+# ---- Physical device path — local Xcode build over USB ----
+if [[ "$type" == "device" ]]; then
+  # Build, install, and launch directly via devicectl — no Metro, no
+  # dependency on expo run:ios's own (occasionally flaky) device-open step.
+  # ENABLE_USER_SCRIPT_SANDBOXING=NO: Xcode's newer script-phase sandboxing
+  # blocks React Native's "Bundle React Native code and images" build script
+  # from writing main.jsbundle (EPERM), since expo prebuild's generated
+  # project doesn't declare that output for the sandboxed model. Overridden
+  # here (not edited into project.pbxproj) so it survives `expo prebuild
+  # --clean` regenerating ios/ from scratch.
+  build_args=(-workspace "$workspace" -scheme "$scheme" -configuration Release -destination "id=$udid" -allowProvisioningUpdates ENABLE_USER_SCRIPT_SANDBOXING=NO build)
+  echo "Building Release for device (no Metro)..."
+  RCT_NO_LAUNCH_PACKAGER=true xcodebuild "${build_args[@]}" > /tmp/todo-build.log 2>&1 || {
+    echo "Build failed. Log: /tmp/todo-build.log"
+    tail -20 /tmp/todo-build.log
+    exit 1
+  }
+
+  built_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/Release-iphoneos/*" 2>/dev/null | head -1)
+  [[ -z "$built_app" ]] && { echo "No .app found after build."; exit 1; }
+
+  echo "Installing on $label..."
+  xcrun devicectl device install app --device "$udid" "$built_app"
+
+  echo "Launching..."
+  xcrun devicectl device process launch --device "$udid" "$bundle_id"
+
+  echo ""
+  echo "App launched in Release mode on $label — no Metro needed."
+  exit 0
 fi
 
-# Keep CFBundleDisplayName in sync with app.json "name".
-# expo prebuild sets it once; subsequent runs don't update it.
-app_name=$(node -e "console.log(require('./app.json').expo.name)")
-info_plist="ios/Todo/Info.plist"
-if [[ -f "$info_plist" && -n "$app_name" ]]; then
-  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $app_name" "$info_plist" 2>/dev/null || true
-fi
+# ---- Simulator path — local Xcode build ----
 
 xcrun simctl uninstall "$udid" "$bundle_id" 2>/dev/null || true
 
 # Clean build if no existing build or Podfile.lock changed.
-# Release is ALWAYS a full clean build, never incrementally reused: expo-dev-client's
-# podspec links expo-dev-launcher only for the Debug pod configuration
-# (`:configurations => :debug`), so a truly fresh Release build never includes the
-# dev-client launcher and boots straight into the app — no "Development servers /
-# npx expo start" screen, no Metro dependency at all. An incrementally-reused Release
-# build in DerivedData can be a stale artifact from before some pod/config change and
-# silently still carry the old (possibly dev-launcher-linked) binary; Podfile.lock's
-# mtime alone isn't a reliable signal that the cached build still reflects the
-# current pod graph. Release builds are infrequent (screenshots only), so the extra
-# build time is a worthwhile trade for guaranteeing this can't happen.
+# Release is ALWAYS a full clean build, never incrementally reused:
+# expo-dev-client's podspec links expo-dev-launcher only for the Debug pod
+# configuration (`:configurations => :debug`), so a truly fresh Release
+# build never includes the dev-client launcher and boots straight into the
+# app — no "Development servers / npx expo start" screen, no Metro
+# dependency at all. An incrementally-reused Release build in DerivedData
+# can be a stale artifact from before some pod/config change and silently
+# still carry the old (possibly dev-launcher-linked) binary; Podfile.lock's
+# mtime alone isn't a reliable signal that the cached build still reflects
+# the current pod graph.
 derived_app=""
 [[ -d ~/Library/Developer/Xcode/DerivedData ]] && \
   derived_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -path "*/${config}-iphonesimulator/*" 2>/dev/null | head -1) || true
-build_args=(-workspace "$workspace" -scheme "$scheme" -configuration "$config" -destination "id=$udid")
-if [[ "$config" == "Release" || -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
+# See the device-Release build_args above for why ENABLE_USER_SCRIPT_SANDBOXING=NO is needed.
+build_args=(-workspace "$workspace" -scheme "$scheme" -configuration "$config" -destination "id=$udid" ENABLE_USER_SCRIPT_SANDBOXING=NO)
+if [[ -z "$derived_app" || ios/Podfile.lock -nt "$derived_app" ]]; then
   echo "Clearing DerivedData for clean build..."
   rm -rf ~/Library/Developer/Xcode/DerivedData/${scheme}-*(N) 2>/dev/null || true
   build_args+=(clean)
@@ -191,15 +214,6 @@ built_app=$(find ~/Library/Developer/Xcode/DerivedData -name "${scheme}.app" -pa
 echo "Installing..."
 xcrun simctl install "$udid" "$built_app"
 
-if [[ "$config" == "Release" ]]; then
-  xcrun simctl launch "$udid" "$bundle_id"
-  echo "Launched in Release mode — ready for screenshots."
-else
-  # Start Metro, then open the app once it's ready
-  lsof -ti tcp:8081 | xargs kill -9 2>/dev/null || true
-  (
-    until curl -sf http://localhost:8081/status > /dev/null 2>&1; do sleep 1; done
-    xcrun simctl openurl "$udid" "${bundle_id}://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
-  ) &
-  npx expo start --dev-client
-fi
+xcrun simctl launch "$udid" "$bundle_id"
+echo ""
+echo "App launched in Release mode — ready for screenshots."

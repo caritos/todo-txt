@@ -17,7 +17,7 @@ bun run ./console/index.ts help
 # Mobile unit tests (Jest)
 cd mobile && npm test
 
-# Mobile: build and run on simulator / USB device (dev-client, Debug config)
+# Mobile: build and run on simulator / USB device (Release, no Metro)
 mobile/scripts/sim.sh
 
 # Mobile: build and submit to App Store / TestFlight
@@ -26,11 +26,11 @@ mobile/scripts/ship.sh
 
 ### sim.sh build behavior
 
-`sim.sh` automatically detects stale or missing build artifacts and does the right thing:
-- **Incremental build** — uses the existing DerivedData build if `Podfile.lock` hasn't changed (Debug config only — see below)
-- **Clean build** — if DerivedData is missing (e.g. after running `cleanup-disk-space.sh`) or `Podfile.lock` is newer than the last build, it runs `xcodebuild clean build` automatically; no manual intervention needed
+`sim.sh` always builds the **Release** configuration for both simulators and USB-connected physical devices — there is no Debug/dev-client picker. This means every local build is Metro-free: the simulator path installs and launches the built `.app` directly via `simctl`, and the device path installs and launches directly via `devicectl`, with no "Development servers / npx expo start" screen and no Metro dependency at all.
 
-**Release builds are always a full clean build, never incrementally reused** (`mobile/scripts/sim.sh`, the DerivedData-staleness check). `expo-dev-client`'s podspec links `expo-dev-launcher` only for the `Debug` pod configuration (`:configurations => :debug`) — a genuinely fresh Release build never includes the dev-client launcher and boots straight into the app, no "Development servers / npx expo start" screen, no Metro dependency at all (verified: a fresh Release `.app` has zero `EXDevLauncher` symbols/resources, and installing+launching it lands directly on the Calendar screen). The bug this guards against: an incrementally-reused Release build in DerivedData can be a stale artifact cached from before some pod/config change, silently still carrying the old (possibly dev-launcher-linked) binary — `Podfile.lock`'s mtime alone isn't a reliable signal that a cached build still reflects the current pod graph. Release builds are infrequent (screenshots only), so the extra build time from always cleaning is a worthwhile trade.
+**Release builds are always a full clean build, never incrementally reused** (`mobile/scripts/sim.sh`, the DerivedData-staleness check). `expo-dev-client`'s podspec links `expo-dev-launcher` only for the `Debug` pod configuration (`:configurations => :debug`) — a genuinely fresh Release build never includes the dev-client launcher and boots straight into the app (verified: a fresh Release `.app` has zero `EXDevLauncher` symbols/resources, and installing+launching it lands directly on the Calendar screen). The bug this guards against: an incrementally-reused Release build in DerivedData can be a stale artifact cached from before some pod/config change, silently still carrying the old (possibly dev-launcher-linked) binary — `Podfile.lock`'s mtime alone isn't a reliable signal that a cached build still reflects the current pod graph. If DerivedData is missing (e.g. after running `cleanup-disk-space.sh`) or `Podfile.lock` is newer than the last build, `sim.sh` runs `xcodebuild clean build` automatically; no manual intervention needed.
+
+`sim.sh` bumps `app.json`'s `ios.buildNumber` on every local build so Settings' "vX.Y.Z (N)" reflects the build actually installed. This is an EAS-independent counter — `appVersionSource: "remote"` in `eas.json` means EAS ignores this field and manages its own build number for TestFlight/App Store builds (`ship.sh`), so the two numbers are expected to diverge; `ios.buildNumber` only ever tracks local sim/device installs.
 
 `sim.sh` only targets simulators and USB-connected physical devices — it does **not** offer a TestFlight/EAS-cloud-build option. A dev-client build (`developmentClient: true` in `eas.json`) requires the Xcode Debug configuration, which compiles React Native's `RCTKeyCommands.m` (`#if RCT_DEV`) into the binary. That file calls the private `UIEvent` selectors `_isKeyDown`, `_modifierFlags`, `_modifiedInput` to support hardware-keyboard dev-menu shortcuts — Apple's App Store Connect binary validator rejects any upload referencing them, so dev-client builds can never pass TestFlight/App Store submission, independent of SDK image version. Use `ship.sh` (the `production` profile — Release config, no dev client) for anything that needs to reach App Store Connect or TestFlight.
 
