@@ -63,7 +63,7 @@ export default function SearchScreen() {
             onPress={() => router.push(`/task/${item.line}` as any)}
             onDone={() => handleDone(item.line)}
             onDelete={() => handleDelete(item.line)}
-            onCheckboxPress={() => (item.done || !item.extensions['type']) && tapCheckbox(item)}
+            onCheckboxPress={() => tapCheckbox(item)}
           />
         )}
         ListEmptyComponent={() =>

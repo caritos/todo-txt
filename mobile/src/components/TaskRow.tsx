@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import { Swipeable, TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import type { Task } from '@shared/parser';
 import { birthdayLabel } from '@shared/commands/list';
 import { Colors, Fonts, Spacing } from '../theme';
@@ -39,6 +39,11 @@ export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue,
   const title = birthdayLabel(task, todayStr) + cleanTitle(task.text);
   const meta = [dateLabel, recurrenceLabel].filter(Boolean).join('   ');
   const done = task.done;
+  // type:event/birthday/anniversary tasks show a diamond instead of a
+  // checkbox, mirroring Calendar's agenda row — Search has no other visual
+  // cue distinguishing these from plain tasks, so without this a completed
+  // event and an untouched checkbox tap look identical to the user.
+  const isEvent = !!task.extensions['type'];
 
   return (
     <Swipeable
@@ -46,14 +51,27 @@ export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue,
       friction={2}
       rightThreshold={40}
     >
-      <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
-        <TouchableOpacity onPress={() => onCheckboxPress?.()} disabled={!onCheckboxPress} hitSlop={8}>
+      {/* Both this row and the nested checkbox button below use
+          gesture-handler's TouchableOpacity, not React Native's core one.
+          Swipeable is itself a gesture-handler component, and mixing RN's
+          legacy responder system with it for nested touchables (a button
+          inside a button) produces unreliable real-device touch arbitration:
+          plain-RN-inside-GH showed a press flash that never committed
+          (issue #80's "checkbox does nothing"); GH-inside-plain-RN then had
+          the outer row win every tap instead (checkbox always navigated).
+          Keeping the whole nested hierarchy on one gesture system — GH's
+          touchables are built to nest correctly with each other and with
+          Swipeable — is what actually resolves it. */}
+      <GHTouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.row}>
+        <GHTouchableOpacity onPress={() => onCheckboxPress?.()} disabled={!onCheckboxPress} hitSlop={8}>
           {(done || pending) ? (
             <Text style={styles.checkboxDone}>✓</Text>
+          ) : isEvent ? (
+            <Text style={styles.checkboxEvent}>◆</Text>
           ) : (
             <View style={[styles.checkbox, isOverdue && styles.checkboxOverdue]} />
           )}
-        </TouchableOpacity>
+        </GHTouchableOpacity>
         <View style={styles.content}>
           <Text style={[styles.title, (done || pending) && styles.titleDone, isOverdue && !done && !pending && styles.titleOverdue]} numberOfLines={3}>{title}</Text>
           {!done && isOverdue && !pending ? (
@@ -69,7 +87,7 @@ export function TaskRow({ task, todayStr, dateLabel, recurrenceLabel, isOverdue,
         {task.priority && !done ? (
           <Text style={styles.priority}>{task.priority}</Text>
         ) : null}
-      </TouchableOpacity>
+      </GHTouchableOpacity>
     </Swipeable>
   );
 }
@@ -95,6 +113,7 @@ const styles = StyleSheet.create({
   },
   checkboxOverdue: { borderColor: Colors.accent },
   checkboxDone: { fontSize: 11, color: Colors.textSecondary, width: 17, marginTop: 2, flexShrink: 0 },
+  checkboxEvent: { fontSize: 11, color: Colors.accent, width: 17, marginTop: 2, flexShrink: 0, textAlign: 'center' },
   content: { flex: 1, gap: 3 },
   title: {
     fontFamily: Fonts.mono,
