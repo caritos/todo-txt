@@ -1,11 +1,16 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Share } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Share, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
+import Constants from 'expo-constants';
 import { parseLine, serializeTasks } from '@shared/parser';
 import { useTasks } from '../src/context/TaskContext';
 import { writeTasks, LOCAL_PATH } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
+
+const appName = Constants.expoConfig?.name ?? 'Stark';
+const appVersion = Constants.expoConfig?.version ?? '';
+const buildNumber = Constants.expoConfig?.ios?.buildNumber ?? '';
 
 export default function SettingsScreen() {
   const { filePath, tasks, reload, weekStart, setWeekStart } = useTasks();
@@ -100,6 +105,36 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.currentPath}>{filePath}</Text>
       </View>
+
+      <Text style={styles.sectionTitle}>About</Text>
+      <View style={styles.card}>
+        <View style={styles.aboutRow}>
+          <Text style={styles.aboutLabel}>APP NAME</Text>
+          <Text style={styles.aboutValue}>{appName}</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.aboutRow}>
+          <Text style={styles.aboutLabel}>VERSION</Text>
+          <Text style={styles.aboutValue}>{appVersion}{buildNumber ? ` (${buildNumber})` : ''}</Text>
+        </View>
+        <View style={styles.divider} />
+        <TouchableOpacity
+          style={styles.aboutRow}
+          onPress={() => Linking.openURL('http://caritos.com')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.aboutLabel}>DEVELOPER</Text>
+          <Text style={styles.aboutLink}>Eladio Caritos</Text>
+        </TouchableOpacity>
+        <View style={styles.divider} />
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() => Linking.openURL('https://stark.caritos.com/privacy')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.optionLabel, styles.optionLabelActive]}>PRIVACY POLICY</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -142,4 +177,14 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.md,
   },
   currentPath: { fontFamily: Fonts.mono, fontSize: 11, color: Colors.textSecondary, lineHeight: 18, padding: Spacing.md },
+  aboutRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+  },
+  aboutLabel: { fontSize: 13, letterSpacing: 2, color: Colors.textSecondary, fontFamily: Fonts.mono },
+  aboutValue: { fontSize: 13, color: Colors.text, fontFamily: Fonts.mono },
+  aboutLink: { fontSize: 13, color: Colors.accent, fontFamily: Fonts.mono },
 });
