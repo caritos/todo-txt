@@ -21,7 +21,14 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Stark uses the microphone to add tasks by voice.",
+          "speechRecognitionPermission": "Stark uses speech recognition to transcribe voice-added tasks."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
