@@ -1,0 +1,8 @@
+{
+  "name": "expo-icloud-file",
+  "version": "1.0.0",
+  "description": "Native module giving persistent, bookmark-based read/write access to a user-picked iCloud Drive file",
+  "main": "index.js",
+  "license": "UNLICENSED",
+  "private": true
+}
