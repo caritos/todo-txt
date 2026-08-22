@@ -9,6 +9,16 @@ jest.mock('expo-file-system', () => ({
   moveAsync: jest.fn(), // should never be called with the direct-write approach
 }));
 
+jest.mock('react-native', () => ({
+  NativeModules: {
+    ExpoIcloudFile: {
+      pickFolder: jest.fn(),
+      readFile: jest.fn(),
+      writeFile: jest.fn(),
+    },
+  },
+}));
+
 import * as FileSystem from 'expo-file-system';
 import { writeTasks } from '../store';
 import { applyAdd } from '@shared/commands/add';

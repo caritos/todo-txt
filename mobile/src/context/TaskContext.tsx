@@ -9,6 +9,7 @@ import {
   setWeekStart as storeSetWeekStart,
   enableICloudStorage,
   disableICloudStorage,
+  clearICloudBookmark,
 } from '../store';
 import type { StorageInfo } from '../store';
 import { today } from '../utils';
@@ -46,6 +47,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   // race on fast interactions shortly after launch).
   const filePathRef = useRef('');
   const tasksRef = useRef<Task[]>([]);
+  // Tracks whether the most recent reload's readTasks call succeeded.
+  // enableICloud/disableICloud must never write tasksRef.current when this
+  // is false — after a failed read, tasksRef still holds a stale/empty
+  // snapshot (see the "Switch to Local" data-loss bug this guards against),
+  // and writing that snapshot over a real file would destroy the user's
+  // actual data.
+  const lastReadOkRef = useRef(true);
 
   const reload = useCallback(async () => {
     const [path, ws, info] = await Promise.all([resolveFile(), resolveWeekStart(), resolveStorageInfo()]);
@@ -58,8 +66,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       tasksRef.current = loaded;
       setTasks(loaded);
       setError(null);
+      lastReadOkRef.current = true;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+      lastReadOkRef.current = false;
     }
   }, []);
 
@@ -80,12 +90,24 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   );
 
   const enableICloud = useCallback(async () => {
+    if (!lastReadOkRef.current) {
+      throw new Error('Cannot enable iCloud Drive: the current task list could not be loaded. Fix the storage issue shown above first, or restart the app.');
+    }
     const { name } = await enableICloudStorage(tasksRef.current);
     await reload();
     return name;
   }, [reload]);
 
   const disableICloud = useCallback(async () => {
+    if (!lastReadOkRef.current) {
+      // Don't overwrite the local file with a known-bad (empty/stale)
+      // in-memory snapshot — just drop the iCloud bookmark and let the
+      // next reload fall back to reading whatever is genuinely on local
+      // disk, untouched.
+      await clearICloudBookmark();
+      await reload();
+      return;
+    }
     await disableICloudStorage(tasksRef.current);
     await reload();
   }, [reload]);

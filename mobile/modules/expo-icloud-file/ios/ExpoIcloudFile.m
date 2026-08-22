@@ -132,19 +132,25 @@ RCT_EXPORT_METHOD(readFile:(NSString *)bookmark
 
     BOOL accessing = [url startAccessingSecurityScopedResource];
 
+    NSNumber *isUbiquitous = nil;
+    [url getResourceValue:&isUbiquitous forKey:NSURLIsUbiquitousItemKey error:nil];
+    if ([isUbiquitous boolValue]) {
+      NSError *downloadError = nil;
+      BOOL downloadStarted = [[NSFileManager defaultManager] startDownloadingUbiquitousItemAtURL:url error:&downloadError];
+      if (downloadStarted) {
+        for (int i = 0; i < 60; i++) {
+          id status = nil;
+          [url getResourceValue:&status forKey:NSURLUbiquitousItemDownloadingStatusKey error:nil];
+          if (status && ![status isEqual:NSURLUbiquitousItemDownloadingStatusNotDownloaded]) break;
+          [NSThread sleepForTimeInterval:0.5];
+        }
+      }
+    }
+
     if (![[NSFileManager defaultManager] fileExistsAtPath:url.path]) {
       if (accessing) [url stopAccessingSecurityScopedResource];
       reject(@"FILE_NOT_FOUND", @"The todo.txt file no longer exists at the saved location.", nil);
       return;
-    }
-
-    NSError *downloadError = nil;
-    [[NSFileManager defaultManager] startDownloadingUbiquitousItemAtURL:url error:&downloadError];
-    for (int i = 0; i < 60; i++) {
-      id status = nil;
-      [url getResourceValue:&status forKey:NSURLUbiquitousItemDownloadingStatusKey error:nil];
-      if (status && ![status isEqual:NSURLUbiquitousItemDownloadingStatusNotDownloaded]) break;
-      [NSThread sleepForTimeInterval:0.5];
     }
 
     NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];

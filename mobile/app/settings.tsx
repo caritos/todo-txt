@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Constants from 'expo-constants';
 import { parseLine, serializeTasks } from '@shared/parser';
 import { useTasks } from '../src/context/TaskContext';
-import { writeTasks, LOCAL_PATH } from '../src/store';
+import { writeTasks, resolveFile } from '../src/store';
 import { Colors, Fonts, Spacing } from '../src/theme';
 
 const appName = Constants.expoConfig?.name ?? 'Stark';
@@ -55,7 +55,8 @@ export default function SettingsScreen() {
                 .split('\n')
                 .filter(line => line.trim().length > 0)
                 .map((line, i) => parseLine(line, i + 1));
-              await writeTasks(LOCAL_PATH ?? '', parsed);
+              const path = await resolveFile();
+              await writeTasks(path, parsed);
               await reload();
               Alert.alert('Imported', `${parsed.length} tasks loaded.`);
             } catch (e) {

@@ -98,11 +98,10 @@ describe('readTasks', () => {
     expect(tasks).toHaveLength(2);
   });
 
-  test('returns empty array when the icloud file does not exist yet', async () => {
+  test('throws when the icloud file does not exist (always an error state — the file is always created during enable, so a missing file means something went wrong on the iCloud side)', async () => {
     const err = Object.assign(new Error('not found'), { code: 'FILE_NOT_FOUND' });
     mockIcloud.readFile.mockRejectedValueOnce(err);
-    const tasks = await readTasks('icloud:abc123');
-    expect(tasks).toEqual([]);
+    await expect(readTasks('icloud:abc123')).rejects.toThrow(/Could not access iCloud Drive/);
   });
 
   test('throws when the icloud bookmark is stale', async () => {

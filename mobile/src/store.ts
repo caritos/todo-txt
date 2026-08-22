@@ -85,8 +85,6 @@ export async function readTasks(filePath: string): Promise<Task[]> {
       const content = await ExpoIcloudFile.readFile(bookmark);
       return parseTaskLines(content);
     } catch (e) {
-      const code = (e as { code?: string })?.code;
-      if (code === 'FILE_NOT_FOUND') return [];
       const detail = e instanceof Error ? e.message : String(e);
       throw new Error(`Could not access iCloud Drive folder. Open Settings to reconnect or switch to local storage. (${detail})`);
     }
@@ -155,11 +153,14 @@ export async function enableICloudStorage(tasks: Task[]): Promise<{ name: string
   return { name };
 }
 
-export async function disableICloudStorage(tasks: Task[]): Promise<void> {
-  await writeLocal(LOCAL_PATH!, tasks);
-
+export async function clearICloudBookmark(): Promise<void> {
   const config = await readConfig();
   delete config.icloudBookmark;
   delete config.icloudFolderName;
   await writeConfig(config);
+}
+
+export async function disableICloudStorage(tasks: Task[]): Promise<void> {
+  await writeLocal(LOCAL_PATH!, tasks);
+  await clearICloudBookmark();
 }
