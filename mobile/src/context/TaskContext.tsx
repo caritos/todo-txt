@@ -80,6 +80,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const save = useCallback(
     async (updated: Task[]) => {
+      if (!lastReadOkRef.current) {
+        throw new Error('Cannot save: the current task list could not be loaded from storage. Fix the storage issue shown above first, or restart the app.');
+      }
       const path = filePathRef.current || filePath;
       if (!path) throw new Error('File path not configured. Open Settings to set a location.');
       await writeTasks(path, updated);
