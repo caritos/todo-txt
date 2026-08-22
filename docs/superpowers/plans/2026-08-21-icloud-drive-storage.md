@@ -226,8 +226,12 @@ RCT_EXPORT_METHOD(pickFolder:(NSString *)sourcePath
     return nil;
   }
   BOOL isStale = NO;
+  // NSURLBookmarkResolutionWithSecurityScope is macOS-only (API_UNAVAILABLE
+  // on iOS, confirmed by a real compiler error during Task 1 execution) — on
+  // iOS a bookmark created from a URL obtained via the document picker is
+  // already implicitly security-scoped, so plain options:0 is correct here.
   NSURL *url = [NSURL URLByResolvingBookmarkData:data
-                                          options:NSURLBookmarkResolutionWithSecurityScope
+                                          options:0
                                     relativeToURL:nil
                               bookmarkDataIsStale:&isStale
                                             error:error];
