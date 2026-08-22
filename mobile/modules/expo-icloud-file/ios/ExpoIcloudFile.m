@@ -105,6 +105,14 @@ RCT_EXPORT_METHOD(pickFolder:(NSString *)sourcePath
                                     relativeToURL:nil
                               bookmarkDataIsStale:&isStale
                                             error:error];
+  if (url && isStale) {
+    if (error) {
+      *error = [NSError errorWithDomain:@"ExpoIcloudFile"
+                                    code:2
+                                userInfo:@{ NSLocalizedDescriptionKey: @"The iCloud Drive bookmark is stale and needs to be re-picked." }];
+    }
+    return nil;
+  }
   return url;
 }
 
