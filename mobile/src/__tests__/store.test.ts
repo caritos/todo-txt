@@ -163,12 +163,19 @@ describe('enableICloudStorage', () => {
 
     const result = await enableICloudStorage(tasks);
 
-    expect(mockFs.writeAsStringAsync).toHaveBeenCalledWith(
+    expect(mockFs.writeAsStringAsync).toHaveBeenNthCalledWith(
+      1,
       'file:///mock-cache-dir/todo.txt',
       'task one\n',
       { encoding: 'utf8' }
     );
     expect(mockIcloud.pickFolder).toHaveBeenCalledWith('file:///mock-cache-dir/todo.txt');
+    expect(mockFs.writeAsStringAsync).toHaveBeenNthCalledWith(
+      2,
+      'file:///mock-doc-dir/todo-config.json',
+      JSON.stringify({ icloudBookmark: 'abc123', icloudFolderName: 'Stark' }),
+      { encoding: 'utf8' }
+    );
     expect(result).toEqual({ name: 'Stark' });
   });
 
@@ -187,15 +194,23 @@ describe('disableICloudStorage', () => {
   ] as any;
 
   test('writes tasks locally and clears the bookmark', async () => {
+    mockFs.readAsStringAsync.mockResolvedValueOnce(JSON.stringify({ icloudBookmark: 'abc123', icloudFolderName: 'Stark' }));
     mockFs.makeDirectoryAsync.mockResolvedValueOnce(undefined as any);
     mockFs.writeAsStringAsync.mockResolvedValueOnce(undefined as any); // local todo.txt write
     mockFs.writeAsStringAsync.mockResolvedValueOnce(undefined as any); // config write
 
     await disableICloudStorage(tasks);
 
-    expect(mockFs.writeAsStringAsync).toHaveBeenCalledWith(
+    expect(mockFs.writeAsStringAsync).toHaveBeenNthCalledWith(
+      1,
       'file:///mock-doc-dir/todo.txt',
       'task one\n',
+      { encoding: 'utf8' }
+    );
+    expect(mockFs.writeAsStringAsync).toHaveBeenNthCalledWith(
+      2,
+      'file:///mock-doc-dir/todo-config.json',
+      JSON.stringify({}),
       { encoding: 'utf8' }
     );
   });
