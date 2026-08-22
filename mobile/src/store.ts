@@ -1,15 +1,31 @@
 import * as FileSystem from 'expo-file-system';
+import { NativeModules } from 'react-native';
 import { parseLine, serializeTasks } from '@shared/parser';
 import type { Task } from '@shared/parser';
 
+type ExpoIcloudFileModule = {
+  pickFolder(sourcePath: string): Promise<{ bookmark: string; name: string }>;
+  readFile(bookmark: string): Promise<string>;
+  writeFile(bookmark: string, content: string): Promise<void>;
+};
+
+const ExpoIcloudFile = NativeModules.ExpoIcloudFile as ExpoIcloudFileModule;
+
 const CONFIG_FILE = FileSystem.documentDirectory + 'todo-config.json';
+const ICLOUD_PREFIX = 'icloud:';
 
 // Always-writable default inside the app sandbox
 export const LOCAL_PATH = FileSystem.documentDirectory
   ? FileSystem.documentDirectory + 'todo.txt'
   : null;
 
-type Config = { weekStart?: 0 | 1 };
+type Config = {
+  weekStart?: 0 | 1;
+  icloudBookmark?: string;
+  icloudFolderName?: string;
+};
+
+export type StorageInfo = { mode: 'local' | 'icloud'; label: string };
 
 async function readConfig(): Promise<Config> {
   try {
@@ -24,12 +40,25 @@ async function writeConfig(config: Config): Promise<void> {
   await FileSystem.writeAsStringAsync(CONFIG_FILE!, JSON.stringify(config), { encoding: 'utf8' });
 }
 
-// There is only ever one valid storage location now (the app's own sandbox),
-// so this is always computed fresh rather than trusted from persisted config —
-// a persisted absolute path (embedding the sandbox container UUID) can go stale
-// across a reinstall/rebuild and silently fail to read, wiping the task list.
+// LOCAL_PATH is always computed fresh rather than trusted from persisted
+// config — a persisted absolute path (embedding the sandbox container UUID)
+// can go stale across a reinstall/rebuild and silently fail to read, wiping
+// the task list. A security-scoped bookmark (icloudBookmark) is different:
+// it's Apple's own mechanism specifically designed to survive across
+// reinstalls/rebuilds by re-resolving to the current location, so persisting
+// it does not reintroduce that failure mode.
 export async function resolveFile(): Promise<string> {
+  const config = await readConfig();
+  if (config.icloudBookmark) return ICLOUD_PREFIX + config.icloudBookmark;
   return LOCAL_PATH!;
+}
+
+export async function resolveStorageInfo(): Promise<StorageInfo> {
+  const config = await readConfig();
+  if (config.icloudBookmark) {
+    return { mode: 'icloud', label: `ICLOUD DRIVE — ${config.icloudFolderName ?? 'Unknown'}` };
+  }
+  return { mode: 'local', label: LOCAL_PATH ?? '' };
 }
 
 export async function resolveWeekStart(): Promise<0 | 1> {
@@ -42,19 +71,36 @@ export async function setWeekStart(weekStart: 0 | 1): Promise<void> {
   await writeConfig({ ...config, weekStart });
 }
 
+function parseTaskLines(content: string): Task[] {
+  return content
+    .split('\n')
+    .filter(line => line.trim().length > 0)
+    .map((line, i) => parseLine(line, i + 1));
+}
+
 export async function readTasks(filePath: string): Promise<Task[]> {
+  if (filePath.startsWith(ICLOUD_PREFIX)) {
+    const bookmark = filePath.slice(ICLOUD_PREFIX.length);
+    try {
+      const content = await ExpoIcloudFile.readFile(bookmark);
+      return parseTaskLines(content);
+    } catch (e) {
+      const code = (e as { code?: string })?.code;
+      if (code === 'FILE_NOT_FOUND') return [];
+      const detail = e instanceof Error ? e.message : String(e);
+      throw new Error(`Could not access iCloud Drive folder. Open Settings to reconnect or switch to local storage. (${detail})`);
+    }
+  }
+
   try {
     const content = await FileSystem.readAsStringAsync(filePath, { encoding: 'utf8' });
-    return content
-      .split('\n')
-      .filter(line => line.trim().length > 0)
-      .map((line, i) => parseLine(line, i + 1));
+    return parseTaskLines(content);
   } catch {
     return [];
   }
 }
 
-export async function writeTasks(filePath: string, tasks: Task[]): Promise<void> {
+async function writeLocal(filePath: string, tasks: Task[]): Promise<void> {
   if (!filePath) throw new Error('File path not configured. Open Settings to set a location.');
 
   const dir = filePath.slice(0, filePath.lastIndexOf('/'));
@@ -81,4 +127,39 @@ export async function writeTasks(filePath: string, tasks: Task[]): Promise<void>
     const detail = e instanceof Error ? e.message : String(e);
     throw new Error(`Could not write to ${filePath.replace(/^file:\/\//, '')}. Check the file path in Settings. (${detail})`);
   }
+}
+
+export async function writeTasks(filePath: string, tasks: Task[]): Promise<void> {
+  if (filePath.startsWith(ICLOUD_PREFIX)) {
+    const bookmark = filePath.slice(ICLOUD_PREFIX.length);
+    try {
+      await ExpoIcloudFile.writeFile(bookmark, serializeTasks(tasks));
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      throw new Error(`Could not access iCloud Drive folder. Open Settings to reconnect or switch to local storage. (${detail})`);
+    }
+    return;
+  }
+
+  await writeLocal(filePath, tasks);
+}
+
+export async function enableICloudStorage(tasks: Task[]): Promise<{ name: string }> {
+  const tempPath = FileSystem.cacheDirectory + 'todo.txt';
+  await FileSystem.writeAsStringAsync(tempPath, serializeTasks(tasks), { encoding: 'utf8' });
+
+  const { bookmark, name } = await ExpoIcloudFile.pickFolder(tempPath);
+
+  const config = await readConfig();
+  await writeConfig({ ...config, icloudBookmark: bookmark, icloudFolderName: name });
+  return { name };
+}
+
+export async function disableICloudStorage(tasks: Task[]): Promise<void> {
+  await writeLocal(LOCAL_PATH!, tasks);
+
+  const config = await readConfig();
+  delete config.icloudBookmark;
+  delete config.icloudFolderName;
+  await writeConfig(config);
 }
