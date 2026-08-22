@@ -13,7 +13,7 @@ const appVersion = Constants.expoConfig?.version ?? '';
 const buildNumber = Constants.expoConfig?.ios?.buildNumber ?? '';
 
 export default function SettingsScreen() {
-  const { filePath, tasks, reload, weekStart, setWeekStart } = useTasks();
+  const { storageInfo, enableICloud, disableICloud, tasks, reload, weekStart, setWeekStart } = useTasks();
   const insets = useSafeAreaInsets();
 
   async function handleExport() {
@@ -67,8 +67,62 @@ export default function SettingsScreen() {
     );
   }
 
+  async function handleUseICloud() {
+    try {
+      const name = await enableICloud();
+      Alert.alert('iCloud Drive enabled', `Tasks are now stored in "${name}".`);
+    } catch (e) {
+      const code = (e as { code?: string }).code;
+      if (code === 'CANCELLED') return;
+      Alert.alert('Could not enable iCloud Drive', (e as Error).message);
+    }
+  }
+
+  function handleSwitchToLocal() {
+    Alert.alert(
+      'Switch to local storage?',
+      'This copies your current tasks to local storage on this device only. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Switch to Local',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await disableICloud();
+            } catch (e) {
+              Alert.alert('Could not switch to local storage', (e as Error).message);
+            }
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <ScrollView style={[styles.screen, { paddingTop: insets.top }]} contentContainerStyle={{ paddingBottom: 120 }}>
+      <Text style={styles.sectionTitle}>Storage Location</Text>
+      <View style={styles.card}>
+        <View style={styles.option}>
+          <Text style={styles.optionLabel}>{storageInfo.mode === 'icloud' ? 'ICLOUD DRIVE' : 'LOCAL'}</Text>
+          <Text style={styles.optionDesc}>
+            {storageInfo.mode === 'icloud' ? storageInfo.label : 'This device only.'}
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        {storageInfo.mode === 'local' ? (
+          <TouchableOpacity style={styles.option} onPress={handleUseICloud} activeOpacity={0.7}>
+            <Text style={[styles.optionLabel, styles.optionLabelActive]}>USE ICLOUD DRIVE</Text>
+            <Text style={styles.optionDesc}>Choose or create a folder in iCloud Drive — we suggest naming it &quot;Stark&quot;.</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.option} onPress={handleSwitchToLocal} activeOpacity={0.7}>
+            <Text style={[styles.optionLabel, styles.optionLabelDestructive]}>SWITCH TO LOCAL</Text>
+            <Text style={styles.optionDesc}>Copy tasks back to this device only.</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <Text style={styles.sectionTitle}>Transfer</Text>
       <View style={styles.card}>
         <TouchableOpacity style={styles.option} onPress={handleExport} activeOpacity={0.7}>
@@ -103,7 +157,7 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionTitle}>Current path</Text>
       <View style={styles.card}>
-        <Text style={styles.currentPath}>{filePath}</Text>
+        <Text style={styles.currentPath}>{storageInfo.label}</Text>
       </View>
 
       <Text style={styles.sectionTitle}>About</Text>
@@ -170,6 +224,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.mono,
   },
   optionLabelActive: { color: Colors.accent },
+  optionLabelDestructive: { color: Colors.actionDelete },
   optionDesc: { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
   divider: {
     height: StyleSheet.hairlineWidth,
