@@ -24,7 +24,6 @@
     "expo-icloud-file": "file:./modules/expo-icloud-file",
     "expo-linking": "~7.0.5",
     "expo-router": "~4.0.22",
-    "expo-speech-recognition": "^1.1.1",
     "expo-status-bar": "~2.0.1",
     "react": "18.3.1",
     "react-native": "0.76.5",

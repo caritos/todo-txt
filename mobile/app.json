@@ -16,19 +16,12 @@
         "ITSAppUsesNonExemptEncryption": false,
         "UIFileSharingEnabled": true
       },
-      "buildNumber": "26",
+      "buildNumber": "31",
       "appleTeamId": "3U8L77G9QV"
     },
     "plugins": [
       "expo-router",
-      "@react-native-community/datetimepicker",
-      [
-        "expo-speech-recognition",
-        {
-          "microphonePermission": "Stark uses the microphone to add tasks by voice.",
-          "speechRecognitionPermission": "Stark uses speech recognition to transcribe voice-added tasks."
-        }
-      ]
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

@@ -4,8 +4,6 @@ import { useState } from 'react';
 import { Colors, Fonts, Spacing } from '../theme';
 import { ViewSwitcher } from './ViewSwitcher';
 import { AddTaskModal } from './AddTaskModal';
-import { VoiceAddButton, VoiceAddToast } from './VoiceAddButton';
-import { useVoiceAdd } from '../hooks/useVoiceAdd';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/calendar': 'Day',
@@ -18,13 +16,11 @@ export function BottomActionBar() {
   const pathname = usePathname();
   const [switcherVisible, setSwitcherVisible] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
-  const { isListening, addedTask, start, stop, undo } = useVoiceAdd();
 
   const label = ROUTE_LABELS[pathname] ?? 'Day';
 
   return (
     <>
-      {addedTask && <VoiceAddToast text={addedTask.text} onUndo={undo} />}
       <View style={styles.bar}>
         <TouchableOpacity onPress={() => setSwitcherVisible(true)} style={styles.iconBtn} hitSlop={8}>
           <Text style={styles.icon}>≡</Text>
@@ -35,7 +31,6 @@ export function BottomActionBar() {
         <TouchableOpacity onPress={() => router.push('/search')} style={styles.iconBtn} hitSlop={8}>
           <Text style={styles.icon}>⌕</Text>
         </TouchableOpacity>
-        <VoiceAddButton isListening={isListening} onPressIn={start} onPressOut={stop} />
         <TouchableOpacity onPress={() => setAddVisible(true)} style={styles.iconBtn} hitSlop={8}>
           <Text style={[styles.icon, styles.addIcon]}>+</Text>
         </TouchableOpacity>
