@@ -64,11 +64,20 @@ RCT_EXPORT_METHOD(pickFolder:(NSString *)sourcePath
     return;
   }
 
+  // fileURL is security-scoped for locations outside the app's sandbox (which
+  // is exactly what an iCloud Drive folder is) — reading its bookmark data
+  // without starting access first is denied by the sandbox, surfacing as a
+  // misleading "file doesn't exist" error even though the file is right there.
+  BOOL accessing = [fileURL startAccessingSecurityScopedResource];
+
   NSError *bookmarkError = nil;
   NSData *bookmark = [fileURL bookmarkDataWithOptions:NSURLBookmarkCreationMinimalBookmark
                         includingResourceValuesForKeys:nil
                                          relativeToURL:nil
                                                  error:&bookmarkError];
+
+  if (accessing) [fileURL stopAccessingSecurityScopedResource];
+
   if (!bookmark) {
     if (reject) reject(@"BOOKMARK_FAILED", bookmarkError.localizedDescription ?: @"Could not create a bookmark for the picked file.", bookmarkError);
     return;
