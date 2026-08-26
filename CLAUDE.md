@@ -133,7 +133,7 @@ mobile/                       ← Expo Router iOS app
 
 ## Mobile Layer
 
-**Tech stack**: Expo SDK 52, Expo Router v3, React Native (iOS only), expo-file-system, react-native-reanimated, react-native-gesture-handler, @expo-google-fonts/jetbrains-mono, chrono-node, expo-speech-recognition.
+**Tech stack**: Expo SDK 52, Expo Router v3, React Native (iOS only), expo-file-system, react-native-reanimated, react-native-gesture-handler, @expo-google-fonts/jetbrains-mono, chrono-node.
 
 **Design tokens**: background `#1A1A1A`, accent `#E8461A`, text `#F0F0F0`, secondary `#888888`, separator `#333333`, checkboxBorder `#555555`. Task text in JetBrains Mono. One accent color only — Braun/Bauhaus. Never use hardcoded hex colors — always reference `Colors.*` from `mobile/src/theme.ts`. Never use hardcoded font families — always use `Fonts.mono`. `Colors.eventDot` (`#8E5FD9`, a muted purple) is a single, deliberate, user-approved exception to the one-accent-color rule — scoped only to the Calendar mini-grid's density dots (issue #81), to distinguish task days from event days the way Apple Calendar uses two dot colors. Don't reuse it elsewhere (e.g. `EventPill.tsx` and the agenda row's `agendaIconEvent`/`agendaIconOverdue` stay `Colors.accent`-only).
 
