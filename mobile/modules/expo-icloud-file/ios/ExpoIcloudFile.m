@@ -32,7 +32,12 @@ RCT_EXPORT_METHOD(pickFolder:(NSString *)sourcePath
     return;
   }
 
-  NSURL *sourceURL = [NSURL fileURLWithPath:sourcePath];
+  // sourcePath is a "file://"-prefixed URI (from Expo FileSystem.cacheDirectory),
+  // not a raw filesystem path — fileURLWithPath: would treat the literal "file://"
+  // prefix as part of the path and produce a URL pointing nowhere real, which
+  // crashes UIDocumentPickerViewController's exporting mode on presentation
+  // since its source file must actually exist.
+  NSURL *sourceURL = [NSURL URLWithString:sourcePath];
   UIDocumentPickerViewController *picker =
     [[UIDocumentPickerViewController alloc] initForExportingURLs:@[ sourceURL ]];
   picker.delegate = self;
