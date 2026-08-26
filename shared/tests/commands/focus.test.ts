@@ -94,6 +94,22 @@ describe('focusSortKey — frequency-day after done', () => {
   });
 });
 
+describe('focusSortKey — typed daily event respects exdate', () => {
+  // Regression: `t skip` on a type:event + frequency:daily task adds today's date to
+  // exdate, but focusSortKey's `type && start` branch fell through to an unconditional
+  // `if (frequency) return todayStr + time`, ignoring exdate entirely — so a skipped
+  // daily event kept showing as due "today" no matter what exdate contained.
+  test('daily typed event with today exdated shows tomorrow, not today', () => {
+    const t = task('~claire %tennis %practice start:2026-07-29 frequency:daily type:event exdate:2026-08-26');
+    expect(focusSortKey(t, '2026-08-26')).toBe('2026-08-27');
+  });
+
+  test('daily typed event with no exdate still shows today (unaffected)', () => {
+    const t = task('~claire %tennis %practice start:2026-07-29 frequency:daily type:event');
+    expect(focusSortKey(t, '2026-08-26')).toBe('2026-08-26');
+  });
+});
+
 describe('nextMonthlyDate day clamping', () => {
   test('clamps day 31 to Feb 28 in a non-leap year', () => {
     const result = nextMonthlyDate('2026-01-31', '2026-02-01', new Set());

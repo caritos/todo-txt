@@ -306,6 +306,12 @@ export function focusSortKey(task: Task, todayStr: string): string {
     if (frequency === 'yearly') return nextYearlyDate(start.slice(0, 10), todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) + time;
     if (frequency === 'monthly') return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) + time;
+    if (frequency === 'daily') {
+      const startDate = start.slice(0, 10);
+      let d = startDate > todayStr ? startDate : todayStr;
+      while (exdates.has(d)) d = addDays(d, 1);
+      return d + time;
+    }
     if (frequency) return todayStr + time;
     // Ongoing multi-day event: sort/display as today instead of its past start
     if (start.slice(0, 10) < todayStr) {
