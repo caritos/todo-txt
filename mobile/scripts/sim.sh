@@ -9,6 +9,40 @@ if ! grep -q '"expo-dev-client"' package.json; then
   npx expo install expo-dev-client
 fi
 
+# Verify every local (file:) dependency — e.g. expo-icloud-file — actually
+# resolves in node_modules. npm install can silently leave a local package's
+# node_modules symlink missing (seen in practice: node_modules existed and
+# looked otherwise complete, but the file: symlink for a native module was
+# gone) even though package.json/package-lock.json both look correct. A
+# missing link means the native module never autolinks, which produces no
+# build-time error at all — just a silent "Cannot read property 'X' of
+# null" at the JS call site the first time the module is used. Hard-fail
+# if the dependency's target directory itself is missing (a stale
+# package.json entry, not a missing link — npm install can't fix that).
+missing_link=false
+for entry in $(node -e "
+  const pkg = require('./package.json');
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+  for (const [name, spec] of Object.entries(deps)) {
+    if (spec.startsWith('file:')) console.log(name + '|' + spec.slice(5));
+  }
+"); do
+  name="${entry%%|*}"
+  target="${entry#*|}"
+  if [[ ! -d "$target" ]]; then
+    echo "Local dependency '$name' points to missing directory '$target' — fix package.json before building."
+    exit 1
+  fi
+  if [[ ! -e "node_modules/$name" ]]; then
+    echo "Local dependency '$name' is missing from node_modules..."
+    missing_link=true
+  fi
+done
+if [[ "$missing_link" == true ]]; then
+  echo "Running npm install to relink local dependencies..."
+  npm install
+fi
+
 # Generate native iOS project if it doesn't exist yet
 if [[ ! -d ios ]]; then
   echo "No ios/ directory found — running expo prebuild..."
@@ -19,12 +53,15 @@ fi
 # Run pod install if Podfile.lock is missing/stale, if generated pod headers
 # are gone (e.g. after cleanup-disk-space.sh removed Pods/Headers without
 # removing Podfile.lock, which makes the content check below pass incorrectly),
-# or if package.json has changed more recently than Podfile.lock — the general
+# if package.json has changed more recently than Podfile.lock — the general
 # case: any newly added/merged native dependency leaves ios/Pods stale until
-# pod install re-syncs it.
+# pod install re-syncs it — or if a local dependency link was just restored
+# above (Podfile.lock's mtime doesn't change just because node_modules did,
+# so that case would otherwise be missed here).
 if ! grep -q "expo-dev-client" ios/Podfile.lock 2>/dev/null || \
    [[ ! -d ios/Pods/Headers/Public/yoga ]] || \
-   [[ package.json -nt ios/Podfile.lock ]]; then
+   [[ package.json -nt ios/Podfile.lock ]] || \
+   [[ "$missing_link" == true ]]; then
   echo "Syncing CocoaPods..."
   (cd ios && pod install)
 fi
