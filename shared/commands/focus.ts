@@ -87,8 +87,10 @@ export function nextWeeklyDate(startStr: string, todayStr: string, every: number
   if (frequencyDay) {
     const dows = new Set(frequencyDay.split(',').map(d => FREQ_DAY_DOW[d]).filter((d): d is number => d !== undefined));
     if (every === 1) {
+      const startDate = startStr.slice(0, 10);
+      const anchor = startDate > todayStr ? startDate : todayStr;
       for (let i = 0; i <= 7; i++) {
-        const d = new Date(todayStr + 'T12:00:00');
+        const d = new Date(anchor + 'T12:00:00');
         d.setDate(d.getDate() + i);
         if (dows.has(d.getDay())) {
           const dateStr = isoDate(d);
@@ -257,13 +259,12 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
       return next >= todayStr && next <= windowEnd;
     }
     if (frequency === 'monthly') {
-      const startDate = start.slice(0, 10);
-      if (startDate < addDays(todayStr, -730)) return false;
       return nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1')) <= windowEnd;
     }
+    if (frequency === 'weekly') {
+      return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) <= windowEnd;
+    }
     if (frequency) {
-      const startDate = start.slice(0, 10);
-      if (startDate < addDays(todayStr, -730)) return false;
       return true;
     }
     const startDate = start.slice(0, 10);
@@ -273,7 +274,6 @@ function isInFocusWindow(task: Task, todayStr: string, windowEnd: string): boole
 
   if (start && frequency) {
     const startDate = start.slice(0, 10);
-    if (startDate < addDays(todayStr, -730)) return false;
     if (frequency === 'weekly') return nextWeeklyDate(start, todayStr, parseInt(task.extensions['every'] ?? '1'), exdates, task.extensions['frequency-day']) <= windowEnd;
     if (frequency === 'monthly') {
       const next = nextMonthlyDate(start, todayStr, exdates, task.extensions['frequency-month-day'], parseInt(task.extensions['every'] ?? '1'));

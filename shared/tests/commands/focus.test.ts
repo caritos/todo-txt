@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
-import { taskOccurrence, nextMonthlyDate, nextYearlyDate, focusSortKey, generateTaskOccurrences, applyFocusForWindow } from '../../commands/focus';
+import { taskOccurrence, nextMonthlyDate, nextYearlyDate, nextWeeklyDate, focusSortKey, generateTaskOccurrences, applyFocusForWindow } from '../../commands/focus';
 import { parseLine } from '../../parser';
+import { addDays } from '../../utils';
 
 function task(raw: string) { return parseLine(raw, 1); }
 const TODAY = '2026-06-15';
@@ -107,6 +108,80 @@ describe('focusSortKey — typed daily event respects exdate', () => {
   test('daily typed event with no exdate still shows today (unaffected)', () => {
     const t = task('~claire %tennis %practice start:2026-07-29 frequency:daily type:event');
     expect(focusSortKey(t, '2026-08-26')).toBe('2026-08-26');
+  });
+});
+
+describe('nextWeeklyDate with frequency-day — future start not yet reached', () => {
+  // Regression: a frequency-day search anchored purely at todayStr can match a weekday
+  // that occurs *before* the task's own start date (e.g. task created today on a
+  // Thursday with a first occurrence on a later Thursday) — the search must never
+  // return a date earlier than start.
+  test('does not match a today weekday earlier than a future start date', () => {
+    // Today (2026-08-27) is itself a Thursday, but the task's first occurrence isn't until Sept 10.
+    expect(nextWeeklyDate('2026-09-10T19:00', '2026-08-27', 1, new Set(), 'Th')).toBe('2026-09-10');
+  });
+});
+
+describe('applyFocusForWindow — typed weekly event respects the focus window', () => {
+  // Regression: isInFocusWindow's `type` branch handled yearly/monthly explicitly but
+  // lumped weekly in with a generic `if (frequency) return true`, so any type:event with
+  // frequency:weekly always showed up regardless of how far off its next occurrence was.
+  test('typed weekly event whose next occurrence is beyond the window is excluded', () => {
+    const t = task('basketball frequency:weekly frequency-day:Th start:2026-10-01T19:00 type:event');
+    const items = applyFocusForWindow([t], '2026-08-27', '2026-09-10');
+    expect(items).toEqual([]);
+  });
+
+  test('typed weekly event whose next occurrence is a future start within the window shows on that date, not today', () => {
+    const t = task('basketball frequency:weekly frequency-day:Th start:2026-09-10T19:00 type:event');
+    const items = applyFocusForWindow([t], '2026-08-27', '2026-09-10');
+    expect(items.map(i => i.effectiveDate)).toEqual(['2026-09-10T19:00']);
+  });
+});
+
+describe('isInFocusWindow — recurring tasks always show regardless of how old start: is', () => {
+  // A prior "hide recurring events with start: > 2 years old and no recur-until" guard
+  // (commit 2de9411c) meant to filter stale one-off ICS imports instead ended up hiding
+  // genuinely still-active recurring tasks/events once they'd been running long enough.
+  // Recurring means recurring — age of the original start: must never suppress it.
+  test('typed weekly event with start far over 2 years old still shows', () => {
+    const today = '2026-08-27';
+    const start = addDays(today, -1500);
+    const t = task(`old standing meeting frequency:weekly start:${start}T10:00 type:event`);
+    const items = applyFocusForWindow([t], today, addDays(today, 14));
+    expect(items.length).toBe(1);
+  });
+
+  test('typed monthly event with start far over 2 years old still shows', () => {
+    const today = '2026-08-27';
+    // Day-of-month (27) matches today's, so the occurrence lands today regardless of year.
+    const t = task(`old standing meeting frequency:monthly start:2015-03-27T10:00 type:event`);
+    const items = applyFocusForWindow([t], today, addDays(today, 14));
+    expect(items.length).toBe(1);
+  });
+
+  test('typed daily event with start far over 2 years old still shows', () => {
+    const today = '2026-08-27';
+    const start = addDays(today, -1500);
+    const t = task(`old standing meeting frequency:daily start:${start}T10:00 type:event`);
+    const items = applyFocusForWindow([t], today, addDays(today, 14));
+    expect(items.length).toBe(1);
+  });
+
+  test('non-typed weekly recurring task with start far over 2 years old still shows', () => {
+    const today = '2026-08-27';
+    const start = addDays(today, -1500);
+    const t = task(`take out trash frequency:weekly start:${start}`);
+    const items = applyFocusForWindow([t], today, addDays(today, 14));
+    expect(items.length).toBe(1);
+  });
+
+  test('non-typed monthly recurring task with start far over 2 years old still shows', () => {
+    const today = '2026-08-27';
+    // Day-of-month (27) matches today's, so the occurrence lands today regardless of year.
+    const t = task(`pay rent frequency:monthly start:2015-03-27`);
+    const items = applyFocusForWindow([t], today, addDays(today, 14));
+    expect(items.length).toBe(1);
   });
 });
 

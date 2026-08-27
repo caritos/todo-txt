@@ -135,11 +135,13 @@ describe('focus command', () => {
     expect(stdout).not.toContain('Ended Standup');
   });
 
-  test('hides recurring event whose start: is older than 2 years with no recur-until:', () => {
+  test('still shows a recurring event whose start: is older than 2 years with no recur-until:', () => {
+    // Recurring means recurring — an old start: date must never suppress an otherwise-active
+    // recurring task/event. A prior guard mistakenly hid these; reversed per explicit product decision.
     const staleStart = addDays(today, -800);
     writeFileSync(todoFile, `2026-05-06 Old Workshop start:${staleStart}T10:00 frequency:daily type:event\n`, 'utf8');
     const { stdout } = run(['--file', todoFile, 'focus']);
-    expect(stdout).not.toContain('Old Workshop');
+    expect(stdout).toContain('Old Workshop');
   });
 
   test('shows daily recurring task whose start: is in the future (within window)', () => {
@@ -232,8 +234,11 @@ describe('focus command', () => {
     const afterSat = addDays(nextSat, 1);
     // A task due the day before next Saturday should sort before it
     const beforeSat = daysUntilSat > 0 ? addDays(today, 1) : addDays(nextSat, -1);
+    // The recurring event's start must be a Saturday, computed relative to `today` (not a
+    // fixed calendar date) so this test can't itself go stale as real time passes.
+    const startSat = addDays(nextSat, -7);
     writeFileSync(todoFile, [
-      `2024-08-03 Weekly Saturday event start:2024-08-03T10:00 frequency:weekly type:event`,
+      `2026-05-06 Weekly Saturday event start:${startSat}T10:00 frequency:weekly type:event`,
       `2026-05-06 Task due after Saturday due:${afterSat}`,
       ...(beforeSat >= today ? [`2026-05-06 Task due before Saturday due:${beforeSat}`] : []),
     ].join('\n') + '\n', 'utf8');
